@@ -1,0 +1,105 @@
+<h2>三视角知识网络 — 设计方案总览</h2>
+<p class="subtitle">基于你的选择：B路线独立渲染 + 三种图形态 + 维护者/浏览者双权限</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
+  <div style="background:#1e1e3e;border-radius:10px;padding:16px;border-top:4px solid #ff9800">
+    <h3 style="color:#ff9800;margin-top:0">概览视角</h3>
+    <p style="color:#888;font-size:12px">领导 / 决策者</p>
+    <p style="font-size:13px"><strong>分组节点图 (D)</strong></p>
+    <ul style="font-size:11px;color:#ccc;line-height:1.7">
+      <li>虚线框包围同域节点</li>
+      <li>域间粗线连接表关联</li>
+      <li>数据源节点在画布边缘</li>
+      <li>节点大小=概念数</li>
+    </ul>
+    <p style="font-size:11px;color:#888">只读浏览 ✦ 可缩放平移</p>
+  </div>
+  <div style="background:#1e1e3e;border-radius:10px;padding:16px;border-top:4px solid #4caf50">
+    <h3 style="color:#4caf50;margin-top:0">数据映射视角</h3>
+    <p style="color:#888;font-size:12px">软件工程师</p>
+    <p style="font-size:13px"><strong>思维导图 (C)</strong></p>
+    <ul style="font-size:11px;color:#ccc;line-height:1.7">
+      <li>根在左，向右分叉展开</li>
+      <li>上半：业务域→本体概念</li>
+      <li>下半：概念→数据源·表·字段</li>
+      <li>不同数据源不同颜色标签</li>
+    </ul>
+    <p style="font-size:11px;color:#888">只读浏览 ✦ 可展开/折叠节点</p>
+  </div>
+  <div style="background:#1e1e3e;border-radius:10px;padding:16px;border-top:4px solid #42a5f5">
+    <h3 style="color:#42a5f5;margin-top:0">本体推理视角</h3>
+    <p style="color:#888;font-size:12px">工艺人员 / 知识维护者</p>
+    <p style="font-size:13px"><strong>力导向图 (A)</strong></p>
+    <ul style="font-size:11px;color:#ccc;line-height:1.7">
+      <li>所有节点自动力排布</li>
+      <li>连线=因果/影响关系</li>
+      <li>点击"编辑"切编辑模式</li>
+      <li>编辑模式可拖拽+连线</li>
+    </ul>
+    <p style="font-size:11px;color:#888">浏览者只读 ✦ 维护者可编辑</p>
+  </div>
+</div>
+
+<div class="section">
+  <h3>关键设计决策汇总</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:12px">
+    <tr style="background:#2a2a4e">
+      <th style="padding:8px;text-align:left">决策项</th>
+      <th style="padding:8px;text-align:left">选择</th>
+    </tr>
+    <tr style="border-bottom:1px solid #333">
+      <td style="padding:8px">三视角架构</td>
+      <td style="padding:8px">各自独立渲染，不要求跨视角节点引用</td>
+    </tr>
+    <tr style="border-bottom:1px solid #333">
+      <td style="padding:8px">概览图形态</td>
+      <td style="padding:8px"><strong>分组节点图</strong> — 虚线框围域，域间粗线，数据源在边缘</td>
+    </tr>
+    <tr style="border-bottom:1px solid #333">
+      <td style="padding:8px">数据映射图形态</td>
+      <td style="padding:8px"><strong>思维导图</strong> — 根左叶右，上半业务下半技术，混合层级</td>
+    </tr>
+    <tr style="border-bottom:1px solid #333">
+      <td style="padding:8px">本体推理图形态</td>
+      <td style="padding:8px"><strong>力导向图</strong> — 自动排布，编辑时切手动模式</td>
+    </tr>
+    <tr style="border-bottom:1px solid #333">
+      <td style="padding:8px">工艺视角编辑</td>
+      <td style="padding:8px">浏览=力导向自动布局；点击"编辑"切可拖拽+连线手柄</td>
+    </tr>
+    <tr style="border-bottom:1px solid #333">
+      <td style="padding:8px">权限模型</td>
+      <td style="padding:8px">维护者：可编辑、可导入数据源；浏览者：三视角只读</td>
+    </tr>
+    <tr>
+      <td style="padding:8px">交互层级</td>
+      <td style="padding:8px">概览：缩放平移 · 数据映射：展开折叠+缩放 · 推理：力导向+编辑</td>
+    </tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>实现要点</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div style="background:#1e1e3e;border-radius:8px;padding:14px">
+      <h4 style="color:#ff9800;margin-top:0">需要新增的能力</h4>
+      <ul style="font-size:11px;color:#ccc;line-height:1.8">
+        <li>分组节点图渲染引擎（d3-force 或自绘 SVG）</li>
+        <li>思维导图渲染引擎（树布局算法）</li>
+        <li>力导向图物理引擎（d3-force）</li>
+        <li>工艺视角浏览/编辑双模式切换</li>
+        <li>浏览者/维护者权限控制</li>
+      </ul>
+    </div>
+    <div style="background:#1e1e3e;border-radius:8px;padding:14px">
+      <h4 style="color:#4caf50;margin-top:0">可以复用的</h4>
+      <ul style="font-size:11px;color:#ccc;line-height:1.8">
+        <li>现有 NodeCard 组件（编辑模式下）</li>
+        <li>现有 EdgeLine 组件（编辑模式下）</li>
+        <li>后端数据模型（BusinessDomain / DataMapping）</li>
+        <li>视角配置 JSON 文件</li>
+        <li>Tab 切换栏（PerspectiveTabs）</li>
+      </ul>
+    </div>
+  </div>
+</div>

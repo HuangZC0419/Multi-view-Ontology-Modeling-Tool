@@ -1,0 +1,90 @@
+<h2>整体架构设计 — 模块拆分方案</h2>
+<p class="subtitle">方案C混合式：新增功能独立模块，现有核心逻辑保持不变</p>
+
+<div class="section">
+  <h3>后端模块结构</h3>
+  <div class="mockup">
+    <div class="mockup-header">backend/app/ 目录结构</div>
+    <div class="mockup-body">
+      <div style="font-family:monospace;font-size:13px;line-height:1.8;padding:10px">
+        <div style="background:#1a1a2e;color:#e0e0e0;padding:12px;border-radius:8px">
+<span style="color:#888"># === 现有文件（不改动核心逻辑）===</span>
+<span style="color:#ffd700">main.py</span>          <span style="color:#888">← FastAPI入口、本体CRUD、贝叶斯分析、项目管理（不变）</span>
+
+<span style="color:#888"># === 新增：共享数据模型 ===</span>
+<span style="color:#7ec8e3">models.py</span>        <span style="color:#888">← 从main.py提取共享Pydantic模型 + 新增数据源/视角模型</span>
+
+<span style="color:#888"># === 新增：路由层 ===</span>
+<span style="color:#888">routers/</span>
+<span style="color:#888">  ├──</span> <span style="color:#7ec8e3">datasource.py</span>  <span style="color:#888">← 数据库连接/断开、表结构预览、Excel/CSV解析、本体导入</span>
+<span style="color:#888">  └──</span> <span style="color:#7ec8e3">perspective.py</span> <span style="color:#888">← 多视角数据查询、视角切换、视角过滤</span>
+
+<span style="color:#888"># === 新增：连接器层（数据源抽象）===</span>
+<span style="color:#888">connectors/</span>
+<span style="color:#888">  ├──</span> <span style="color:#7ec8e3">base.py</span>        <span style="color:#888">← 抽象基类 DataSourceConnector（统一接口）</span>
+<span style="color:#888">  ├──</span> <span style="color:#7ec8e3">dameng.py</span>      <span style="color:#888">← 达梦数据库连接器（dmPython驱动）</span>
+<span style="color:#888">  └──</span> <span style="color:#7ec8e3">file_parser.py</span> <span style="color:#888">← Excel/CSV文件解析器（openpyxl + csv）</span>
+
+<span style="color:#888"># === 新增：业务逻辑层 ===</span>
+<span style="color:#888">services/</span>
+<span style="color:#888">  └──</span> <span style="color:#7ec8e3">ontology_extract.py</span> <span style="color:#888">← 从表结构/文件列提取本体概念（半自动流程）</span>
+                        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>前端组件结构</h3>
+  <div class="mockup">
+    <div class="mockup-header">frontend/src/ 目录结构</div>
+    <div class="mockup-body">
+      <div style="font-family:monospace;font-size:13px;line-height:1.8;padding:10px">
+        <div style="background:#1a1a2e;color:#e0e0e0;padding:12px;border-radius:8px">
+<span style="color:#ffd700">App.vue</span>           <span style="color:#888">← 主框架（精简，只保留顶层布局 + 画布核心）</span>
+
+<span style="color:#888"># === 新增：组件目录 ===</span>
+<span style="color:#888">components/</span>
+<span style="color:#888">  ├── canvas/</span>        <span style="color:#888"># 画布相关</span>
+<span style="color:#888">  │   ├──</span> <span style="color:#7ec8e3">CanvasArea.vue</span>    <span style="color:#888">← SVG画布渲染</span>
+<span style="color:#888">  │   ├──</span> <span style="color:#7ec8e3">NodeCard.vue</span>      <span style="color:#888">← 节点卡片</span>
+<span style="color:#888">  │   └──</span> <span style="color:#7ec8e3">EdgeLine.vue</span>      <span style="color:#888">← 关系连线</span>
+<span style="color:#888">  ├── datasource/</span>    <span style="color:#888"># 数据导入面板</span>
+<span style="color:#888">  │   ├──</span> <span style="color:#7ec8e3">DataSourcePanel.vue</span>  <span style="color:#888">← 导入入口（数据库/文件）</span>
+<span style="color:#888">  │   ├──</span> <span style="color:#7ec8e3">DbConnector.vue</span>       <span style="color:#888">← 数据库连接表单</span>
+<span style="color:#888">  │   ├──</span> <span style="color:#7ec8e3">FileUploader.vue</span>      <span style="color:#888">← Excel/CSV上传</span>
+<span style="color:#888">  │   └──</span> <span style="color:#7ec8e3">SchemaPreview.vue</span>     <span style="color:#888">← 数据结构预览+勾选</span>
+<span style="color:#888">  └── perspective/</span>   <span style="color:#888"># 多视角</span>
+<span style="color:#888">      ├──</span> <span style="color:#7ec8e3">PerspectiveTabs.vue</span>  <span style="color:#888">← 顶部Tab栏</span>
+<span style="color:#888">      ├──</span> <span style="color:#7ec8e3">LeaderView.vue</span>       <span style="color:#888">← 领导视角内容</span>
+<span style="color:#888">      ├──</span> <span style="color:#7ec8e3">EngineerView.vue</span>     <span style="color:#888">← 软件工程师视角内容</span>
+<span style="color:#888">      └──</span> <span style="color:#7ec8e3">ProcessView.vue</span>      <span style="color:#888">← 工艺人员视角内容</span>
+                        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>核心设计原则</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+    <div class="card">
+      <div class="card-body">
+        <h3>🔌 连接器抽象</h3>
+        <p>DataSourceConnector 基类定义统一接口：connect / disconnect / get_tables / get_columns / preview_data。<br>达梦和文件解析各自实现，方便后续扩展。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>📦 模型独立</h3>
+        <p>新增的 Pydantic 模型（DataSourceInfo、TableSchema、PerspectiveConfig 等）放 models.py，与现有本体模型共享基础类型。</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>🧩 组件松耦合</h3>
+        <p>视角切换通过 props/emit 通信，数据导入通过 provide/inject 共享状态，不引入 Vue Router 或 Pinia（保持简洁）。</p>
+      </div>
+    </div>
+  </div>
+</div>

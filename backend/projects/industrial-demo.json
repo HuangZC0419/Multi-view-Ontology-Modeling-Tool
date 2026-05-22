@@ -1,0 +1,251 @@
+{
+  "nodes": [
+    {
+      "id": "raw-benzene",
+      "name": "原料苯液",
+      "x": 58.278453616281695,
+      "y": -77.73586746427239,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "preheat-temp",
+      "name": "预热温度",
+      "x": 525.1608230492297,
+      "y": -262.74499389380196,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "top-pressure",
+      "name": "塔顶压力",
+      "x": 201.15180068133236,
+      "y": -314.69715050132635,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "catalyst-activity",
+      "name": "催化剂活性",
+      "x": 388.7359715259047,
+      "y": 562.7973484702261,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "distillation-tower",
+      "name": "精馏塔",
+      "x": 526.2079145777143,
+      "y": 174.00150372798288,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "top-product",
+      "name": "塔顶产物",
+      "x": 957.7412345738446,
+      "y": -213.00676677592298,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "bottom-product",
+      "name": "塔底产物",
+      "x": 1165.2206962655684,
+      "y": 261.2116738976711,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "mid-fraction",
+      "name": "中间馏分",
+      "x": 736.5295606761736,
+      "y": 554.3755044028667,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "product-purity",
+      "name": "产品纯度",
+      "x": 1136.1630786412043,
+      "y": 98.57890779663202,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "energy-cost",
+      "name": "能耗成本",
+      "x": 1112.0045111839488,
+      "y": 443.3208942344682,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "reflux-ratio",
+      "name": "回流比",
+      "x": -4.0941155619559595,
+      "y": 231.58486009635305,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "operator",
+      "name": "操作人员",
+      "x": 26.626751189107495,
+      "y": 534.7419864378362,
+      "parent_id": null,
+      "attributes": []
+    }
+  ],
+  "edges": [
+    {
+      "id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+      "source": "raw-benzene",
+      "target": "distillation-tower",
+      "relation": "输入",
+      "kind": "relation",
+      "characteristics": []
+    },
+    {
+      "id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
+      "source": "preheat-temp",
+      "target": "distillation-tower",
+      "relation": "控制",
+      "kind": "relation",
+      "characteristics": []
+    },
+    {
+      "id": "c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f",
+      "source": "top-pressure",
+      "target": "distillation-tower",
+      "relation": "调控",
+      "kind": "relation",
+      "characteristics": []
+    },
+    {
+      "id": "d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a",
+      "source": "catalyst-activity",
+      "target": "distillation-tower",
+      "relation": "促进",
+      "kind": "relation",
+      "characteristics": []
+    },
+    {
+      "id": "e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a9b",
+      "source": "reflux-ratio",
+      "target": "distillation-tower",
+      "relation": "调节",
+      "kind": "relation",
+      "characteristics": []
+    },
+    {
+      "id": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b0c",
+      "source": "operator",
+      "target": "distillation-tower",
+      "relation": "操作",
+      "kind": "relation",
+      "characteristics": []
+    },
+    {
+      "id": "a7b8c9d0-e1f2-4a3b-4c5d-6e7f8a9b0c1d",
+      "source": "operator",
+      "target": "preheat-temp",
+      "relation": "设定",
+      "kind": "relation",
+      "characteristics": []
+    },
+    {
+      "id": "b8c9d0e1-f2a3-4b4c-5d6e-7f8a9b0c1d2e",
+      "source": "operator",
+      "target": "top-pressure",
+      "relation": "设定",
+      "kind": "relation",
+      "characteristics": []
+    },
+    {
+      "id": "c9d0e1f2-a3b4-4c5d-6e7f-8a9b0c1d2e3f",
+      "source": "distillation-tower",
+      "target": "top-product",
+      "relation": "产生",
+      "kind": "relation",
+      "characteristics": []
+    },
+    {
+      "id": "d0e1f2a3-b4c5-4d6e-7f8a-9b0c1d2e3f4a",
+      "source": "distillation-tower",
+      "target": "bottom-product",
+      "relation": "产生",
+      "kind": "relation",
+      "characteristics": []
+    },
+    {
+      "id": "e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b",
+      "source": "distillation-tower",
+      "target": "mid-fraction",
+      "relation": "产出",
+      "kind": "relation",
+      "characteristics": []
+    },
+    {
+      "id": "f2a3b4c5-d6e7-4f8a-9b0c-1d2e3f4a5b6c",
+      "source": "top-product",
+      "target": "product-purity",
+      "relation": "决定",
+      "kind": "relation",
+      "characteristics": []
+    },
+    {
+      "id": "a3b4c5d6-e7f8-4a9b-0c1d-2e3f4a5b6c7d",
+      "source": "bottom-product",
+      "target": "product-purity",
+      "relation": "影响",
+      "kind": "relation",
+      "characteristics": []
+    },
+    {
+      "id": "b4c5d6e7-f8a9-4b0c-1d2e-3f4a5b6c7d8e",
+      "source": "top-pressure",
+      "target": "energy-cost",
+      "relation": "影响",
+      "kind": "relation",
+      "characteristics": []
+    },
+    {
+      "id": "c5d6e7f8-a9b0-4c1d-2e3f-4a5b6c7d8e9f",
+      "source": "preheat-temp",
+      "target": "energy-cost",
+      "relation": "影响",
+      "kind": "relation",
+      "characteristics": []
+    },
+    {
+      "id": "d6e7f8a9-b0c1-4d2e-3f4a-5b6c7d8e9f0a",
+      "source": "reflux-ratio",
+      "target": "energy-cost",
+      "relation": "影响",
+      "kind": "relation",
+      "characteristics": []
+    }
+  ],
+  "inference_rules": [
+    {
+      "id": "inf-rule-1",
+      "rel1": "控制",
+      "rel2": "产生",
+      "inferred_rel": "影响"
+    },
+    {
+      "id": "inf-rule-2",
+      "rel1": "调控",
+      "rel2": "产生",
+      "inferred_rel": "决定"
+    }
+  ],
+  "mutex_rules": [
+    {
+      "id": "mutex-rule-1",
+      "rel1": "促进",
+      "rel2": "抑制"
+    }
+  ]
+}

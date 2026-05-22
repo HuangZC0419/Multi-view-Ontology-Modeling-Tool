@@ -1,0 +1,379 @@
+{
+  "nodes": [
+    {
+      "id": "machine-rigidity",
+      "name": "机床刚性",
+      "x": -6.836905562741833,
+      "y": -15.41484374225793,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "tool-material",
+      "name": "刀具材料",
+      "x": -153.68922648994163,
+      "y": 74.6666965074904,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "cutting-speed",
+      "name": "切削速度",
+      "x": -174.08425028541035,
+      "y": 309.5070208571175,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "feed-rate",
+      "name": "进给量",
+      "x": -133.9864851902243,
+      "y": 493.446700333225,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "depth-of-cut",
+      "name": "切削深度",
+      "x": 309.15226731991925,
+      "y": -2.479585588064367,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "operator-skill",
+      "name": "操作人员技能",
+      "x": -113.39158728520357,
+      "y": -173.1450977137623,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "workpiece-hardness",
+      "name": "工件材料硬度",
+      "x": 97.93447200023633,
+      "y": 570.4888254759302,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "coolant-flow",
+      "name": "冷却液流量",
+      "x": 301.6744676190194,
+      "y": 603.5444654284111,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "tool-wear",
+      "name": "刀具磨损",
+      "x": 699.6819548429186,
+      "y": -287.6384826857489,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "cutting-temp",
+      "name": "切削温度",
+      "x": 179.07200471680017,
+      "y": -249.49008367120314,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "surface-roughness",
+      "name": "表面粗糙度",
+      "x": 1068.1520580332024,
+      "y": -82.52122438417517,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "dimensional-accuracy",
+      "name": "尺寸精度",
+      "x": 1032.605312856763,
+      "y": 473.5912711425279,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "machining-efficiency",
+      "name": "加工效率",
+      "x": 774.6791481904311,
+      "y": 615.7587179044299,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "part-quality",
+      "name": "工件质量",
+      "x": 1021.7722327142055,
+      "y": 202.265211857088,
+      "parent_id": null,
+      "attributes": []
+    },
+    {
+      "id": "production-cost",
+      "name": "生产成本",
+      "x": 517.8325532380981,
+      "y": 615.809677285499,
+      "parent_id": null,
+      "attributes": []
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "machine-rigidity",
+      "target": "dimensional-accuracy",
+      "relation": "约束",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.5
+    },
+    {
+      "id": "e2",
+      "source": "tool-material",
+      "target": "tool-wear",
+      "relation": "决定",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.9
+    },
+    {
+      "id": "e3",
+      "source": "cutting-speed",
+      "target": "tool-wear",
+      "relation": "加速",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7
+    },
+    {
+      "id": "e4",
+      "source": "cutting-speed",
+      "target": "cutting-temp",
+      "relation": "升高",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7
+    },
+    {
+      "id": "e5",
+      "source": "feed-rate",
+      "target": "surface-roughness",
+      "relation": "影响",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.55
+    },
+    {
+      "id": "e6",
+      "source": "feed-rate",
+      "target": "tool-wear",
+      "relation": "加速",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7
+    },
+    {
+      "id": "e7",
+      "source": "feed-rate",
+      "target": "cutting-temp",
+      "relation": "升高",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.65
+    },
+    {
+      "id": "e8",
+      "source": "depth-of-cut",
+      "target": "tool-wear",
+      "relation": "加重",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.75
+    },
+    {
+      "id": "e9",
+      "source": "depth-of-cut",
+      "target": "cutting-temp",
+      "relation": "升高",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7
+    },
+    {
+      "id": "e10",
+      "source": "operator-skill",
+      "target": "cutting-speed",
+      "relation": "调控",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.65
+    },
+    {
+      "id": "e11",
+      "source": "operator-skill",
+      "target": "feed-rate",
+      "relation": "调控",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.65
+    },
+    {
+      "id": "e12",
+      "source": "operator-skill",
+      "target": "depth-of-cut",
+      "relation": "调控",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.65
+    },
+    {
+      "id": "e13",
+      "source": "workpiece-hardness",
+      "target": "tool-wear",
+      "relation": "加剧",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7
+    },
+    {
+      "id": "e14",
+      "source": "workpiece-hardness",
+      "target": "surface-roughness",
+      "relation": "影响",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.5
+    },
+    {
+      "id": "e15",
+      "source": "tool-wear",
+      "target": "surface-roughness",
+      "relation": "恶化",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.8
+    },
+    {
+      "id": "e16",
+      "source": "tool-wear",
+      "target": "dimensional-accuracy",
+      "relation": "降低",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.75
+    },
+    {
+      "id": "e17",
+      "source": "tool-wear",
+      "target": "machining-efficiency",
+      "relation": "降低",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7
+    },
+    {
+      "id": "e18",
+      "source": "cutting-temp",
+      "target": "tool-wear",
+      "relation": "加剧",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7
+    },
+    {
+      "id": "e19",
+      "source": "cutting-temp",
+      "target": "surface-roughness",
+      "relation": "影响",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.5
+    },
+    {
+      "id": "e20",
+      "source": "surface-roughness",
+      "target": "part-quality",
+      "relation": "决定",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.85
+    },
+    {
+      "id": "e21",
+      "source": "dimensional-accuracy",
+      "target": "part-quality",
+      "relation": "决定",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.9
+    },
+    {
+      "id": "e22",
+      "source": "machining-efficiency",
+      "target": "production-cost",
+      "relation": "影响",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.65
+    },
+    {
+      "id": "e23",
+      "source": "tool-wear",
+      "target": "production-cost",
+      "relation": "推高",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.65
+    },
+    {
+      "id": "e24",
+      "source": "coolant-flow",
+      "target": "cutting-temp",
+      "relation": "抑制",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.6
+    },
+    {
+      "id": "e25",
+      "source": "coolant-flow",
+      "target": "tool-wear",
+      "relation": "减缓",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.55
+    }
+  ],
+  "inference_rules": [
+    {
+      "id": "ir1",
+      "rel1": "加速",
+      "rel2": "恶化",
+      "inferred_rel": "间接导致"
+    },
+    {
+      "id": "ir2",
+      "rel1": "调控",
+      "rel2": "加速",
+      "inferred_rel": "间接影响"
+    },
+    {
+      "id": "ir3",
+      "rel1": "升高",
+      "rel2": "加剧",
+      "inferred_rel": "间接加剧"
+    }
+  ],
+  "mutex_rules": [
+    {
+      "id": "mr1",
+      "rel1": "抑制",
+      "rel2": "加速"
+    }
+  ],
+  "relation_weights": {}
+}

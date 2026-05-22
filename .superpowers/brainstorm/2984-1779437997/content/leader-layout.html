@@ -1,0 +1,40 @@
+<h2>概览视角 — 四种图形态</h2>
+<p class="subtitle">业务域层级 + 数据源支撑关系的视觉化方式</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>力导向图（Force-Directed Graph）</h3>
+      <p>业务域节点和数据源节点混排，关系用连线。节点大小代表概念数多少，连线粗细代表覆盖度。自动布局，节点互相推开避免重叠。</p>
+      <p style="color:#888;font-size:12px">像 Neo4j 浏览器那种风格，一眼看出谁是核心</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>径向树 / 旭日图（Sunburst / Radial Tree）</h3>
+      <p>中心是项目名，第一圈4个业务域扇区，第二圈15个本体概念，扇区大小按概念数比例。数据源用外围弧形标签标注。</p>
+      <p style="color:#888;font-size:12px">层级关系一目了然，适合展示"什么属于什么"</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>思维导图（Mind Map / Tree）</h3>
+      <p>中心根节点向右分叉，一级分支=4个业务域，二级分支=15个本体概念。每个概念旁边用小标签标出数据来源。</p>
+      <p style="color:#888;font-size:12px">中国人熟悉的脑图风格，适合宏观梳理</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="d" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>分组节点图（Clustered Node Graph）</h3>
+      <p>类似你现在画布里工艺视角的图，但把同域节点用虚线框围起来，域之间用粗关系线连接。数据源节点出现在画布边缘。</p>
+      <p style="color:#888;font-size:12px">最接近工艺视角，风格统一</p>
+    </div>
+  </div>
+</div>
