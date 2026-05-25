@@ -1,30 +1,17 @@
 from __future__ import annotations
 
-import csv
-import io
 import json
-import re
 import sys
 import uuid
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Set, Tuple
+from typing import Any, Dict, List, Literal, Optional
 
-import cv2
-import jieba.posseg as pseg
-import numpy as np
-import warnings
-from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
-
-# 抑制 onnxruntime 在 Win7 上的版本警告
-warnings.filterwarnings("ignore", message=".*Unsupported Windows.*")
-
-from rapidocr_onnxruntime import RapidOCR
 
 
 # PyInstaller 兼容：frozen 模式下使用 exe 所在目录作为数据根目录
@@ -38,10 +25,8 @@ INDEX_FILE = PROJECTS_DIR / "index.json"
 
 if getattr(sys, "frozen", False):
     FRONTEND_DIST = Path(sys._MEIPASS) / "frontend" / "dist"
-    SAMPLE_OCR_FILE = Path(sys._MEIPASS) / "test.png"
 else:
     FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
-    SAMPLE_OCR_FILE = Path(__file__).resolve().parent.parent.parent / "test.png"
 
 _active_project_id: Optional[str] = None
 
@@ -104,28 +89,6 @@ class CreateEdgePayload(BaseModel):
 
 class ReparentNodePayload(BaseModel):
     new_parent_id: str | None = None
-
-
-class OcrExtractResponse(BaseModel):
-    mode: Literal["table", "sentence", "mixed"]
-    raw_text: str = ""
-    entities: list[str] = Field(default_factory=list)
-    table_rows: list[list[str]] = Field(default_factory=list)
-
-
-class OcrImportPayload(BaseModel):
-    entities: list[str] = Field(default_factory=list)
-    start_x: float = 120
-    start_y: float = 120
-    spacing_x: float = 180
-    spacing_y: float = 120
-    parent_id: str | None = None
-
-
-class OcrImportResult(BaseModel):
-    created_count: int
-    skipped_entities: list[str] = Field(default_factory=list)
-    nodes: list[OntologyNode] = Field(default_factory=list)
 
 
 class ProjectInfo(BaseModel):
@@ -413,222 +376,6 @@ def save_graph(graph: GraphState) -> None:
 
 
 graph_state = load_graph()
-ocr_engine = RapidOCR()
-
-
-def _dedupe_keep_order(items: list[str]) -> list[str]:
-    seen: set[str] = set()
-    result: list[str] = []
-    for item in items:
-        text = item.strip()
-        if not text or text in seen:
-            continue
-        seen.add(text)
-        result.append(text)
-    return result
-
-
-def _normalize_text(text: str) -> str:
-    # 去掉常见不可见字符，统一换行，减少前端出现“乱码感”
-    normalized = (
-        text.replace("\ufeff", "")
-        .replace("\u200b", "")
-        .replace("\u3000", " ")
-        .replace("\x00", "")
-        .replace("\r\n", "\n")
-        .replace("\r", "\n")
-    )
-    return normalized.strip()
-
-
-def _decode_uploaded_text(content: bytes) -> str:
-    # 先按 BOM / 明确特征判断，避免 UTF-8 被误判为 GB 乱码
-    if content.startswith(b"\xef\xbb\xbf"):
-        return _normalize_text(content.decode("utf-8-sig", errors="strict"))
-    if content.startswith(b"\xff\xfe") or content.startswith(b"\xfe\xff"):
-        return _normalize_text(content.decode("utf-16", errors="strict"))
-
-    # UTF-8 成功则直接使用（最常见且最不该被二次误判）
-    try:
-        return _normalize_text(content.decode("utf-8", errors="strict"))
-    except UnicodeDecodeError:
-        pass
-
-    # 若出现大量空字节，优先按 UTF-16 变体尝试
-    zero_ratio = content.count(0) / max(1, len(content))
-    if zero_ratio > 0.15:
-        for enc in ("utf-16-le", "utf-16-be"):
-            try:
-                return _normalize_text(content.decode(enc, errors="strict"))
-            except UnicodeDecodeError:
-                continue
-
-    # 兼容常见中文编码
-    for enc in ("gb18030", "gbk", "big5"):
-        try:
-            return _normalize_text(content.decode(enc, errors="strict"))
-        except UnicodeDecodeError:
-            continue
-
-    # 最后兜底：避免抛错，尽量返回可读内容
-    return _normalize_text(content.decode("utf-8", errors="replace"))
-
-
-def _normalize_symbol(text: str) -> str:
-    """针对物理量符号进行归一化，例如处理 OCR 可能产生的空格"""
-    # 去除两端可能多余的下划线
-    text = text.strip("_")
-    
-    # 修复常见 OCR 识别错误，如 Am 被识别为 A_
-    if text == "A_":
-        return "Am"
-    # 如果是类似 P perf, TDS in 这种模式，尝试合并
-    if re.match(r"^[A-Za-z]\s+[a-z0-9]{1,4}$", text):
-        return text.replace(" ", "")
-    return text
-
-
-def _extract_nouns_from_text(text: str) -> list[str]:
-    nouns: list[str] = []
-    # 提取可能的物理量符号 (如 Pperf, Q_in, TDS_out, CO2, Am)
-    # 模式：字母开头，后面跟着字母数字或下划线，不依赖 \b 避免中文边界匹配失败
-    symbols = re.findall(r"(?<![A-Za-z0-9_])[A-Za-z][A-Za-z0-9_]{0,15}(?![A-Za-z0-9_])", text)
-    nouns.extend(symbols)
-
-    # 结巴分词可能会把 Q_p 切分为 'Q', '_', 'p'，并且都标注为 'eng'
-    # 为了避免把符号拆散的部分重复加入实体列表，我们要先构建已提取符号的所有可能碎片
-    symbol_parts: set[str] = set(symbols)
-    for sym in symbols:
-        if "_" in sym:
-            symbol_parts.update(sym.split("_"))
-
-    for word, flag in pseg.cut(text):
-        w = word.strip()
-        if not w:
-            continue
-        # 排除已经被识别为符号的整体或被拆散的部分
-        if w in symbol_parts:
-            continue
-        if flag.startswith("n") or flag in {"vn", "eng"}:
-            nouns.append(w)
-
-    result = _dedupe_keep_order([_normalize_symbol(n) for n in nouns])
-    if result:
-        return result
-
-    # 若名词提取过少，回退到按逗号/句号切分的短语
-    fallback = [seg.strip() for seg in re.split(r"[，。；;、\n]+", text) if seg.strip()]
-    return _dedupe_keep_order(fallback)
-
-
-def _group_rows_by_y(cells: list[dict]) -> list[list[dict]]:
-    if not cells:
-        return []
-
-    heights = [max(8.0, cell["h"]) for cell in cells]
-    median_h = sorted(heights)[len(heights) // 2]
-    row_tol = max(16.0, median_h * 0.8)
-
-    rows: list[dict] = []
-    for cell in sorted(cells, key=lambda x: x["cy"]):
-        placed = False
-        for row in rows:
-            if abs(cell["cy"] - row["y"]) <= row_tol:
-                row["cells"].append(cell)
-                row["y"] = (row["y"] * row["count"] + cell["cy"]) / (row["count"] + 1)
-                row["count"] += 1
-                placed = True
-                break
-        if not placed:
-            rows.append({"y": cell["cy"], "cells": [cell], "count": 1})
-
-    result: list[list[dict]] = []
-    for row in rows:
-        result.append(sorted(row["cells"], key=lambda x: x["cx"]))
-    return result
-
-
-def _parse_ocr_image(image_bytes: bytes) -> OcrExtractResponse:
-    np_arr = np.frombuffer(image_bytes, dtype=np.uint8)
-    image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-    if image is None:
-        raise HTTPException(status_code=400, detail="无法解码图片，请检查文件格式")
-
-    ocr_result, _ = ocr_engine(image)
-    if not ocr_result:
-        return OcrExtractResponse(mode="sentence", raw_text="", entities=[], table_rows=[])
-
-    cells: list[dict] = []
-    for item in ocr_result:
-        if len(item) < 2:
-            continue
-        box = item[0]
-        text = _normalize_text(str(item[1]))
-        if not text:
-            continue
-        xs = [float(p[0]) for p in box]
-        ys = [float(p[1]) for p in box]
-        x_min, x_max = min(xs), max(xs)
-        y_min, y_max = min(ys), max(ys)
-        cells.append(
-            {
-                "text": text,
-                "cx": (x_min + x_max) / 2,
-                "cy": (y_min + y_max) / 2,
-                "w": x_max - x_min,
-                "h": y_max - y_min,
-            }
-        )
-
-    if not cells:
-        return OcrExtractResponse(mode="sentence", raw_text="", entities=[], table_rows=[])
-
-    rows = _group_rows_by_y(cells)
-    row_lengths = [len(r) for r in rows]
-    median_cols = sorted(row_lengths)[len(row_lengths) // 2] if row_lengths else 0
-    dense_rows = sum(1 for x in row_lengths if x >= max(2, median_cols - 1))
-    is_table = len(rows) >= 3 and median_cols >= 3 and dense_rows / max(1, len(rows)) >= 0.6
-
-    if is_table:
-        table_rows = [[cell["text"] for cell in row] for row in rows]
-        raw_entities = []
-        for row in table_rows:
-            for cell in row:
-                c = cell.strip()
-                # Skip empty or pure numbers
-                if not c or c.isdigit():
-                    continue
-                # Skip pure punctuation that are short (not letters/numbers/chinese)
-                if len(c) <= 2 and not any(ch.isalnum() or "\u4e00" <= ch <= "\u9fff" for ch in c):
-                    continue
-                # For tables, usually we want the cell text itself as an entity.
-                # If it's too long (>15 chars), it might be a description, so we extract nouns.
-                # But we should avoid splitting English sentences into scattered words.
-                if len(c) > 15 and any("\u4e00" <= ch <= "\u9fff" for ch in c):
-                    nouns = _extract_nouns_from_text(c)
-                    # Filter out scattered English words from jieba
-                    raw_entities.extend([n for n in nouns if any("\u4e00" <= ch <= "\u9fff" for ch in n) or len(n) > 2])
-                else:
-                    # Filter out common table headers/captions like "表5-1"
-                    if not re.match(r"^(表|图|table|figure)\s*[\d\.\-]+", c, re.IGNORECASE):
-                        raw_entities.append(c)
-        entities = _dedupe_keep_order(raw_entities)
-        raw_text = "\n".join(["\t".join(row) for row in table_rows])
-        return OcrExtractResponse(
-            mode="table",
-            raw_text=raw_text,
-            entities=entities,
-            table_rows=table_rows,
-        )
-
-    sentence_text = " ".join(cell["text"] for row in rows for cell in row)
-    entities = _extract_nouns_from_text(sentence_text)
-    return OcrExtractResponse(
-        mode="sentence",
-        raw_text=sentence_text,
-        entities=entities,
-        table_rows=[],
-    )
 
 
 @app.get("/api/graph", response_model=GraphState)
@@ -909,111 +656,81 @@ def delete_project(project_id: str):
         graph_state = _load_project_data(new_active_id)
 
 
-@app.post("/api/ocr/extract", response_model=OcrExtractResponse)
-@app.post("/ocr/extract", response_model=OcrExtractResponse)
-async def ocr_extract(
-    file: UploadFile = File(...),
-) -> OcrExtractResponse:
-    filename = (file.filename or "").lower()
-    suffix = Path(filename).suffix
-    content = await file.read()
-    if not content:
-        raise HTTPException(status_code=400, detail="上传文件为空")
+# ============================================================
+# 用户认证
+# ============================================================
 
-    if suffix in {".png", ".jpg", ".jpeg", ".bmp", ".webp"}:
-        return _parse_ocr_image(content)
+import openpyxl
 
-    if suffix in {".txt", ".md"}:
-        text = _decode_uploaded_text(content)
-        entities = _extract_nouns_from_text(text)
-        return OcrExtractResponse(mode="sentence", raw_text=text, entities=entities, table_rows=[])
-
-    if suffix == ".csv":
-        csv_text = _decode_uploaded_text(content)
-        rows = [row for row in csv.reader(io.StringIO(csv_text))]
-        raw_entities = []
-        for row in rows:
-            for cell in row:
-                c = cell.strip()
-                if not c or c.isdigit():
-                    continue
-                if len(c) <= 2 and not any(ch.isalnum() or "\u4e00" <= ch <= "\u9fff" for ch in c):
-                    continue
-                if len(c) > 10:
-                    raw_entities.extend(_extract_nouns_from_text(c))
-                else:
-                    raw_entities.append(c)
-        entities = _dedupe_keep_order(raw_entities)
-        return OcrExtractResponse(
-            mode="table",
-            raw_text=csv_text,
-            entities=entities,
-            table_rows=rows,
-        )
-
-    raise HTTPException(status_code=400, detail="暂不支持该文件类型，当前支持：图片/png/jpg、txt、csv")
+USERS_XLSX = BASE_DIR / "users.xlsx"
+_auth_sessions: dict[str, dict] = {}  # {token: {username, name, role}}
 
 
-@app.post("/api/ocr/import", response_model=OcrImportResult)
-@app.post("/ocr/import", response_model=OcrImportResult)
-def ocr_import(payload: OcrImportPayload) -> OcrImportResult:
-    if payload.parent_id and not any(n.id == payload.parent_id for n in graph_state.nodes):
-        raise HTTPException(status_code=400, detail="parent_id 对应节点不存在")
+def _load_users() -> list[dict]:
+    """从 users.xlsx 加载用户列表（username/password 均转为字符串）"""
+    if not USERS_XLSX.exists():
+        return []
+    wb = openpyxl.load_workbook(str(USERS_XLSX), read_only=True, data_only=True)
+    ws = wb.active
+    users = []
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        if row[0] and row[1]:
+            users.append({
+                "username": str(row[0]).strip(),
+                "password": str(int(row[1])) if isinstance(row[1], (int, float)) else str(row[1]).strip(),
+                "role": str(row[2]).strip() if row[2] else "user",
+                "name": str(row[3]).strip() if row[3] else str(row[0]).strip(),
+            })
+    wb.close()
+    return users
 
-    entities = _dedupe_keep_order(payload.entities)
-    if not entities:
-        return OcrImportResult(created_count=0, skipped_entities=[], nodes=[])
 
-    existing_names = {n.name for n in graph_state.nodes}
-    skipped: list[str] = []
-    created_nodes: list[OntologyNode] = []
+class LoginPayload(BaseModel):
+    username: str
+    password: str
 
-    for i, entity in enumerate(entities):
-        if entity in existing_names:
-            skipped.append(entity)
-            continue
 
-        col = i % 4
-        row = i // 4
-        node = OntologyNode(
-            id=str(uuid.uuid4()),
-            name=entity,
-            x=payload.start_x + col * payload.spacing_x,
-            y=payload.start_y + row * payload.spacing_y,
-            parent_id=payload.parent_id,
-        )
-        graph_state.nodes.append(node)
-        created_nodes.append(node)
-        existing_names.add(entity)
+class LoginResponse(BaseModel):
+    success: bool
+    message: str = ""
+    token: str | None = None
+    username: str | None = None
+    name: str | None = None
+    role: str | None = None
 
-        if payload.parent_id:
-            graph_state.edges.append(
-                OntologyEdge(
-                    id=str(uuid.uuid4()),
-                    source=payload.parent_id,
-                    target=node.id,
-                    relation="父子关系",
-                    kind="parent-child",
-                )
+
+@app.post("/api/auth/login", response_model=LoginResponse)
+async def login(payload: LoginPayload):
+    users = _load_users()
+    pw_str = str(payload.password).strip()
+    uname_str = payload.username.strip()
+    for u in users:
+        if u["username"] == uname_str and u["password"] == pw_str:
+            token = str(uuid.uuid4())
+            _auth_sessions[token] = {
+                "username": u["username"],
+                "name": u["name"],
+                "role": u["role"],
+            }
+            return LoginResponse(
+                success=True, token=token,
+                username=u["username"], name=u["name"], role=u["role"]
             )
-
-    save_graph(graph_state)
-    return OcrImportResult(
-        created_count=len(created_nodes),
-        skipped_entities=skipped,
-        nodes=created_nodes,
-    )
+    return LoginResponse(success=False, message="用户名或密码错误")
 
 
-@app.get("/api/ocr/sample-file")
-def get_ocr_sample_file() -> FileResponse:
-    if not SAMPLE_OCR_FILE.exists():
-        raise HTTPException(status_code=404, detail="示例文件不存在")
-    return FileResponse(
-        path=SAMPLE_OCR_FILE,
-        media_type="image/png",
-        filename=SAMPLE_OCR_FILE.name,
-    )
+@app.post("/api/auth/logout")
+async def logout(token: str = ""):
+    _auth_sessions.pop(token, None)
+    return {"success": True}
+
+
+@app.get("/api/auth/session")
+async def get_session(token: str = ""):
+    """校验 token 是否有效，返回用户信息"""
+    if token in _auth_sessions:
+        return {"valid": True, **_auth_sessions[token]}
+    return {"valid": False}
 
 
 # ============================================================

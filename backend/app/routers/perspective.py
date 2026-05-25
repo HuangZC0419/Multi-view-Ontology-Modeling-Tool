@@ -50,6 +50,20 @@ async def get_leader_view(project_id: str):
     domains = [BusinessDomain(**d) for d in config.get("domains", [])]
     sources = [DataSourceInfo(**s) for s in config.get("sources", [])]
 
+    node_map = {n["id"]: n.get("name", n["id"]) for n in graph.get("nodes", [])}
+    mappings = config.get("mappings", [])
+    source_onto_map: dict[str, list[str]] = {}
+    for m in mappings:
+        sn = m.get("source_name", "")
+        nid = m.get("ontology_node_id", "")
+        name = node_map.get(nid, nid)
+        if sn not in source_onto_map:
+            source_onto_map[sn] = []
+        if name not in source_onto_map[sn]:
+            source_onto_map[sn].append(name)
+    for src in sources:
+        src.covered_ontology_names = source_onto_map.get(src.name, [])
+
     source_domain_map = {}
     for src in sources:
         source_domain_map[src.id] = [
@@ -57,15 +71,26 @@ async def get_leader_view(project_id: str):
             if src.id in d.databases or src.name in d.databases
         ]
 
+    mapped_node_ids = set()
+    for m in mappings:
+        mapped_node_ids.add(m.get("ontology_node_id", ""))
+    manual_node_ids = [n["id"] for n in graph.get("nodes", []) if n["id"] not in mapped_node_ids]
+    manual_node_names = [node_map[nid] for nid in manual_node_ids if nid in node_map]
+
     return LeaderViewData(
         summary={
-            "domains": len(domains),
-            "nodes": len(graph.get("nodes", [])),
-            "edges": len(graph.get("edges", [])),
-            "sources": len(sources),
-            "dameng_count": sum(1 for s in sources if s.type == "dameng"),
-            "excel_count": sum(1 for s in sources if s.type == "excel"),
-            "csv_count": sum(1 for s in sources if s.type == "csv"),
+            "domain_count": len(domains),
+            "node_count": len(graph.get("nodes", [])),
+            "inference_count": len(graph.get("edges", [])),
+            "source_count": len(sources),
+            "source_distribution": {
+                "dameng": sum(1 for s in sources if s.type == "dameng"),
+                "excel": sum(1 for s in sources if s.type == "excel"),
+                "csv": sum(1 for s in sources if s.type == "csv"),
+            },
+            "manual_node_count": len(manual_node_ids),
+            "manual_edge_count": len(graph.get("edges", [])),
+            "manual_node_names": manual_node_names,
         },
         data_sources=sources,
         domains=domains,
@@ -79,19 +104,41 @@ async def get_engineer_view(project_id: str):
     graph = _load_project(project_id)
     config = _load_perspective_config(project_id)
 
+    project_name = config.get("project_name", project_id)
     domains = [BusinessDomain(**d) for d in config.get("domains", [])]
-    mappings = [DataMapping(**m) for m in config.get("mappings", [])]
+    raw_mappings = config.get("mappings", [])
 
     node_map = {n["id"]: n for n in graph.get("nodes", [])}
-    nodes_brief = [
-        {"id": m.ontology_node_id, "name": node_map[m.ontology_node_id]["name"]}
-        for m in mappings
-        if m.ontology_node_id in node_map
-    ]
+
+    # 构建 ontology_node_id → domain_id 映射
+    node_domain_map = {}
+    for d in domains:
+        for nid in d.ontology_node_ids:
+            node_domain_map[nid] = d.id
+
+    # 丰富 mapping 数据，添加 node_name 和 domain_id
+    enriched_mappings = []
+    nodes_brief = []
+    seen_nodes = set()
+    for m in raw_mappings:
+        nid = m.get("ontology_node_id", "")
+        node = node_map.get(nid)
+        if not node:
+            continue
+        node_name = node.get("name", nid)
+        enriched = dict(m)
+        enriched["node_name"] = node_name
+        enriched["domain_id"] = node_domain_map.get(nid, "_other")
+        enriched_mappings.append(DataMapping(**enriched))
+
+        if nid not in seen_nodes:
+            seen_nodes.add(nid)
+            nodes_brief.append({"id": nid, "name": node_name})
 
     return EngineerViewData(
+        project_name=project_name,
         nodes=nodes_brief,
-        mappings=mappings,
+        mappings=enriched_mappings,
         domains=domains
     )
 

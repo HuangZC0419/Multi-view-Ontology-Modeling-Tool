@@ -130,7 +130,7 @@ function toggleExpand(sourceId) {
   expandedSources.value = next;
 }
 
-// ========== 响应式二部图布局 ==========
+// ========== 响应式并排-树形布局 ==========
 const svgContainer = ref(null);
 const containerWidth = ref(700);
 
@@ -151,7 +151,6 @@ onUnmounted(() => {
   if (resizeObserver) resizeObserver.disconnect();
 });
 
-// 处理 svgContainer 在数据加载完成后才渲染的情况
 watch(svgContainer, (el) => {
   if (el && !resizeObserver) {
     resizeObserver = new ResizeObserver((entries) => {
@@ -166,44 +165,36 @@ watch(svgContainer, (el) => {
 
 const layoutParams = computed(() => {
   const W = containerWidth.value;
-  const padding = 16;
+  const padding = 24;
 
-  const sourceX = 8;
-  const sourceW = Math.max(100, Math.floor(W * 0.20));
-  const sourceH = 40;
+  const sourceW = Math.max(120, Math.floor(W * 0.15));
+  const sourceH = 48;
 
-  const gapArea = Math.floor(W * 0.08);
-  const midX = sourceX + sourceW + gapArea / 2;
+  const chipGapX = 12;
+  const chipGapY = 16;
+  const minChipW = 90;
+  const maxChipW = 160;
 
-  const chipAreaStart = sourceX + sourceW + gapArea;
-  const chipAreaWidth = W - chipAreaStart - padding;
-
-  const chipGapX = 6;
-  const chipGapY = 8;
-  const minChipW = 80;
-  const maxChipW = 140;
-  const cols = Math.max(2, Math.floor((chipAreaWidth + chipGapX) / (minChipW + chipGapX)));
-
-  const chipW = Math.min(maxChipW, Math.max(minChipW,
-    Math.floor((chipAreaWidth - (cols - 1) * chipGapX) / cols)
-  ));
-  const chipH = 28;
-
-  const colW = chipW + chipGapX;
+  const chipH = 36;
   const rowH = chipH + chipGapY;
 
-  const groupGap = 32;
+  // 上下层级之间的垂直间距
+  const verticalGap = 40;
+  // 每个数据源组之间的水平间距
+  const groupGapX = 32;
+  
+  // 多行折叠高度
+  const collapseLimit = 6;
 
-  const sourceFontSize = Math.max(11, Math.min(13, Math.floor(W / 55)));
-  const chipFontSize = Math.max(10, Math.min(12, Math.floor(W / 65)));
-
-  const nameMaxLen = Math.floor(chipW / (chipFontSize * 0.6));
+  const sourceFontSize = Math.max(12, Math.min(14, Math.floor(W / 60)));
+  const chipFontSize = Math.max(11, Math.min(13, Math.floor(W / 70)));
+  const nameMaxLen = Math.floor(maxChipW / (chipFontSize * 0.65));
 
   return {
-    padding, sourceX, sourceW, sourceH, gapArea, midX,
-    chipAreaStart, chipAreaWidth, chipGapX, chipGapY,
-    minChipW, maxChipW, cols, chipW, chipH, colW, rowH,
-    groupGap, sourceFontSize, chipFontSize, nameMaxLen,
+    padding, sourceW, sourceH,
+    chipGapX, chipGapY, minChipW, maxChipW, chipH, rowH,
+    verticalGap, groupGapX, collapseLimit, sourceFontSize, chipFontSize, nameMaxLen,
+    W,
   };
 });
 
@@ -213,77 +204,126 @@ function shortName(name, maxLen = 11) {
 }
 
 const svgLayout = computed(() => {
-  if (!data.value?.data_sources?.length) return { groups: [], totalHeight: 0 };
+  if (!data.value?.data_sources?.length) return { groups: [], totalHeight: 0, totalWidth: 0 };
 
   const sources = data.value.data_sources;
   const manualNames = data.value?.summary?.manual_node_names || [];
-  if (!sources.length && !manualNames.length) return { groups: [], totalHeight: 0 };
+  if (!sources.length && !manualNames.length) return { groups: [], totalHeight: 0, totalWidth: 0 };
 
   const LP = layoutParams.value;
-  let y = LP.padding;
   const groups = [];
+  
+  // 1. 准备原始分组数据
+  const rawGroups = [];
+  for (const src of sources) {
+    rawGroups.push({ id: src.id, name: src.name, type: (src.type || "").toLowerCase(), names: src.covered_ontology_names || [] });
+  }
+  if (manualNames.length > 0) {
+    rawGroups.push({ id: "src-manual", name: "人工维护", type: "manual", names: manualNames });
+  }
+  
+  const groupCount = rawGroups.length;
+  // 计算平分后每个组可以分到的最大宽度
+  const availableWidth = LP.W - LP.padding * 2;
+  // 每组的理想宽度 (如果宽度够的话)
+  let groupColWidth = Math.max(
+    LP.sourceW,
+    Math.floor((availableWidth - (groupCount - 1) * LP.groupGapX) / groupCount)
+  );
+  
+  // 如果分不到足够的宽度，我们需要允许 svg 出现水平滚动，确保每个组有合理的最小宽度
+  // 每个组至少要能放下两个 chip 
+  const minGroupColWidth = Math.max(LP.sourceW, LP.minChipW * 2 + LP.chipGapX);
+  groupColWidth = Math.max(groupColWidth, minGroupColWidth);
+  
+  const totalContentWidth = groupCount * groupColWidth + (groupCount - 1) * LP.groupGapX;
+  // 实际 SVG 的宽度（如果大于容器宽度则出横向滚动条）
+  const svgWidth = Math.max(LP.W, totalContentWidth + LP.padding * 2);
 
-  function buildGroup(id, name, type, names) {
+  let startX = LP.padding + Math.max(0, (svgWidth - LP.padding * 2 - totalContentWidth) / 2);
+  let maxBlockH = LP.sourceH;
+
+  for (let gIdx = 0; gIdx < groupCount; gIdx++) {
+    const { id, name, type, names } = rawGroups[gIdx];
     const fullCount = names.length;
     const isExpanded = expandedSources.value.has(id);
-    const showAll = isExpanded || fullCount <= COLLAPSE_LIMIT;
-    const visibleCount = showAll ? fullCount : COLLAPSE_LIMIT;
-    const visibleNames = showAll ? names : names.slice(0, COLLAPSE_LIMIT);
+    const showAll = isExpanded || fullCount <= LP.collapseLimit;
+    const visibleCount = showAll ? fullCount : LP.collapseLimit;
+    const visibleNames = showAll ? names : names.slice(0, LP.collapseLimit);
 
-    const rows = fullCount === 0 ? 0 : Math.ceil(visibleCount / LP.cols);
-    let blockH = Math.max(rows * LP.rowH, LP.sourceH + 8);
-    const needsButton = fullCount > COLLAPSE_LIMIT;
-    if (needsButton && !isExpanded) {
-      blockH += 8 + LP.chipH;
-    }
-
-    const sourceY = y + (blockH - LP.sourceH) / 2;
+    // 确定此组内部布局参数
+    // 当前组的可用区域
+    const groupX = startX + gIdx * (groupColWidth + LP.groupGapX);
+    
+    // 当前组一排能放几个 chip
+    const cols = Math.max(1, Math.floor((groupColWidth + LP.chipGapX) / (LP.minChipW + LP.chipGapX)));
+    const actualChipW = Math.min(LP.maxChipW, Math.max(LP.minChipW, Math.floor((groupColWidth - (cols - 1) * LP.chipGapX) / cols)));
+    const actualColW = actualChipW + LP.chipGapX;
+    
+    // 数据源卡片居中
+    const sourceX = groupX + (groupColWidth - LP.sourceW) / 2;
+    const sourceY = LP.padding;
+    const chipStartY = sourceY + LP.sourceH + LP.verticalGap;
 
     const chips = [];
+    const rows = fullCount === 0 ? 0 : Math.ceil(visibleCount / cols);
+    
     for (let i = 0; i < visibleCount; i++) {
-      const row = Math.floor(i / LP.cols);
-      const col = i % LP.cols;
+      const row = Math.floor(i / cols);
+      const itemsInRow = row === rows - 1 ? visibleCount - row * cols : cols;
+      const rowWidth = itemsInRow * actualChipW + (itemsInRow - 1) * LP.chipGapX;
+      const rowStartX = groupX + (groupColWidth - rowWidth) / 2;
+      const colInRow = i % cols;
+      
       chips.push({
         name: visibleNames[i],
-        x: LP.chipAreaStart + col * LP.colW,
-        y: y + row * LP.rowH,
+        x: rowStartX + colInRow * actualColW,
+        y: chipStartY + row * LP.rowH,
+        w: actualChipW,
       });
     }
 
-    const buttonX = LP.chipAreaStart;
-    const buttonY = rows === 0 ? y + 4 : y + rows * LP.rowH + 6;
+    const needsButton = fullCount > LP.collapseLimit;
+    let buttonX = 0;
+    let buttonY = 0;
+    let blockH = LP.sourceH;
+
+    if (fullCount > 0) {
+       blockH += LP.verticalGap + rows * LP.rowH;
+    }
+
+    if (needsButton && !isExpanded) {
+      buttonX = groupX + (groupColWidth - actualChipW) / 2;
+      buttonY = chipStartY + rows * LP.rowH;
+      blockH += LP.chipH + LP.chipGapY;
+    }
+
+    maxBlockH = Math.max(maxBlockH, blockH);
 
     groups.push({
       id, name, type,
-      sourceX: LP.sourceX, sourceY, sourceW: LP.sourceW, sourceH: LP.sourceH,
+      sourceX, sourceY, sourceW: LP.sourceW, sourceH: LP.sourceH,
       chips, rows, hasContent: fullCount > 0,
-      needsButton, hiddenCount: fullCount - COLLAPSE_LIMIT, isExpanded,
-      buttonX, buttonY, blockTop: y, blockH,
-      midX: LP.midX, chipX: LP.chipAreaStart,
+      needsButton, hiddenCount: fullCount - LP.collapseLimit, isExpanded,
+      buttonX, buttonY, blockH,
+      sourceMidX: sourceX + LP.sourceW / 2,
+      sourceMidY: sourceY + LP.sourceH,
+      actualChipW
     });
-
-    y += blockH + LP.groupGap;
   }
 
-  for (const src of sources) {
-    buildGroup(src.id, src.name, (src.type || "").toLowerCase(), src.covered_ontology_names || []);
-  }
-
-  if (manualNames.length > 0) {
-    buildGroup("src-manual", "人工维护", "manual", manualNames);
-  }
-
-  return { groups, totalHeight: y - LP.groupGap + LP.padding };
+  const totalHeight = LP.padding * 2 + maxBlockH;
+  return { groups, totalHeight, totalWidth: svgWidth };
 });
 
-function chipPathY(chip) {
-  return chip.y + layoutParams.value.chipH / 2;
+function chipPathX(chip) {
+  return chip.x + chip.w / 2;
 }
 
-function getCurve(x1, y1, x2, y2) {
-  const dx = Math.abs(x2 - x1);
-  const cx = x1 + dx * 0.4;
-  return `M ${x1} ${y1} C ${cx} ${y1}, ${x2 - dx * 0.4} ${y2}, ${x2} ${y2}`;
+function getVerticalCurve(x1, y1, x2, y2) {
+  const dy = Math.abs(y2 - y1);
+  const cy = y1 + dy * 0.4;
+  return `M ${x1} ${y1} C ${x1} ${cy}, ${x2} ${y2 - dy * 0.4}, ${x2} ${y2}`;
 }
 </script>
 
@@ -456,9 +496,9 @@ function getCurve(x1, y1, x2, y2) {
           ref="svgContainer"
         >
           <svg
-            :width="containerWidth - 32"
+            :width="svgLayout.totalWidth"
             :height="svgLayout.totalHeight"
-            :viewBox="`0 0 ${containerWidth - 32} ${svgLayout.totalHeight}`"
+            :viewBox="`0 0 ${svgLayout.totalWidth} ${svgLayout.totalHeight}`"
             class="lv-svg"
             xmlns="http://www.w3.org/2000/svg"
           >
@@ -478,7 +518,7 @@ function getCurve(x1, y1, x2, y2) {
               <path
                 v-for="chip in g.chips"
                 :key="'p-' + chip.name"
-                :d="getCurve(g.sourceX + g.sourceW, g.sourceY + g.sourceH / 2, chip.x, chipPathY(chip))"
+                :d="getVerticalCurve(g.sourceMidX, g.sourceMidY, chipPathX(chip), chip.y)"
                 fill="none"
                 :stroke="sourceTypeStyle(g.type).color"
                 stroke-opacity="0.35"
@@ -501,16 +541,16 @@ function getCurve(x1, y1, x2, y2) {
                 text-anchor="middle"
                 dominant-baseline="central"
                 fill="#ffffff"
-                :font-size="layoutParams.sourceFontSize"
-                font-weight="700"
-                letter-spacing="0.02em"
+                :font-size="layoutParams.sourceFontSize + 1"
+                font-weight="800"
+                letter-spacing="0.04em"
               >{{ shortName(g.name, layoutParams.nameMaxLen) }}</text>
 
-              <g v-for="chip in g.chips" :key="'c-' + chip.name">
+              <g v-for="chip in g.chips" :key="`c-${chip.name}`">
                 <rect
                   :x="chip.x"
                   :y="chip.y"
-                  :width="layoutParams.chipW"
+                  :width="g.actualChipW"
                   :height="layoutParams.chipH"
                   :rx="layoutParams.chipH / 2"
                   fill="#ffffff"
@@ -519,13 +559,13 @@ function getCurve(x1, y1, x2, y2) {
                   filter="url(#chip-shadow)"
                 />
                 <text
-                  :x="chip.x + layoutParams.chipW / 2"
+                  :x="chip.x + g.actualChipW / 2"
                   :y="chip.y + layoutParams.chipH / 2 + 1"
                   text-anchor="middle"
                   dominant-baseline="central"
-                  fill="#334155"
+                  fill="#1e293b"
                   :font-size="layoutParams.chipFontSize"
-                  font-weight="600"
+                  font-weight="700"
                 >{{ shortName(chip.name, layoutParams.nameMaxLen) }}</text>
               </g>
 
@@ -533,32 +573,33 @@ function getCurve(x1, y1, x2, y2) {
                 <rect
                   :x="g.buttonX"
                   :y="g.buttonY"
-                  :width="layoutParams.chipW"
+                  :width="g.actualChipW"
                   :height="layoutParams.chipH"
                   :rx="layoutParams.chipH / 2"
                   fill="#f8fafc"
-                  stroke="#cbd5e1"
-                  stroke-width="1"
-                  stroke-dasharray="2 2"
+                  stroke="#94a3b8"
+                  stroke-width="1.5"
+                  stroke-dasharray="4 4"
                 />
                 <text
-                  :x="g.buttonX + layoutParams.chipW / 2"
+                  :x="g.buttonX + g.actualChipW / 2"
                   :y="g.buttonY + layoutParams.chipH / 2 + 1"
                   text-anchor="middle"
                   dominant-baseline="central"
-                  fill="#64748b"
+                  fill="#475569"
                   :font-size="layoutParams.chipFontSize"
-                  font-weight="600"
-                >{{ g.isExpanded ? '收起' : '+' + g.hiddenCount + ' 个' }}</text>
+                  font-weight="700"
+                >{{ g.isExpanded ? '收起' : `+${g.hiddenCount} 个` }}</text>
               </g>
 
               <text
                 v-if="!g.hasContent"
-                :x="g.chipX"
-                :y="g.sourceY + g.sourceH / 2 + 1"
+                :x="g.sourceMidX"
+                :y="g.sourceY + g.sourceH + layoutParams.verticalGap / 2"
+                text-anchor="middle"
                 dominant-baseline="central"
                 fill="#94a3b8"
-                :font-size="layoutParams.chipFontSize"
+                font-size="11"
                 font-style="italic"
               >暂无关联本体</text>
             </g>
@@ -930,8 +971,9 @@ function getCurve(x1, y1, x2, y2) {
   border-radius: 12px;
   background: #ffffff;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-  overflow-x: hidden;
-  padding: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 14px 14px 0 14px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -950,6 +992,7 @@ function getCurve(x1, y1, x2, y2) {
 .lv-svg {
   display: block;
   /* width and height are defined inline to prevent scaling up */
+  margin: 0 auto;
 }
 
 .svg-expand-btn {

@@ -5,6 +5,7 @@ import LeaderView from "./components/perspective/LeaderView.vue";
 import EngineerView from "./components/perspective/EngineerView.vue";
 import ProcessView from "./components/perspective/ProcessView.vue";
 import DataSourcePanel from "./components/datasource/DataSourcePanel.vue";
+import LoginView from "./components/auth/LoginView.vue";
 
 // Use relative path for same-origin or explicit API_BASE. Fallback to current hostname with 8000 port.
 const defaultApiBase = typeof window !== 'undefined' ? `http://${window.location.hostname}:8000` : "http://127.0.0.1:8000";
@@ -38,12 +39,21 @@ const draggingNodeId = ref(null);
 const dragOffset = ref({ x: 0, y: 0 });
 const canvasRef = ref(null);
 
+// ========================
+// 登录状态管理
+// ========================
+const isLoggedIn = ref(false);
+const currentUser = ref({ token: "", username: "", name: "", role: "" });
+const isManager = computed(() => currentUser.value.role === "manager");
+
 // 画布平移与缩放状态
 const viewOffset = ref({ x: 0, y: 0 });
 const zoom = ref(1);
 const dragTick = ref(0); // 拖拽计数器，强制边线实时跟随
 const isPanning = ref(false);
 const panStart = ref({ x: 0, y: 0 });
+let panRafId = null;
+let lastPointerEvent = null;
 
 function onWheel(event) {
   if (!canvasRef.value) return;
@@ -70,9 +80,6 @@ function onWheel(event) {
   
   zoom.value = newZoom;
 }
-
-// LLM OCR 暂停使用状态（部署至内网，暂停使用）
-const llmOcrPaused = ref(true);
 
 // 缩放控件方法
 function zoomIn() {
@@ -108,16 +115,6 @@ const confirmState = ref({
   resolve: null
 });
 
-// OCR 导入状态
-const ocrFile = ref(null);
-const ocrLoading = ref(false);
-const ocrResult = ref(null);
-const ocrCandidates = ref([]);
-const ocrDialogVisible = ref(false);
-const ocrPreviewUrl = ref("");
-const ocrPreviewText = ref("");
-const ocrPreviewType = ref("");
-
 // 已有节点重挂载（转为子本体）状态
 const reparentMode = ref(false);
 const reparentSourceId = ref(null);
@@ -133,6 +130,13 @@ const contextMenu = ref({
 
 // 节点折叠状态 (记录被折叠的节点 ID)
 const collapsedNodeIds = ref(new Set());
+
+// 侧边栏折叠面板状态
+const activeAccordion = ref("causal");
+
+function toggleAccordion(key) {
+  activeAccordion.value = activeAccordion.value === key ? "" : key;
+}
 
 // ========================
 // 弹窗逻辑
@@ -197,62 +201,6 @@ function closePrompt() {
   promptState.value.resolve = null;
   promptState.value.reject = null;
 }
-
-function setOcrFile(file) {
-  ocrFile.value = file;
-  ocrResult.value = null;
-  ocrCandidates.value = [];
-  ocrDialogVisible.value = false;
-
-  if (ocrPreviewUrl.value) {
-    URL.revokeObjectURL(ocrPreviewUrl.value);
-    ocrPreviewUrl.value = "";
-  }
-  ocrPreviewText.value = "";
-  ocrPreviewType.value = "";
-
-  if (file) {
-    if (file.type.startsWith("image/")) {
-      ocrPreviewType.value = "image";
-      ocrPreviewUrl.value = URL.createObjectURL(file);
-    } else {
-      ocrPreviewType.value = "text";
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        ocrPreviewText.value = e.target.result;
-      };
-      reader.readAsText(file);
-    }
-  }
-}
-
-function onOcrFileChange(event) {
-  const file = event.target.files?.[0] || null;
-  setOcrFile(file);
-}
-
-async function useSampleOcrFile() {
-  try {
-    const response = await fetch(`${API_BASE}/api/ocr/sample-file`);
-    if (!response.ok) {
-      throw new Error(await response.text());
-    }
-    const blob = await response.blob();
-    const sampleFile = new File([blob], "test.png", { type: blob.type || "image/png" });
-    setOcrFile(sampleFile);
-    statusMessage.value = "已加载示例文件 test.png，可直接开始识别";
-  } catch (error) {
-    statusMessage.value = `加载示例文件失败：${error.message}`;
-  }
-}
-
-function toggleAllOcrCandidates(checked) {
-  ocrCandidates.value = ocrCandidates.value.map((item) => ({ ...item, selected: checked }));
-}
-
-const selectedOcrEntities = computed(() =>
-  ocrCandidates.value.filter((item) => item.selected).map((item) => item.text)
-);
 
 // 规则管理
 const rulesDialogVisible = ref(false);
@@ -385,21 +333,6 @@ function removeAttribute(idx) {
 }
 
 function updateAttribute() {
-  syncGraph();
-}
-
-// 关系特征编辑逻辑
-function toggleCharacteristic(char) {
-  if (!selectedEdge.value) return;
-  if (!selectedEdge.value.characteristics) {
-    selectedEdge.value.characteristics = [];
-  }
-  const idx = selectedEdge.value.characteristics.indexOf(char);
-  if (idx > -1) {
-    selectedEdge.value.characteristics.splice(idx, 1);
-  } else {
-    selectedEdge.value.characteristics.push(char);
-  }
   syncGraph();
 }
 
@@ -706,70 +639,6 @@ async function syncGraph(projectId) {
   }
 }
 
-function canUseLlmOcr() {
-  if (!ocrFile.value) return false;
-  const type = ocrFile.value.type || "";
-  const name = (ocrFile.value.name || "").toLowerCase();
-  return type.startsWith("image/") || [".png", ".jpg", ".jpeg", ".bmp", ".webp"].some((ext) => name.endsWith(ext));
-}
-
-async function runOcrExtract(engine = "local") {
-  if (!ocrFile.value) {
-    statusMessage.value = "请先选择文件";
-    return;
-  }
-  if (engine === "llm" && !canUseLlmOcr()) {
-    statusMessage.value = "大模型 OCR 目前仅支持图片文件";
-    return;
-  }
-  try {
-    ocrLoading.value = true;
-    const formData = new FormData();
-    formData.append("file", ocrFile.value);
-    const result = await request(`/api/ocr/extract?engine=${engine}`, {
-      method: "POST",
-      body: formData
-    });
-    ocrResult.value = result;
-    ocrCandidates.value = (result.entities || []).map((text) => ({
-      text,
-      selected: true
-    }));
-    ocrDialogVisible.value = true;
-    statusMessage.value = `${engine === "llm" ? "大模型 OCR" : "本地 OCR"} 识别完成：${ocrCandidates.value.length} 项`;
-  } catch (error) {
-    statusMessage.value = `${engine === "llm" ? "大模型 OCR" : "本地 OCR"} 识别失败：${error.message}`;
-  } finally {
-    ocrLoading.value = false;
-  }
-}
-
-async function importOcrToCanvas() {
-  const entities = selectedOcrEntities.value;
-  if (!entities.length) {
-    statusMessage.value = "请至少勾选一项再导入";
-    return;
-  }
-  try {
-    const payload = {
-      entities,
-      start_x: 120 - viewOffset.value.x,
-      start_y: 120 - viewOffset.value.y,
-      spacing_x: 180,
-      spacing_y: 120
-    };
-    const result = await request("/api/ocr/import", {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
-    await loadGraph();
-    ocrDialogVisible.value = false;
-    statusMessage.value = `已导入 ${result.created_count} 项，跳过 ${result.skipped_entities.length} 项`;
-  } catch (error) {
-    statusMessage.value = `导入失败：${error.message}`;
-  }
-}
-
 async function createNode(payload) {
   const node = await request("/api/nodes", {
     method: "POST",
@@ -982,7 +851,7 @@ function startDrag(event, node) {
 function startPanning(event) {
   if (event.button !== 0) return; // 仅左键平移
   // 弹窗或右键菜单打开时，不启动平移
-  if (promptState.value.visible || confirmState.value.visible || ocrDialogVisible.value || contextMenu.value.visible || rulesDialogVisible.value || bayesianDialogVisible.value || weightDialogVisible.value || projectMenuOpen.value) return;
+  if (promptState.value.visible || confirmState.value.visible || contextMenu.value.visible || rulesDialogVisible.value || bayesianDialogVisible.value || weightDialogVisible.value || projectMenuOpen.value) return;
   isPanning.value = true;
   panStart.value = {
     x: event.clientX - viewOffset.value.x,
@@ -990,22 +859,33 @@ function startPanning(event) {
   };
 }
 
-async function onPointerMove(event) {
-  if (draggingNodeId.value) {
-    const node = nodes.value.find((item) => item.id === draggingNodeId.value);
-    if (!node) return;
-    node.x = (event.clientX - viewOffset.value.x) / zoom.value - dragOffset.value.x;
-    node.y = (event.clientY - viewOffset.value.y) / zoom.value - dragOffset.value.y;
-    dragTick.value++; // 强制边线实时跟随
-  } else if (isPanning.value) {
-    viewOffset.value = {
-      x: event.clientX - panStart.value.x,
-      y: event.clientY - panStart.value.y
-    };
-  }
+function onPointerMove(event) {
+  lastPointerEvent = event;
+  if (panRafId !== null) return;
+  panRafId = requestAnimationFrame(() => {
+    panRafId = null;
+    const e = lastPointerEvent;
+    if (!e) return;
+    if (draggingNodeId.value) {
+      const node = nodes.value.find((item) => item.id === draggingNodeId.value);
+      if (!node) return;
+      node.x = (e.clientX - viewOffset.value.x) / zoom.value - dragOffset.value.x;
+      node.y = (e.clientY - viewOffset.value.y) / zoom.value - dragOffset.value.y;
+      dragTick.value++;
+    } else if (isPanning.value) {
+      viewOffset.value = {
+        x: e.clientX - panStart.value.x,
+        y: e.clientY - panStart.value.y
+      };
+    }
+  });
 }
 
 async function onPointerUp() {
+  if (panRafId !== null) {
+    cancelAnimationFrame(panRafId);
+    panRafId = null;
+  }
   if (draggingNodeId.value) {
     draggingNodeId.value = null;
     try {
@@ -1222,7 +1102,46 @@ function onImportNodes(importedNodes) {
   }
 }
 
+// ========================
+// 登录 / 登出
+// ========================
+function onLoginSuccess(user) {
+  currentUser.value = user;
+  isLoggedIn.value = true;
+  localStorage.setItem("benti_user", JSON.stringify(user));
+}
+
+function onLogout() {
+  const token = currentUser.value.token;
+  fetch(`${API_BASE}/api/auth/logout?token=${token}`, { method: "POST" }).catch(() => {});
+  currentUser.value = { token: "", username: "", name: "", role: "" };
+  isLoggedIn.value = false;
+  localStorage.removeItem("benti_user");
+}
+
 onMounted(() => {
+  // 从 localStorage 恢复登录态
+  const savedUser = localStorage.getItem("benti_user");
+  if (savedUser) {
+    try {
+      const user = JSON.parse(savedUser);
+      // 校验 token 有效性
+      fetch(`${API_BASE}/api/auth/session?token=${user.token}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.valid) {
+            currentUser.value = user;
+            isLoggedIn.value = true;
+          } else {
+            localStorage.removeItem("benti_user");
+          }
+        })
+        .catch(() => {});
+    } catch (e) {
+      localStorage.removeItem("benti_user");
+    }
+  }
+
   loadProjects();
   window.addEventListener("pointermove", onPointerMove);
   window.addEventListener("pointerup", onPointerUp);
@@ -1230,6 +1149,10 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  if (panRafId !== null) {
+    cancelAnimationFrame(panRafId);
+    panRafId = null;
+  }
   window.removeEventListener("pointermove", onPointerMove);
   window.removeEventListener("pointerup", onPointerUp);
   window.removeEventListener("keydown", handleGlobalKeyDown);
@@ -1237,7 +1160,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="app-container" @click="hideContextMenu">
+  <!-- 未登录：显示登录界面 -->
+  <LoginView v-if="!isLoggedIn" @login-success="onLoginSuccess" />
+
+  <!-- 已登录：显示完整界面 -->
+  <div v-else class="app-container" @click="hideContextMenu">
     <!-- 全局关系数据列表，供所有的 input list="rel-list" 使用 -->
     <datalist id="rel-list">
       <option v-for="r in uniqueRelations" :key="r" :value="r"></option>
@@ -1276,91 +1203,116 @@ onUnmounted(() => {
       </div>
       
       <div class="sidebar-content">
-        <div class="action-group">
-          <h3 class="group-title">画布操作</h3>
-          <button class="btn btn-primary" @click="addOntology(null, null)">
-            <span class="icon">＋</span> 新增独立本体
-          </button>
-          <button class="btn btn-secondary" @click="syncGraph">
-            <span class="icon">💾</span> 保存当前画布
-          </button>
-          <button class="btn btn-danger" @click="clearGraph">
-            <span class="icon">🗑️</span> 一键清空画布
-          </button>
-        </div>
-
-        <div class="action-group">
-          <h3 class="group-title">关系连接</h3>
-          <button 
-            class="btn btn-outline" 
-            :class="{ active: connectMode }" 
-            :disabled="!selectedNodeId && !connectMode"
-            @click="connectMode ? cancelConnectMode() : enableConnectMode()"
-          >
-            <span class="icon">🔗</span> {{ connectMode ? '取消连线 (Esc)' : '开启连线模式' }}
-          </button>
-          <button
-            class="btn btn-outline"
-            :class="{ active: reparentMode }"
-            :disabled="!selectedNodeId && !reparentMode"
-            @click="reparentMode ? cancelReparentMode() : enableReparentMode()"
-          >
-            <span class="icon">🌳</span> {{ reparentMode ? '取消子本体模式' : '转为子本体模式' }}
-          </button>
-          <button class="btn btn-secondary" @click="rulesDialogVisible = true">
-            <span class="icon">⚙️</span> 关系逻辑规则设置
-          </button>
-          <p class="tip-text" v-if="connectMode">请在画布点击目标本体</p>
-          <p class="tip-text" v-if="reparentMode">先选待移动本体，再点目标父本体</p>
-        </div>
-
-        <div class="action-group">
-          <h3 class="group-title">因果分析</h3>
-          <button class="btn btn-bayesian" @click="bayesianDialogVisible = true">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 6v6l4 2"/>
-            </svg>
-            贝叶斯网络分析
-          </button>
-          <button class="btn btn-weight-config" @click="weightDialogVisible = true">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
-            </svg>
-            关系权重配置
-          </button>
-        </div>
-
-        <div class="action-group">
-          <h3 class="group-title">数据导入</h3>
-          <DataSourcePanel @import-nodes="onImportNodes" />
-        </div>
-
-        <div class="action-group">
-          <h3 class="group-title">OCR 导入</h3>
-          <button class="btn btn-ghost" :disabled="ocrLoading" @click="useSampleOcrFile">
-            <span class="icon">🧪</span> 使用示例文件 test.png
-          </button>
-          <input
-            class="file-input"
-            type="file"
-            accept=".png,.jpg,.jpeg,.bmp,.webp,.txt,.csv"
-            @change="onOcrFileChange"
-          />
-          <button class="btn btn-secondary" :disabled="!ocrFile || ocrLoading" @click="runOcrExtract('local')">
-            <span class="icon">🔍</span> {{ ocrLoading ? "识别中..." : "本地识别" }}
-          </button>
-          <!-- 大模型识别：部署至内网，暂停使用 -->
-          <button class="btn btn-primary" disabled title="部署至内网，暂停使用">
-            <span class="icon">🤖</span> 大模型识别
-          </button>
-          <div class="llm-paused-badge">
-            <span class="pause-icon">⏸</span> 大模型识别暂不可用（内网环境）
+        <!-- ===== 管理者：画布编辑 ===== -->
+        <div class="accordion-group" v-if="isManager">
+          <div class="accordion-header" @click="toggleAccordion('canvas')">
+            <svg class="accordion-arrow" :class="{ open: activeAccordion === 'canvas' }" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            <span>画布编辑</span>
           </div>
-          <button class="btn btn-outline" v-if="ocrResult" @click="ocrDialogVisible = true">
-            <span class="icon">📋</span> 查看识别结果
-          </button>
+          <div class="accordion-body" v-show="activeAccordion === 'canvas'">
+            <button class="btn btn-primary" @click="addOntology(null, null)">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              新增独立本体
+            </button>
+            <button class="btn btn-secondary" @click="syncGraph">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              保存当前画布
+            </button>
+            <button class="btn btn-danger" @click="clearGraph">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              一键清空画布
+            </button>
+          </div>
         </div>
+
+        <!-- ===== 管理者：关系与规则 ===== -->
+        <div class="accordion-group" v-if="isManager">
+          <div class="accordion-header" @click="toggleAccordion('relation')">
+            <svg class="accordion-arrow" :class="{ open: activeAccordion === 'relation' }" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            <span>关系与规则</span>
+          </div>
+          <div class="accordion-body" v-show="activeAccordion === 'relation'">
+            <button
+              class="btn btn-outline"
+              :class="{ active: connectMode }"
+              :disabled="!selectedNodeId && !connectMode"
+              @click="connectMode ? cancelConnectMode() : enableConnectMode()"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              {{ connectMode ? '取消连线 (Esc)' : '开启连线模式' }}
+            </button>
+            <p class="tip-text" v-if="connectMode">请在画布点击目标本体</p>
+            <button
+              class="btn btn-outline"
+              :class="{ active: reparentMode }"
+              :disabled="!selectedNodeId && !reparentMode"
+              @click="reparentMode ? cancelReparentMode() : enableReparentMode()"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="21" x2="12" y2="8"/><polyline points="5 15 12 8 19 15"/></svg>
+              {{ reparentMode ? '取消子本体模式' : '转为子本体模式' }}
+            </button>
+            <p class="tip-text" v-if="reparentMode">先选待移动本体，再点目标父本体</p>
+            <button class="btn btn-secondary" @click="rulesDialogVisible = true">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              关系逻辑规则设置
+            </button>
+          </div>
+        </div>
+
+        <!-- ===== 所有用户：因果分析 ===== -->
+        <div class="accordion-group">
+          <div class="accordion-header" @click="toggleAccordion('causal')">
+            <svg class="accordion-arrow" :class="{ open: activeAccordion === 'causal' }" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            <span>因果分析</span>
+          </div>
+          <div class="accordion-body" v-show="activeAccordion === 'causal'">
+            <button class="btn btn-bayesian" @click="bayesianDialogVisible = true">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+              </svg>
+              贝叶斯网络分析
+            </button>
+            <button class="btn btn-weight-config" @click="weightDialogVisible = true">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+              </svg>
+              关系权重配置
+            </button>
+          </div>
+        </div>
+
+        <!-- ===== 管理者：数据导入 ===== -->
+        <div class="accordion-group" v-if="isManager">
+          <div class="accordion-header" @click="toggleAccordion('import')">
+            <svg class="accordion-arrow" :class="{ open: activeAccordion === 'import' }" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            <span>数据导入</span>
+          </div>
+          <div class="accordion-body" v-show="activeAccordion === 'import'">
+            <DataSourcePanel @import-nodes="onImportNodes" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 用户信息区域 -->
+      <div class="user-info-bar" v-if="isLoggedIn">
+        <div class="user-info-avatar">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </div>
+        <div class="user-info-detail">
+          <span class="user-info-name">{{ currentUser.name || currentUser.username }}</span>
+          <span class="user-info-role" :class="currentUser.role">{{ isManager ? '管理者' : '普通用户' }}</span>
+        </div>
+        <button class="user-info-logout" @click="onLogout" title="退出登录">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+        </button>
       </div>
 
       <div class="sidebar-footer">
@@ -1392,7 +1344,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <button class="btn btn-ghost" @click="loadGraph">↻ 刷新画布</button>
+        <button class="btn btn-ghost" @click="loadGraph"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> 刷新画布</button>
 	        <button class="btn btn-help" @click="openHelp">
 	          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
 	          帮助文档
@@ -1432,23 +1384,23 @@ onUnmounted(() => {
       <!-- 右键菜单 -->
       <div class="context-menu" v-if="contextMenu.visible" :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }" @click.stop>
         <template v-if="contextMenu.type === 'node'">
-          <div class="menu-item" @click="addChildOntology(contextMenu.nodeId)">
-            <span class="menu-icon">➕</span> 新增子本体
+          <div class="menu-item" v-if="isManager" @click="addChildOntology(contextMenu.nodeId)">
+            <svg class="menu-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 新增子本体
           </div>
-          <div class="menu-item" @click="startConnectionFromMenu(contextMenu.nodeId)">
-            <span class="menu-icon">🔗</span> 从此节点连线
+          <div class="menu-item" v-if="isManager" @click="startConnectionFromMenu(contextMenu.nodeId)">
+            <svg class="menu-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> 从此节点连线
           </div>
-          <div class="menu-item" @click="startReparentFromMenu(contextMenu.nodeId)">
-            <span class="menu-icon">🌳</span> 将此节点转为子本体
+          <div class="menu-item" v-if="isManager" @click="startReparentFromMenu(contextMenu.nodeId)">
+            <svg class="menu-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="21" x2="12" y2="8"/><polyline points="5 15 12 8 19 15"/></svg> 将此节点转为子本体
           </div>
           <div class="menu-divider" v-if="hasChildren(contextMenu.nodeId)"></div>
           <div class="menu-item" v-if="hasChildren(contextMenu.nodeId)" @click="toggleCollapse(contextMenu.nodeId)">
-            <span class="menu-icon">↕️</span> {{ collapsedNodeIds.has(contextMenu.nodeId) ? '展开子节点' : '折叠子节点' }}
+            <svg class="menu-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="3" x2="12" y2="21"/><polyline points="8 8 12 4 16 8"/><polyline points="8 16 12 20 16 16"/></svg> {{ collapsedNodeIds.has(contextMenu.nodeId) ? '展开子节点' : '折叠子节点' }}
           </div>
         </template>
         <template v-else>
-          <div class="menu-item" @click="addRootOntologyMenu">
-            <span class="menu-icon">➕</span> 在此新增独立本体
+          <div class="menu-item" v-if="isManager" @click="addRootOntologyMenu">
+            <svg class="menu-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 在此新增独立本体
           </div>
         </template>
       </div>
@@ -1793,67 +1745,28 @@ onUnmounted(() => {
           </div>
           <div class="rd-body">
             <p class="rd-desc">设定不同关系类型在贝叶斯因果分析中的默认权重。权重越高，该关系的影响力越大。也可选中单条边在详情面板中单独覆盖权重。</p>
+            <p v-if="!isManager" class="rd-readonly-hint">当前为只读模式，仅可查看权重配置，无法修改。</p>
             <div class="by-weights-card">
               <div v-for="(weight, relName) in weightConfig" :key="relName" class="by-weight-row">
                 <span class="by-weight-name">{{ relName }}</span>
-                <input type="range" min="0" max="1" step="0.05" v-model.number="weightConfig[relName]" class="by-slider" />
+                <input type="range" min="0" max="1" step="0.05" v-model.number="weightConfig[relName]" class="by-slider" :disabled="!isManager" />
                 <span class="by-weight-val">{{ (weightConfig[relName] * 100).toFixed(0) }}%</span>
-                <button class="by-weight-del" @click="removeWeightMapping(relName)">
+                <button v-if="isManager" class="by-weight-del" @click="removeWeightMapping(relName)">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                 </button>
               </div>
               <div v-if="Object.keys(weightConfig).length === 0" class="rd-empty">
                 <span>暂未配置权重映射，所有关系使用系统默认值（50%）</span>
               </div>
-              <div class="by-weight-add">
+              <div v-if="isManager" class="by-weight-add">
                 <input v-model="newWeightRelation" placeholder="关系名" class="by-input-sm" @keyup.enter="addWeightMapping" />
                 <input type="range" min="0" max="1" step="0.05" v-model.number="newWeightValue" class="by-slider-sm" />
                 <span class="by-weight-val-add">{{ (newWeightValue * 100).toFixed(0) }}%</span>
                 <button class="by-weight-add-btn" @click="addWeightMapping">添加</button>
               </div>
             </div>
-            <button class="by-run-btn" @click="saveWeightConfig(); weightDialogVisible = false" style="margin-top: 16px; width: 100%;">保存并关闭</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- OCR 结果弹窗 -->
-      <div class="prompt-overlay" v-if="ocrDialogVisible" @click.self="ocrDialogVisible = false" @wheel.stop>
-        <div class="prompt-dialog ocr-dialog" @click.stop>
-          <div class="ocr-dialog-header">
-            <h3>OCR 识别结果</h3>
-            <button class="btn btn-ghost ocr-close-btn" @click="ocrDialogVisible = false">关闭</button>
-          </div>
-          
-          <!-- 并排布局容器 -->
-          <div class="ocr-split-layout">
-            <!-- 左侧：原始文本预览 -->
-            <div class="ocr-preview-panel">
-              <div class="ocr-meta">用户上传文件预览</div>
-              <div class="ocr-preview-content">
-                <img v-if="ocrPreviewType === 'image'" :src="ocrPreviewUrl" alt="预览图" class="ocr-preview-img" />
-                <pre v-else-if="ocrPreviewType === 'text'">{{ ocrPreviewText }}</pre>
-                <div v-else class="ocr-preview-empty">暂无预览</div>
-              </div>
-            </div>
-
-            <!-- 右侧：识别实体选择 -->
-            <div class="ocr-panel" v-if="ocrResult">
-              <div class="ocr-meta">提取实体 (模式：{{ ocrResult.mode }}，共 {{ ocrCandidates.length }} 项)</div>
-              <div class="ocr-actions">
-                <button class="btn btn-ghost" @click="toggleAllOcrCandidates(true)">全选</button>
-                <button class="btn btn-ghost" @click="toggleAllOcrCandidates(false)">全不选</button>
-              </div>
-              <div class="ocr-list">
-                <label class="ocr-item" v-for="(item, idx) in ocrCandidates" :key="`${item.text}-${idx}`">
-                  <input type="checkbox" v-model="item.selected" />
-                    <span :title="item.text">{{ item.text }}</span>
-                </label>
-              </div>
-              <button class="btn btn-primary" :disabled="selectedOcrEntities.length === 0" @click="importOcrToCanvas">
-                一键导入勾选项
-              </button>
-            </div>
+            <button v-if="isManager" class="by-run-btn" @click="saveWeightConfig(); weightDialogVisible = false" style="margin-top: 16px; width: 100%;">保存并关闭</button>
+            <button v-else class="by-run-btn" @click="weightDialogVisible = false" style="margin-top: 16px; width: 100%; background: #94a3b8;">关闭</button>
           </div>
         </div>
       </div>
@@ -1947,7 +1860,10 @@ onUnmounted(() => {
             <span class="node-title" :title="node.name" v-html="formatSymbol(node.name)"></span>
           </div>
           <div class="node-body">
-            <div class="node-id">ID: {{ node.id.slice(0, 6) }}</div>
+            <div v-if="node.attributes && node.attributes.length > 0" class="node-attrs">
+              <span v-for="(attr, ai) in node.attributes" :key="ai" class="node-attr-chip">{{ attr.key }}</span>
+            </div>
+            <div v-else class="node-id">ID: {{ node.id.slice(0, 6) }}</div>
           </div>
 
           <!-- 展开/折叠按钮 -->
@@ -1963,9 +1879,9 @@ onUnmounted(() => {
 
       <!-- 缩放控件 -->
       <div class="zoom-controls" @click.stop>
-        <button class="zoom-btn" @click="zoomIn" title="放大 (或使用滚轮)">＋</button>
-        <button class="zoom-btn" @click="zoomReset" title="重置缩放">⌂</button>
-        <button class="zoom-btn" @click="zoomOut" title="缩小 (或使用滚轮)">－</button>
+        <button class="zoom-btn" @click="zoomIn" title="放大 (或使用滚轮)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+        <button class="zoom-btn" @click="zoomReset" title="重置缩放"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg></button>
+        <button class="zoom-btn" @click="zoomOut" title="缩小 (或使用滚轮)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
       </div>
     </main>
       </div> <!-- end canvas-wrapper -->
@@ -1992,19 +1908,19 @@ onUnmounted(() => {
         <template v-if="selectedNode">
           <div class="detail-group">
             <label>名称</label>
-            <input type="text" v-model="selectedNode.name" @change="syncGraph" class="input-field" />
+            <input type="text" v-model="selectedNode.name" @change="syncGraph" class="input-field" :disabled="!isManager" />
           </div>
 
           <div class="detail-group">
             <div class="group-header">
               <label>属性 (Data Properties)</label>
-              <button class="add-btn" @click="addAttribute">＋</button>
+              <button v-if="isManager" class="add-btn" @click="addAttribute"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
             </div>
             <div class="attr-list">
               <div v-for="(attr, idx) in selectedNode.attributes" :key="idx" class="attr-item">
-                <input type="text" v-model="attr.key" @change="updateAttribute" placeholder="键" />
-                <input type="text" v-model="attr.value" @change="updateAttribute" placeholder="值" />
-                <button class="remove-btn" @click="removeAttribute(idx)">×</button>
+                <input type="text" v-model="attr.key" @change="updateAttribute" placeholder="键" :disabled="!isManager" />
+                <input type="text" v-model="attr.value" @change="updateAttribute" placeholder="值" :disabled="!isManager" />
+                <button v-if="isManager" class="remove-btn" @click="removeAttribute(idx)">×</button>
               </div>
               <div v-if="!selectedNode.attributes?.length" class="empty-tip">暂无属性</div>
             </div>
@@ -2015,7 +1931,7 @@ onUnmounted(() => {
         <template v-else-if="selectedEdge">
           <div class="detail-group">
             <label>关系名称</label>
-            <input type="text" list="rel-list" v-model="selectedEdge.relation" @change="syncGraph" class="input-field" />
+            <input type="text" list="rel-list" v-model="selectedEdge.relation" @change="syncGraph" class="input-field" :disabled="!isManager" />
           </div>
 
           <div class="detail-group">
@@ -2024,39 +1940,23 @@ onUnmounted(() => {
               <input type="range" min="0" max="1" step="0.05"
                 :value="selectedEdge.weight != null ? selectedEdge.weight : 0.5"
                 @input="selectedEdge.weight = parseFloat($event.target.value); syncGraph()"
-                class="weight-slider" />
+                class="weight-slider"
+                :disabled="!isManager" />
               <span class="weight-val">{{ ((selectedEdge.weight != null ? selectedEdge.weight : 0.5) * 100).toFixed(0) }}%</span>
             </div>
             <div class="weight-hint">
               当前使用{{ selectedEdge.weight != null ? '显式权重' : '系统默认值(0.5)，拖动滑块设置显式权重' }}
             </div>
-            <button v-if="selectedEdge.weight != null" class="btn btn-ghost btn-xs"
+            <button v-if="selectedEdge.weight != null && isManager" class="btn btn-ghost btn-xs"
               @click="selectedEdge.weight = null; syncGraph()">重置为默认</button>
           </div>
 
-          <div class="detail-group" v-if="selectedEdge.kind === 'relation'">
-            <label>特征 (Characteristics)</label>
-            <div class="chara-options">
-              <label class="chara-item">
-                <input type="checkbox" :checked="selectedEdge.characteristics?.includes('symmetric')" @change="toggleCharacteristic('symmetric')" />
-                Symmetric (对称)
-              </label>
-              <label class="chara-item">
-                <input type="checkbox" :checked="selectedEdge.characteristics?.includes('transitive')" @change="toggleCharacteristic('transitive')" />
-                Transitive (传递)
-              </label>
-              <label class="chara-item">
-                <input type="checkbox" :checked="selectedEdge.characteristics?.includes('functional')" @change="toggleCharacteristic('functional')" />
-                Functional (函数)
-              </label>
-            </div>
-          </div>
         </template>
       </div>
 
-      <div class="panel-footer">
+      <div class="panel-footer" v-if="isManager">
         <button class="btn btn-danger" @click="selectedNode ? deleteSelectedNode() : deleteSelectedEdge()">
-          <span class="icon">🗑️</span> 删除此{{ selectedNode ? '本体' : '关系' }}
+          <span class="icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></span> 删除此{{ selectedNode ? '本体' : '关系' }}
         </button>
       </div>
     </aside>
@@ -2624,21 +2524,8 @@ onUnmounted(() => {
 
 .sidebar-content {
   flex: 1;
-  padding: 24px;
+  padding: 12px 0;
   overflow-y: auto;
-}
-
-.action-group {
-  margin-bottom: 32px;
-}
-
-.group-title {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #475569;
-  margin: 0 0 16px 4px;
-  font-weight: 700;
 }
 
 /* Buttons */
@@ -2703,231 +2590,29 @@ onUnmounted(() => {
   border-color: #fca5a5;
 }
 
-.tip-text {
-  font-size: 13px;
-  color: #d97706;
-  margin: 4px 0 0 0;
-  text-align: center;
-  font-weight: 500;
+/* Accordion 折叠面板 */
+.accordion-group {
+  border-bottom: 1px solid #e2e8f0;
+}
+.accordion-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; cursor: pointer;
+  font-size: 13px; font-weight: 600; color: #334155;
+  user-select: none;
+}
+.accordion-header:hover { background: #f1f5f9; }
+.accordion-arrow { transition: transform 0.2s; width: 14px; flex-shrink: 0; color: #94a3b8; }
+.accordion-arrow.open { transform: rotate(90deg); color: #334155; }
+.accordion-body {
+  padding: 6px 14px 12px;
+  display: flex; flex-direction: column; gap: 4px;
 }
 
-.file-input {
-  display: block;
-  width: 100%;
-  margin-bottom: 12px;
-  font-size: 13px;
-  color: #334155;
-  padding: 8px;
-  border: 1px dashed #cbd5e1;
-  border-radius: 8px;
-  background: #fafafa;
-}
-
-.file-input:focus-visible {
-  outline: none;
-  border-color: #2563eb;
-}
-
-/* LLM 暂停使用提示 */
-.llm-paused-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  background: #fffbeb;
-  border: 1px solid #fde68a;
-  border-radius: var(--radius-md);
-  font-size: 12px;
-  font-weight: 600;
-  color: #92400e;
-  margin-bottom: 12px;
-  line-height: 1.5;
-}
-
-.pause-icon {
-  font-size: 13px;
-  flex-shrink: 0;
-}
-
-.ocr-dialog {
-  width: 90vw !important;
-  max-width: 1400px !important;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.ocr-dialog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-  padding: 0 4px;
-}
-
-.ocr-dialog-header h3 {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 800;
-  color: #0f172a;
-}
-
-.ocr-close-btn {
-  width: auto;
-  margin: 0;
-  padding: 8px 16px;
-  font-size: 14px;
-}
-
-.ocr-split-layout {
-  display: flex;
-  gap: 24px;
-  flex: 1;
-  overflow: hidden;
-  padding-top: 8px;
-}
-
-.ocr-preview-panel {
-  flex: 1.1;
-  min-width: 0;
-  border: 1px solid #cbd5e1;
-  border-radius: 12px;
-  background: #f8fafc;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.ocr-preview-panel .ocr-meta {
-  padding: 16px 16px 0;
-}
-
-.ocr-preview-content {
-  flex: 1;
-  overflow: auto;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  background: #ffffff;
-  margin: 12px;
-  border-radius: 8px;
-  border: 1px solid #f1f5f9;
-}
-
-.ocr-preview-img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 6px;
-  object-fit: contain;
-  margin: auto;
-}
-
-.ocr-preview-empty {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.accordion-body .tip-text {
+  font-size: 11px;
   color: #94a3b8;
-  font-size: 14px;
-}
-
-.ocr-preview-content pre {
-  margin: 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 13px;
-  color: #334155;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  line-height: 1.6;
-}
-
-.ocr-panel {
-  flex: 1.3;
-  border: 1px solid #cbd5e1;
-  border-radius: 12px;
-  padding: 20px;
-  background: #f8fafc;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.ocr-meta {
-  font-size: 15px;
-  font-weight: 600;
-  color: #334155;
-  margin-bottom: 16px;
-}
-
-.ocr-actions {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.ocr-actions .btn {
-  margin-bottom: 0;
-  padding: 8px 16px;
-  font-size: 13px;
-  width: auto;
-}
-
-.ocr-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
-  flex: 1;
-  max-height: none;
-  min-height: 300px;
-  overflow-y: auto;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  background: #ffffff;
-  padding: 16px;
-  margin-bottom: 16px;
-}
-
-.ocr-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px;
-  border-radius: 8px;
-  background: #f8fafc;
-  border: 1px solid transparent;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.ocr-item:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
-}
-
-/* Fallback for browsers that don't support :has */
-.ocr-item.selected {
-  background: #eff6ff;
-  border-color: #bfdbfe;
-}
-.ocr-item:has(input:checked) {
-  background: #eff6ff;
-  border-color: #bfdbfe;
-}
-
-.ocr-item input[type="checkbox"] {
-  margin-top: 2px;
-  width: 18px;
-  height: 18px;
-  accent-color: #2563eb;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.ocr-item span {
-  font-size: 14px;
-  color: #1e293b;
-  line-height: 1.5;
-  word-break: break-word;
+  margin: -2px 0 2px 0;
+  text-align: left;
   font-weight: 500;
 }
 
@@ -3005,6 +2690,87 @@ onUnmounted(() => {
   background: #dbeafe;
   border-color: #93c5fd;
   color: #1e3a8a;
+}
+
+/* ======================== 用户信息栏 ======================== */
+.user-info-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fafbfc;
+}
+
+.user-info-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #eff6ff;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.user-info-detail {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-info-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-info-role {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  width: fit-content;
+  letter-spacing: 0.03em;
+}
+
+.user-info-role.manager {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.user-info-role.user {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.user-info-logout {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.user-info-logout:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
 }
 
 /* Sidebar Footer */
@@ -3587,6 +3353,10 @@ onUnmounted(() => {
 }
 
 /* 拖拽时禁用所有连线过渡，确保实时跟随 */
+.edges-layer.is-dragging {
+  will-change: transform;
+}
+
 .edges-layer.is-dragging .edge-line,
 .edges-layer.is-dragging .edge-label-bg,
 .edges-layer.is-dragging .edge-label {
@@ -3832,33 +3602,6 @@ onUnmounted(() => {
   border: 1px dashed #cbd5e1;
 }
 
-.chara-options {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  background: #f8fafc;
-  padding: 16px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-}
-
-.chara-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  color: #334155;
-  cursor: pointer;
-  text-transform: none !important;
-  font-weight: 500 !important;
-}
-
-.chara-item input {
-  width: 16px;
-  height: 16px;
-  accent-color: #2563eb;
-}
-
 /* ======================== Node Card ======================== */
 .node-card {
   position: absolute;
@@ -3925,6 +3668,7 @@ onUnmounted(() => {
   z-index: 100;
   opacity: 0.94;
   filter: saturate(1.05);
+  transition: none !important;
 }
 
 /* 选中态 */
@@ -4066,13 +3810,13 @@ onUnmounted(() => {
   line-height: 1.3;
 }
 
-.node-title i, .ocr-item i {
+.node-title i {
   font-family: "Times New Roman", Times, serif;
   font-style: italic;
   margin-right: 1px;
 }
 
-.node-title sub, .ocr-item sub {
+.node-title sub {
   font-size: 0.75em;
   bottom: -0.2em;
   margin-left: 1px;
@@ -4099,6 +3843,31 @@ onUnmounted(() => {
 .node-card.selected .node-id {
   background: rgba(219, 234, 254, 0.6);
   color: #3b82f6;
+}
+
+.node-attrs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.node-attr-chip {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  font-size: 10px;
+  font-weight: 500;
+  color: #475569;
+  white-space: nowrap;
+  line-height: 1.5;
+}
+
+.node-card.selected .node-attr-chip {
+  background: #EFF6FF;
+  border-color: #BFDBFE;
+  color: #2563EB;
 }
 
 /* ======================== 折叠按钮 ======================== */
@@ -4221,11 +3990,12 @@ onUnmounted(() => {
 }
 
 .menu-icon {
-  font-size: 13px;
-  width: 18px;
+  width: 14px;
+  height: 14px;
   text-align: center;
   flex-shrink: 0;
   opacity: 0.8;
+  color: #64748b;
 }
 
 .menu-divider {
@@ -4605,6 +4375,18 @@ onUnmounted(() => {
   max-width: 94vw;
   max-height: 80vh;
   overflow-y: auto;
+}
+
+.rd-readonly-hint {
+  margin: 0 0 12px 0;
+  padding: 10px 14px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #92400e;
+  line-height: 1.5;
 }
 
 /* ---------- 权重配置卡片 ---------- */

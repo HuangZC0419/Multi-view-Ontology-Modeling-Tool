@@ -1,0 +1,158 @@
+<h2>概览页面设计 — 基于真实数据</h2>
+<p class="subtitle">机械加工工艺本体案例：15 个本体 · 25 条关系 · 3 个数据源 · 4 个域</p>
+
+<div class="section">
+  <h3>区块 1 — 核心指标卡</h3>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:24px;">
+  <div style="background:#eff6ff;border-left:4px solid #2563eb;border-radius:10px;padding:16px;">
+    <div style="font-size:24px;font-weight:700;color:#0f172a;">15</div>
+    <div style="font-size:12px;color:#64748b;margin-top:4px;">本体概念</div>
+  </div>
+  <div style="background:#f5f3ff;border-left:4px solid #7c3aed;border-radius:10px;padding:16px;">
+    <div style="font-size:24px;font-weight:700;color:#0f172a;">25</div>
+    <div style="font-size:12px;color:#64748b;margin-top:4px;">推理关系</div>
+  </div>
+  <div style="background:#fffbeb;border-left:4px solid #d97706;border-radius:10px;padding:16px;">
+    <div style="font-size:24px;font-weight:700;color:#0f172a;">3</div>
+    <div style="font-size:12px;color:#64748b;margin-top:4px;">数据底座</div>
+  </div>
+  <div style="background:#d1fae5;border-left:4px solid #059669;border-radius:10px;padding:16px;">
+    <div style="font-size:24px;font-weight:700;color:#0f172a;">4</div>
+    <div style="font-size:12px;color:#64748b;margin-top:4px;">业务域</div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>区块 2 — 数据底座卡片</h3>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:24px;">
+  <div style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:10px;padding:16px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <span style="background:#7c3aed;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;">达梦</span>
+      <span style="font-size:22px;font-weight:700;color:#0f172a;">1</span>
+      <span style="font-size:12px;color:#64748b;">个数据库</span>
+    </div>
+    <div style="font-size:12px;color:#334155;font-weight:600;">BENTI_DB</div>
+    <div style="font-size:11px;color:#94a3b8;margin-top:4px;">5 张表 · 覆盖全部 4 个域 · 13 个本体</div>
+  </div>
+  <div style="background:#d1fae5;border:1px solid #a7f3d0;border-radius:10px;padding:16px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <span style="background:#059669;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;">Excel</span>
+      <span style="font-size:22px;font-weight:700;color:#0f172a;">1</span>
+      <span style="font-size:12px;color:#64748b;">个文件</span>
+    </div>
+    <div style="font-size:12px;color:#334155;font-weight:600;">material_spec.xlsx</div>
+    <div style="font-size:11px;color:#94a3b8;margin-top:4px;">1 张表 · 覆盖设备与刀具域 · 1 个本体</div>
+  </div>
+  <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:16px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <span style="background:#d97706;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;">CSV</span>
+      <span style="font-size:22px;font-weight:700;color:#0f172a;">1</span>
+      <span style="font-size:12px;color:#64748b;">个文件</span>
+    </div>
+    <div style="font-size:12px;color:#334155;font-weight:600;">cost_report.csv</div>
+    <div style="font-size:11px;color:#94a3b8;margin-top:4px;">1 张表 · 覆盖人员与成本域 · 1 个本体</div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>区块 3 — 数据底座与业务域关系图</h3>
+  <p style="font-size:12px;color:#64748b;margin-bottom:12px;">左：数据底座（按类型着色） / 右：业务域卡片（含本体数和支撑来源） / 连线：支撑关系</p>
+</div>
+<div style="text-align:center;margin-bottom:24px;">
+  <svg width="720" height="380" viewBox="0 0 720 380" style="max-width:100%;background:#fafbfc;border:1px solid #e2e8f0;border-radius:10px;">
+    <!-- ===== 左侧：数据源 ===== -->
+    <!-- BENTI_DB 达梦 -->
+    <rect x="20" y="40" width="170" height="80" rx="10" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1.5"/>
+    <rect x="20" y="40" width="170" height="24" rx="10" fill="#7c3aed"/>
+    <rect x="20" y="50" width="170" height="14" fill="#7c3aed"/>
+    <text x="105" y="57" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">达梦数据库</text>
+    <text x="105" y="82" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">BENTI_DB</text>
+    <text x="105" y="100" text-anchor="middle" font-size="10" fill="#64748b">5 张表 · 覆盖 13 个本体 · 全部 4 域</text>
+
+    <!-- material_spec.xlsx Excel -->
+    <rect x="20" y="150" width="170" height="72" rx="10" fill="#d1fae5" stroke="#a7f3d0" stroke-width="1.5"/>
+    <rect x="20" y="150" width="170" height="24" rx="10" fill="#059669"/>
+    <rect x="20" y="160" width="170" height="14" fill="#059669"/>
+    <text x="105" y="167" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">Excel 文件</text>
+    <text x="105" y="192" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">material_spec.xlsx</text>
+    <text x="105" y="208" text-anchor="middle" font-size="10" fill="#64748b">材料规格 · 1 个本体 · 设备与刀具域</text>
+
+    <!-- cost_report.csv CSV -->
+    <rect x="20" y="252" width="170" height="72" rx="10" fill="#fff7ed" stroke="#fcd34d" stroke-width="1.5"/>
+    <rect x="20" y="252" width="170" height="24" rx="10" fill="#d97706"/>
+    <rect x="20" y="262" width="170" height="14" fill="#d97706"/>
+    <text x="105" y="269" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">CSV 文件</text>
+    <text x="105" y="294" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">cost_report.csv</text>
+    <text x="105" y="310" text-anchor="middle" font-size="10" fill="#64748b">成本报表 · 1 个本体 · 人员与成本域</text>
+
+    <!-- ===== 右侧：业务域 ===== -->
+    <!-- 设备与刀具域 -->
+    <rect x="480" y="20" width="220" height="92" rx="10" fill="#fff" stroke="#f59e0b" stroke-width="1.5"/>
+    <rect x="480" y="20" width="6" height="92" rx="3" fill="#f59e0b"/>
+    <text x="500" y="42" font-size="13" font-weight="700" fill="#0f172a">设备与刀具域</text>
+    <text x="500" y="60" font-size="11" fill="#64748b">5 个本体概念</text>
+    <text x="500" y="78" font-size="11" fill="#64748b">机床刚性 / 刀具材料 / 刀具磨损</text>
+    <text x="500" y="94" font-size="11" fill="#64748b">冷却液流量 / 工件硬度</text>
+    <text x="500" y="108" font-size="10" fill="#f59e0b">BENTI_DB + material_spec.xlsx 支撑</text>
+
+    <!-- 工艺参数域 -->
+    <rect x="480" y="132" width="220" height="78" rx="10" fill="#fff" stroke="#3b82f6" stroke-width="1.5"/>
+    <rect x="480" y="132" width="6" height="78" rx="3" fill="#3b82f6"/>
+    <text x="500" y="154" font-size="13" font-weight="700" fill="#0f172a">工艺参数域</text>
+    <text x="500" y="172" font-size="11" fill="#64748b">4 个本体概念</text>
+    <text x="500" y="190" font-size="11" fill="#64748b">切削速度 / 进给率 / 切削深度 / 切削温度</text>
+    <text x="500" y="206" font-size="10" fill="#3b82f6">BENTI_DB 支撑</text>
+
+    <!-- 质量检测域 -->
+    <rect x="480" y="230" width="220" height="70" rx="10" fill="#fff" stroke="#059669" stroke-width="1.5"/>
+    <rect x="480" y="230" width="6" height="70" rx="3" fill="#059669"/>
+    <text x="500" y="252" font-size="13" font-weight="700" fill="#0f172a">质量检测域</text>
+    <text x="500" y="270" font-size="11" fill="#64748b">3 个本体概念</text>
+    <text x="500" y="288" font-size="11" fill="#64748b">表面粗糙度 / 尺寸精度 / 零件质量</text>
+    <text x="500" y="298" font-size="10" fill="#059669">BENTI_DB 支撑</text>
+
+    <!-- 人员与成本域 -->
+    <rect x="480" y="320" width="220" height="60" rx="10" fill="#fff" stroke="#7c3aed" stroke-width="1.5"/>
+    <rect x="480" y="320" width="6" height="60" rx="3" fill="#7c3aed"/>
+    <text x="500" y="340" font-size="12" font-weight="700" fill="#0f172a">人员与成本域</text>
+    <text x="500" y="356" font-size="11" fill="#64748b">3 个本体概念</text>
+    <text x="500" y="374" font-size="10" fill="#7c3aed">BENTI_DB + cost_report.csv 支撑</text>
+
+    <!-- ===== 连线 ===== -->
+    <!-- BENTI_DB → 全部4域 -->
+    <line x1="190" y1="80" x2="480" y2="66" stroke="#c4b5fd" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.6"/>
+    <line x1="190" y1="80" x2="480" y2="171" stroke="#c4b5fd" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.6"/>
+    <line x1="190" y1="80" x2="480" y2="265" stroke="#c4b5fd" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.6"/>
+    <line x1="190" y1="80" x2="480" y2="350" stroke="#c4b5fd" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.6"/>
+
+    <!-- material_spec.xlsx → 设备与刀具域 -->
+    <line x1="190" y1="186" x2="480" y2="66" stroke="#a7f3d0" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.6"/>
+
+    <!-- cost_report.csv → 人员与成本域 -->
+    <line x1="190" y1="288" x2="480" y2="350" stroke="#fcd34d" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.6"/>
+  </svg>
+</div>
+
+<div class="section">
+  <h3>确认要点</h3>
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>保留</h4>
+      <ul>
+        <li>4 个核心指标卡：本体(15)、关系(25)、数据底座(3)、域(4)</li>
+        <li>数据底座卡片：按达梦/Excel/CSV分组，显示名称、表数、覆盖域和本体</li>
+        <li>数据底座-业务域关系图：左数据源→右业务域，虚线连接，每个域标本体数和来源</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>移除</h4>
+      <ul>
+        <li>完整数据源表格（名称/类型/连接信息/表列表）</li>
+        <li>数据源覆盖度百分比分析</li>
+        <li>"数据源分布"指标卡</li>
+      </ul>
+    </div>
+  </div>
+</div>

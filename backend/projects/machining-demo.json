@@ -6,15 +6,73 @@
       "x": -6.836905562741833,
       "y": -15.41484374225793,
       "parent_id": null,
-      "attributes": []
+      "attributes": [
+        {
+          "key": "刚性等级",
+          "value": "HRC55"
+        },
+        {
+          "key": "机床型号",
+          "value": "TK6511"
+        },
+        {
+          "key": "最大承重",
+          "value": "5000 kg"
+        },
+        {
+          "key": "主轴功率",
+          "value": "15 kW"
+        },
+        {
+          "key": "导轨类型",
+          "value": "滚柱线轨"
+        },
+        {
+          "key": "最大转速",
+          "value": "6000 rpm"
+        },
+        {
+          "key": "出厂精度",
+          "value": "0.005 mm"
+        }
+      ]
     },
     {
       "id": "tool-material",
       "name": "刀具材料",
-      "x": -153.68922648994163,
-      "y": 74.6666965074904,
+      "x": -251.49986523451102,
+      "y": 78.00115010105526,
       "parent_id": null,
-      "attributes": []
+      "attributes": [
+        {
+          "key": "材料类型",
+          "value": "硬质合金"
+        },
+        {
+          "key": "涂层",
+          "value": "TiAlN"
+        },
+        {
+          "key": "硬度",
+          "value": "92 HRA"
+        },
+        {
+          "key": "耐热温度",
+          "value": "1000 °C"
+        },
+        {
+          "key": "适用工件材料",
+          "value": "合金钢"
+        },
+        {
+          "key": "抗弯强度",
+          "value": "2500 MPa"
+        },
+        {
+          "key": "晶粒尺寸",
+          "value": "0.8 μm"
+        }
+      ]
     },
     {
       "id": "cutting-speed",
@@ -22,7 +80,36 @@
       "x": -174.08425028541035,
       "y": 309.5070208571175,
       "parent_id": null,
-      "attributes": []
+      "attributes": [
+        {
+          "key": "当前值",
+          "value": "180 m/min"
+        },
+        {
+          "key": "最大值",
+          "value": "250 m/min"
+        },
+        {
+          "key": "最小值",
+          "value": "80 m/min"
+        },
+        {
+          "key": "步长",
+          "value": "10 m/min"
+        },
+        {
+          "key": "主轴转速",
+          "value": "1200 rpm"
+        },
+        {
+          "key": "单位",
+          "value": "m/min"
+        },
+        {
+          "key": "推荐范围",
+          "value": "120-200 m/min"
+        }
+      ]
     },
     {
       "id": "feed-rate",
@@ -30,23 +117,110 @@
       "x": -133.9864851902243,
       "y": 493.446700333225,
       "parent_id": null,
-      "attributes": []
+      "attributes": [
+        {
+          "key": "当前值",
+          "value": "0.25 mm/r"
+        },
+        {
+          "key": "最大值",
+          "value": "0.40 mm/r"
+        },
+        {
+          "key": "最小值",
+          "value": "0.08 mm/r"
+        },
+        {
+          "key": "步长",
+          "value": "0.02 mm/r"
+        },
+        {
+          "key": "单位",
+          "value": "mm/r"
+        },
+        {
+          "key": "粗加工推荐值",
+          "value": "0.30-0.40 mm/r"
+        },
+        {
+          "key": "精加工推荐值",
+          "value": "0.08-0.15 mm/r"
+        }
+      ]
     },
     {
       "id": "depth-of-cut",
       "name": "切削深度",
-      "x": 309.15226731991925,
-      "y": -2.479585588064367,
+      "x": 308.8718317599131,
+      "y": -3.5311213008777145,
       "parent_id": null,
-      "attributes": []
+      "attributes": [
+        {
+          "key": "当前值",
+          "value": "2.5 mm"
+        },
+        {
+          "key": "最大值",
+          "value": "5.0 mm"
+        },
+        {
+          "key": "最小值",
+          "value": "0.3 mm"
+        },
+        {
+          "key": "单位",
+          "value": "mm"
+        },
+        {
+          "key": "切削类型",
+          "value": "粗加工"
+        },
+        {
+          "key": "走刀次数",
+          "value": "3 次"
+        },
+        {
+          "key": "精加工余量",
+          "value": "0.5 mm"
+        }
+      ]
     },
     {
       "id": "operator-skill",
       "name": "操作人员技能",
-      "x": -113.39158728520357,
-      "y": -173.1450977137623,
+      "x": -114.39679397185984,
+      "y": -174.15030440041858,
       "parent_id": null,
-      "attributes": []
+      "attributes": [
+        {
+          "key": "技能等级",
+          "value": "高级"
+        },
+        {
+          "key": "证书类型",
+          "value": "数控铣工二级"
+        },
+        {
+          "key": "从业年限",
+          "value": "8 年"
+        },
+        {
+          "key": "培训记录",
+          "value": "2025安全生产培训"
+        },
+        {
+          "key": "操作设备数",
+          "value": "3 台"
+        },
+        {
+          "key": "事故率",
+          "value": "0.02 %"
+        },
+        {
+          "key": "月均工时",
+          "value": "176 h"
+        }
+      ]
     },
     {
       "id": "workpiece-hardness",
@@ -54,7 +228,36 @@
       "x": 97.93447200023633,
       "y": 570.4888254759302,
       "parent_id": null,
-      "attributes": []
+      "attributes": [
+        {
+          "key": "硬度值",
+          "value": "280 HB"
+        },
+        {
+          "key": "最大值",
+          "value": "320 HB"
+        },
+        {
+          "key": "最小值",
+          "value": "180 HB"
+        },
+        {
+          "key": "材料牌号",
+          "value": "40Cr"
+        },
+        {
+          "key": "热处理状态",
+          "value": "调质处理"
+        },
+        {
+          "key": "抗拉强度",
+          "value": "980 MPa"
+        },
+        {
+          "key": "单位",
+          "value": "HB"
+        }
+      ]
     },
     {
       "id": "coolant-flow",
@@ -62,7 +265,36 @@
       "x": 301.6744676190194,
       "y": 603.5444654284111,
       "parent_id": null,
-      "attributes": []
+      "attributes": [
+        {
+          "key": "流量值",
+          "value": "12 L/min"
+        },
+        {
+          "key": "最大值",
+          "value": "20 L/min"
+        },
+        {
+          "key": "最小值",
+          "value": "5 L/min"
+        },
+        {
+          "key": "冷却液类型",
+          "value": "乳化液"
+        },
+        {
+          "key": "压力",
+          "value": "0.8 MPa"
+        },
+        {
+          "key": "浓度",
+          "value": "5 %"
+        },
+        {
+          "key": "单位",
+          "value": "L/min"
+        }
+      ]
     },
     {
       "id": "tool-wear",
@@ -70,7 +302,36 @@
       "x": 699.6819548429186,
       "y": -287.6384826857489,
       "parent_id": null,
-      "attributes": []
+      "attributes": [
+        {
+          "key": "磨损量",
+          "value": "0.15 mm"
+        },
+        {
+          "key": "失效阈值",
+          "value": "0.30 mm"
+        },
+        {
+          "key": "最小值",
+          "value": "0.00 mm"
+        },
+        {
+          "key": "剩余寿命",
+          "value": "45 h"
+        },
+        {
+          "key": "磨损状态",
+          "value": "正常"
+        },
+        {
+          "key": "已加工件数",
+          "value": "320 件"
+        },
+        {
+          "key": "单位",
+          "value": "mm"
+        }
+      ]
     },
     {
       "id": "cutting-temp",
@@ -78,7 +339,36 @@
       "x": 179.07200471680017,
       "y": -249.49008367120314,
       "parent_id": null,
-      "attributes": []
+      "attributes": [
+        {
+          "key": "当前值",
+          "value": "650 °C"
+        },
+        {
+          "key": "最大值",
+          "value": "850 °C"
+        },
+        {
+          "key": "最小值",
+          "value": "350 °C"
+        },
+        {
+          "key": "测温方式",
+          "value": "红外热像仪"
+        },
+        {
+          "key": "报警阈值",
+          "value": "750 °C"
+        },
+        {
+          "key": "单位",
+          "value": "°C"
+        },
+        {
+          "key": "采样频率",
+          "value": "10 Hz"
+        }
+      ]
     },
     {
       "id": "surface-roughness",
@@ -86,7 +376,36 @@
       "x": 1068.1520580332024,
       "y": -82.52122438417517,
       "parent_id": null,
-      "attributes": []
+      "attributes": [
+        {
+          "key": "当前值",
+          "value": "Ra 1.6 μm"
+        },
+        {
+          "key": "上限",
+          "value": "Ra 3.2 μm"
+        },
+        {
+          "key": "下限",
+          "value": "Ra 0.8 μm"
+        },
+        {
+          "key": "检测标准",
+          "value": "GB/T 1031"
+        },
+        {
+          "key": "单位",
+          "value": "μm"
+        },
+        {
+          "key": "取样长度",
+          "value": "0.8 mm"
+        },
+        {
+          "key": "检测频次",
+          "value": "1 次/批次"
+        }
+      ]
     },
     {
       "id": "dimensional-accuracy",
@@ -94,7 +413,36 @@
       "x": 1032.605312856763,
       "y": 473.5912711425279,
       "parent_id": null,
-      "attributes": []
+      "attributes": [
+        {
+          "key": "尺寸公差",
+          "value": "±0.02 mm"
+        },
+        {
+          "key": "标称尺寸",
+          "value": "50.00 mm"
+        },
+        {
+          "key": "公差等级",
+          "value": "IT7"
+        },
+        {
+          "key": "检测方法",
+          "value": "三坐标测量"
+        },
+        {
+          "key": "上偏差",
+          "value": "+0.02 mm"
+        },
+        {
+          "key": "下偏差",
+          "value": "-0.02 mm"
+        },
+        {
+          "key": "单位",
+          "value": "mm"
+        }
+      ]
     },
     {
       "id": "machining-efficiency",
@@ -102,7 +450,36 @@
       "x": 774.6791481904311,
       "y": 615.7587179044299,
       "parent_id": null,
-      "attributes": []
+      "attributes": [
+        {
+          "key": "效率评分",
+          "value": "85 %"
+        },
+        {
+          "key": "最小评分",
+          "value": "60 %"
+        },
+        {
+          "key": "产出数量",
+          "value": "12 件/h"
+        },
+        {
+          "key": "稼动率",
+          "value": "92 %"
+        },
+        {
+          "key": "单件工时",
+          "value": "5 min"
+        },
+        {
+          "key": "废品率",
+          "value": "0.5 %"
+        },
+        {
+          "key": "单位",
+          "value": "%"
+        }
+      ]
     },
     {
       "id": "part-quality",
@@ -110,7 +487,36 @@
       "x": 1021.7722327142055,
       "y": 202.265211857088,
       "parent_id": null,
-      "attributes": []
+      "attributes": [
+        {
+          "key": "质量等级",
+          "value": "A级"
+        },
+        {
+          "key": "合格率",
+          "value": "99.5 %"
+        },
+        {
+          "key": "缺陷数上限",
+          "value": "2 件/百件"
+        },
+        {
+          "key": "检测频次",
+          "value": "全检"
+        },
+        {
+          "key": "批次号",
+          "value": "BATCH-20260115"
+        },
+        {
+          "key": "关键尺寸CPK",
+          "value": "1.67"
+        },
+        {
+          "key": "单位",
+          "value": "%"
+        }
+      ]
     },
     {
       "id": "production-cost",
@@ -118,7 +524,36 @@
       "x": 517.8325532380981,
       "y": 615.809677285499,
       "parent_id": null,
-      "attributes": []
+      "attributes": [
+        {
+          "key": "总成本",
+          "value": "185.50 元/件"
+        },
+        {
+          "key": "材料成本",
+          "value": "52.30 元/件"
+        },
+        {
+          "key": "工时成本",
+          "value": "75.00 元/h"
+        },
+        {
+          "key": "设备折旧",
+          "value": "18.20 元/h"
+        },
+        {
+          "key": "刀具消耗",
+          "value": "12.80 元/件"
+        },
+        {
+          "key": "能耗成本",
+          "value": "8.50 元/件"
+        },
+        {
+          "key": "单位",
+          "value": "元/件"
+        }
+      ]
     }
   ],
   "edges": [

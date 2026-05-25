@@ -59,6 +59,7 @@ class DataSourceInfo(BaseModel):
     covered_nodes: int = 0
     covered_domains: list[str] = Field(default_factory=list)
     total_fields: int = 0
+    covered_ontology_names: list[str] = Field(default_factory=list)
 
 
 class BusinessDomain(BaseModel):
@@ -83,6 +84,8 @@ class DataMapping(BaseModel):
     source_name: str
     table_name: str
     field_mappings: list[FieldMapping] = Field(default_factory=list)
+    node_name: str = ""
+    domain_id: str = ""
 
 
 class LeaderViewData(BaseModel):
@@ -95,6 +98,7 @@ class LeaderViewData(BaseModel):
 
 class EngineerViewData(BaseModel):
     """工程师视角完整数据"""
+    project_name: str = ""
     nodes: list = Field(default_factory=list)
     mappings: list[DataMapping] = Field(default_factory=list)
     domains: list[BusinessDomain] = Field(default_factory=list)

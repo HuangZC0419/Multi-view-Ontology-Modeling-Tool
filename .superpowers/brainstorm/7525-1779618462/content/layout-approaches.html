@@ -1,0 +1,140 @@
+<h2>数据映射浏览器 — 三种交互方案对比</h2>
+<p class="subtitle">场景：1 个域 · 30 个概念 · 每个概念 3-8 个字段 | 目标是概览与细节自由切换</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">方案 A：渐进折叠 + 语义缩放</div>
+        <div class="mockup-body" style="padding:16px;background:#F8FAFC;font-family:system-ui;font-size:12px;">
+          <div style="margin-bottom:12px;padding:6px 10px;background:#E2E8F0;border-radius:4px;font-size:10px;color:#64748B;">
+            📐 缩放 50%（概览模式）— 仅显示概念名 + 字段数徽标
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <div style="background:#E65100;color:#fff;padding:4px 10px;border-radius:6px;font-weight:600;font-size:11px;">机械加工</div>
+            <span style="color:#94A3B8;font-size:10px;">→</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-left:20px;">
+            <div style="background:#fff;border:1px solid #E2E8F0;border-radius:5px;padding:3px 8px;font-size:10px;">主轴转速 <span style="background:#DBEAFE;color:#2563EB;border-radius:3px;padding:0 4px;font-size:9px;">5字段</span></div>
+            <div style="background:#fff;border:1px solid #E2E8F0;border-radius:5px;padding:3px 8px;font-size:10px;">进给量 <span style="background:#DBEAFE;color:#2563EB;border-radius:3px;padding:0 4px;font-size:9px;">8字段</span></div>
+            <div style="background:#fff;border:1px solid #E2E8F0;border-radius:5px;padding:3px 8px;font-size:10px;">切削深度 <span style="background:#DBEAFE;color:#2563EB;border-radius:3px;padding:0 4px;font-size:9px;">3字段</span></div>
+            <div style="background:#fff;border:1px solid #E2E8F0;border-radius:5px;padding:3px 8px;font-size:10px;">刀具角度 <span style="background:#DBEAFE;color:#2563EB;border-radius:3px;padding:0 4px;font-size:9px;">6字段</span></div>
+            <div style="background:#fff;border:1px solid #E2E8F0;border-radius:5px;padding:3px 8px;font-size:10px;">材料硬度 <span style="background:#DBEAFE;color:#2563EB;border-radius:3px;padding:0 4px;font-size:9px;">4字段</span></div>
+            <div style="background:#fff;border:1px solid #E2E8F0;border-radius:5px;padding:3px 8px;font-size:10px;">…</div>
+          </div>
+          <div style="margin-top:14px;padding:6px 10px;background:#E2E8F0;border-radius:4px;font-size:10px;color:#64748B;">
+            📐 缩放 100%（细节模式）— 展开选中概念，显示数据源 + 字段映射
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:6px;margin-top:8px;">
+            <div style="background:#E65100;color:#fff;padding:4px 10px;border-radius:6px;font-size:11px;flex-shrink:0;">机械加工</div>
+            <span style="color:#94A3B8;font-size:10px;flex-shrink:0;">→</span>
+            <div style="background:#334155;color:#fff;padding:4px 10px;border-radius:5px;font-size:10px;flex-shrink:0;">主轴转速</div>
+            <span style="color:#94A3B8;font-size:10px;flex-shrink:0;">→</span>
+            <div style="background:#EDE9FE;border:1px solid #A78BFA;border-radius:5px;padding:4px 8px;font-size:10px;">
+              <div style="color:#7C3AED;font-weight:600;">达梦·equipment</div>
+              <div style="font-size:9px;color:#64748B;">spindle_speed ← 主轴转速</div>
+              <div style="font-size:9px;color:#64748B;">max_rpm ← 最高转速</div>
+              <div style="font-size:9px;color:#64748B;">… 等5项</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 渐进折叠 + 语义缩放</h3>
+      <p>根据缩放级别自动切换显示粒度。缩小看概念列表（带字段计数徽标），放大看完整映射树。滚轮缩放自然驱动层级过渡，无需点击。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>优点</h4><ul><li>滚轮驱动，流畅直觉</li><li>始终保持概览感</li><li>改动适中，保留现有布局</li></ul></div>
+        <div class="cons"><h4>缺点</h4><ul><li>语义缩放阈值需要调试</li><li>中等层级时信息量可能跳跃</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">方案 B：网格卡片 + 抽屉详情</div>
+        <div class="mockup-body" style="padding:16px;background:#F8FAFC;font-family:system-ui;font-size:12px;">
+          <div style="margin-bottom:8px;font-size:10px;color:#64748B;">📋 概览：概念以卡片网格排列，点击展开右侧抽屉</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            <div style="background:#fff;border:1px solid #CBD5E1;border-radius:6px;padding:8px 10px;width:130px;font-size:11px;cursor:pointer;">
+              <div style="font-weight:600;color:#1E3A5F;">主轴转速</div>
+              <div style="color:#64748B;font-size:9px;">达梦·equipment</div>
+              <div style="margin-top:4px;background:#DBEAFE;color:#2563EB;border-radius:3px;padding:1px 6px;font-size:9px;display:inline-block;">5 字段</div>
+            </div>
+            <div style="background:#fff;border:1px solid #CBD5E1;border-radius:6px;padding:8px 10px;width:130px;font-size:11px;cursor:pointer;">
+              <div style="font-weight:600;color:#1E3A5F;">进给量</div>
+              <div style="color:#64748B;font-size:9px;">Excel·params</div>
+              <div style="margin-top:4px;background:#DBEAFE;color:#2563EB;border-radius:3px;padding:1px 6px;font-size:9px;display:inline-block;">8 字段</div>
+            </div>
+            <div style="background:#fff;border:1px solid #CBD5E1;border-radius:6px;padding:8px 10px;width:130px;font-size:11px;cursor:pointer;">
+              <div style="font-weight:600;color:#1E3A5F;">切削深度</div>
+              <div style="color:#64748B;font-size:9px;">CSV·cutting</div>
+              <div style="margin-top:4px;background:#DBEAFE;color:#2563EB;border-radius:3px;padding:1px 6px;font-size:9px;display:inline-block;">3 字段</div>
+            </div>
+            <div style="background:#fff;border:1px solid #CBD5E1;border-radius:6px;padding:8px 10px;width:130px;font-size:11px;opacity:0.4;">…</div>
+          </div>
+          <div style="margin-top:12px;border-left:3px solid #2563EB;padding:8px 12px;background:#fff;border-radius:0 6px 6px 0;">
+            <div style="font-size:10px;color:#64748B;">📌 抽屉：主轴转速 详情</div>
+            <div style="font-size:9px;color:#94A3B8;">达梦数据库 · equipment 表</div>
+            <div style="font-size:9px;color:#334155;margin-top:4px;">spindle_speed ← 主轴转速 (float)</div>
+            <div style="font-size:9px;color:#334155;">max_rpm ← 最高转速 (int)</div>
+            <div style="font-size:9px;color:#334155;">min_rpm ← 最低转速 (int)</div>
+            <div style="font-size:9px;color:#334155;">direction ← 转向 (string)</div>
+            <div style="font-size:9px;color:#334155;">unit ← 单位 (string)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 网格卡片 + 抽屉详情</h3>
+      <p>概览用卡片网格平铺所有概念（紧凑），点击某个概念在侧边抽屉展示完整字段映射。适合定位具体概念。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>优点</h4><ul><li>概览极紧凑，所有概念一目了然</li><li>卡片搜索/排序很直观</li></ul></div>
+        <div class="cons"><h4>缺点</h4><ul><li>丢弃了树形层级关系</li><li>需要大量重写，偏离现有架构</li><li>概念间关系不可见</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">方案 C：优化现有树布局 + 迷你地图</div>
+        <div class="mockup-body" style="padding:16px;background:#F8FAFC;font-family:system-ui;font-size:12px;">
+          <div style="display:flex;gap:12px;">
+            <div style="flex:1;">
+              <div style="font-size:10px;color:#64748B;margin-bottom:6px;">🌲 树形布局保持，新增特性：</div>
+              <div style="font-size:10px;color:#334155;">
+                ✓ 概念默认折叠（仅显示 20-50 个概念行）<br>
+                ✓ 每个概念旁显示 <span style="background:#DBEAFE;color:#2563EB;border-radius:3px;padding:0 4px;font-size:9px;">N字段</span> 徽标<br>
+                ✓ 点击展开单个概念，查看数据源+字段<br>
+                ✓ 拖拽速度修复（除以scale）<br>
+                ✓ 可选：点击概念时自动居中+放大
+              </div>
+            </div>
+            <div style="width:120px;border:1px solid #E2E8F0;border-radius:6px;padding:6px;background:#fff;flex-shrink:0;">
+              <div style="font-size:9px;color:#64748B;text-align:center;margin-bottom:4px;">🗺️ 迷你地图</div>
+              <div style="width:100%;height:80px;background:#F1F5F9;border-radius:3px;position:relative;overflow:hidden;">
+                <div style="position:absolute;top:10%;left:5%;width:60%;height:25%;background:#CBD5E1;border-radius:2px;"></div>
+                <div style="position:absolute;top:15%;left:30%;width:25%;height:20%;background:#CBD5E1;border-radius:2px;"></div>
+                <div style="position:absolute;top:8%;left:8%;width:15%;height:8%;border:1px solid #2563EB;border-radius:1px;"></div>
+              </div>
+              <div style="font-size:8px;color:#94A3B8;text-align:center;margin-top:2px;">蓝色框 = 当前视图</div>
+            </div>
+          </div>
+          <div style="margin-top:10px;font-size:10px;color:#64748B;background:#FEF3C7;padding:6px 10px;border-radius:4px;">
+            💡 这是对现有代码改动最小的方案 — 保留 SVG 树布局，叠加折叠/徽标/拖拽修复/迷你地图
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 优化现有树 + 迷你地图（推荐）</h3>
+      <p>保留当前 SVG 树形结构，增加：默认折叠概念、字段计数徽标、迷你地图导航、拖拽速度修复。改动最小、风险最低。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>优点</h4><ul><li>改动最小（~100行），风险可控</li><li>保留层级关系可视化</li><li>迷你地图解决"我在哪"问题</li></ul></div>
+        <div class="cons"><h4>缺点</h4><ul><li>概览时信息密度改善有限</li><li>仍需要点击交互来展开细节</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
