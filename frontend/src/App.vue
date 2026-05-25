@@ -35,7 +35,7 @@ const projectMenuOpen = ref(false);
 const renamingProjectId = ref(null);
 const renameValue = ref('');
 
-const activeWorkbenchTab = ref("project");
+const activeWorkbenchTab = ref("import");
 const relationCreateMode = ref("canvas");
 
 const draggingNodeId = ref(null);
@@ -206,6 +206,7 @@ const rulesDialogVisible = ref(false);
 const activeTab = ref('mutex'); // 'mutex' | 'inference'
 
 const relationDialogVisible = ref(false);
+const relationCreateChoiceVisible = ref(false);
 const relationDraft = ref({ sourceId: "", targetId: "", relation: "", weight: 0.65 });
 const sourceQuery = ref("");
 const targetQuery = ref("");
@@ -800,6 +801,24 @@ function beginCanvasPickRelation() {
   statusMessage.value = "连线：请先点击源本体";
 }
 
+function openRelationCreateChoice() {
+  relationCreateChoiceVisible.value = true;
+}
+
+function closeRelationCreateChoice() {
+  relationCreateChoiceVisible.value = false;
+}
+
+function chooseRelationCreateMode(mode) {
+  relationCreateMode.value = mode;
+  closeRelationCreateChoice();
+  if (mode === "canvas") {
+    beginCanvasPickRelation();
+    return;
+  }
+  openRelationDialog();
+}
+
 function openRelationDialog() {
   relationDraft.value = { sourceId: "", targetId: "", relation: "", weight: 0.65 };
   sourceQuery.value = "";
@@ -902,7 +921,7 @@ function startDrag(event, node) {
 function startPanning(event) {
   if (event.button !== 0) return; // 仅左键平移
   // 弹窗或右键菜单打开时，不启动平移
-  if (promptState.value.visible || confirmState.value.visible || contextMenu.value.visible || relationDialogVisible.value || rulesDialogVisible.value || bayesianDialogVisible.value || weightDialogVisible.value || projectMenuOpen.value) return;
+  if (promptState.value.visible || confirmState.value.visible || contextMenu.value.visible || relationDialogVisible.value || relationCreateChoiceVisible.value || rulesDialogVisible.value || bayesianDialogVisible.value || weightDialogVisible.value || projectMenuOpen.value) return;
   isPanning.value = true;
   panStart.value = {
     x: event.clientX - viewOffset.value.x,
@@ -983,6 +1002,10 @@ function openHelp() {
 
 function handleGlobalKeyDown(e) {
   if (e.key === "Escape") {
+    if (relationCreateChoiceVisible.value) {
+      closeRelationCreateChoice();
+      return;
+    }
     if (relationDialogVisible.value) {
       closeRelationDialog();
       return;
@@ -1247,42 +1270,43 @@ onUnmounted(() => {
         <h2>本体建模系统</h2>
       </div>
 
-      <div class="workbench-tabs">
-        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'project' }" @click="activeWorkbenchTab = 'project'">项目</button>
-        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'import' }" @click="activeWorkbenchTab = 'import'">数据导入</button>
-        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'modeling' }" @click="activeWorkbenchTab = 'modeling'">建模</button>
-      </div>
-
-      <div class="sidebar-content">
-        <div v-if="activeWorkbenchTab === 'project'" class="workbench-panel">
-          <div class="workbench-section">
-            <div class="workbench-title">项目</div>
-            <div class="project-selector" @click.stop>
-              <button class="ps-trigger" @click="projectMenuOpen = !projectMenuOpen">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-                <span class="ps-current-name">{{ projects.find(p => p.id === currentProjectId)?.name || '选择项目' }}</span>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
-              </button>
-              <div class="ps-dropdown" v-if="projectMenuOpen">
-                <div class="ps-list">
-                  <div v-for="proj in projects" :key="proj.id" class="ps-item" :class="{ active: currentProjectId === proj.id }" @click="switchProject(proj.id); projectMenuOpen = false">
-                    <svg class="ps-item-dot" v-if="currentProjectId === proj.id" width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="#1E40AF"/></svg>
-                    <span v-else class="ps-item-dot" style="width:6px;flex-shrink:0"></span>
-                    <span class="ps-item-name" v-if="renamingProjectId !== proj.id">{{ proj.name }}</span>
-                    <input v-else class="ps-rename-input" v-model="renameValue" @keyup.enter="finishRename(proj.id)" @keyup.esc="renamingProjectId = null" @blur="finishRename(proj.id)" @click.stop />
-                    <div class="ps-item-actions" v-if="renamingProjectId !== proj.id && isManager">
-                      <button @click.stop="startRename(proj.id)" title="重命名"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
-                      <button @click.stop="deleteProject(proj.id)" title="删除"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
-                    </div>
+      <div class="project-top">
+        <div class="workbench-section">
+          <div class="workbench-title">项目</div>
+          <div class="project-selector" @click.stop>
+            <button class="ps-trigger" @click="projectMenuOpen = !projectMenuOpen">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              <span class="ps-current-name">{{ projects.find(p => p.id === currentProjectId)?.name || '选择项目' }}</span>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="ps-dropdown" v-if="projectMenuOpen">
+              <div class="ps-list">
+                <div v-for="proj in projects" :key="proj.id" class="ps-item" :class="{ active: currentProjectId === proj.id }" @click="switchProject(proj.id); projectMenuOpen = false">
+                  <svg class="ps-item-dot" v-if="currentProjectId === proj.id" width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="#1E40AF"/></svg>
+                  <span v-else class="ps-item-dot" style="width:6px;flex-shrink:0"></span>
+                  <span class="ps-item-name" v-if="renamingProjectId !== proj.id">{{ proj.name }}</span>
+                  <input v-else class="ps-rename-input" v-model="renameValue" @keyup.enter="finishRename(proj.id)" @keyup.esc="renamingProjectId = null" @blur="finishRename(proj.id)" @click.stop />
+                  <div class="ps-item-actions" v-if="renamingProjectId !== proj.id && isManager">
+                    <button @click.stop="startRename(proj.id)" title="重命名"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+                    <button @click.stop="deleteProject(proj.id)" title="删除"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
                   </div>
                 </div>
-                <div class="ps-footer" v-if="isManager">
-                  <button class="ps-new-btn" @click="createProject(); projectMenuOpen = false">+ 新建项目</button>
-                </div>
+              </div>
+              <div class="ps-footer" v-if="isManager">
+                <button class="ps-new-btn" @click="createProject(); projectMenuOpen = false">+ 新建项目</button>
               </div>
             </div>
           </div>
         </div>
+      </div>
+
+      <div class="workbench-tabs">
+        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'import' }" @click="activeWorkbenchTab = 'import'">数据导入</button>
+        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'modeling' }" @click="activeWorkbenchTab = 'modeling'">建模</button>
+        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'analysis' }" @click="activeWorkbenchTab = 'analysis'">分析</button>
+      </div>
+
+      <div class="sidebar-content">
 
         <div v-if="activeWorkbenchTab === 'import'" class="workbench-panel">
           <div class="workbench-section">
@@ -1301,14 +1325,10 @@ onUnmounted(() => {
                 新增节点
               </button>
               <div class="relation-row">
-                <button class="btn btn-outline" @click="relationCreateMode === 'canvas' ? beginCanvasPickRelation() : openRelationDialog()">
+                <button class="btn btn-outline" @click="openRelationCreateChoice()">
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                   新增关系
                 </button>
-                <div class="mode-toggle">
-                  <button class="mode-btn" :class="{ active: relationCreateMode === 'canvas' }" @click="relationCreateMode = 'canvas'">画布点选</button>
-                  <button class="mode-btn" :class="{ active: relationCreateMode === 'dialog' }" @click="relationCreateMode = 'dialog'">弹窗选择</button>
-                </div>
               </div>
 
               <button class="btn btn-secondary" @click="syncGraph">
@@ -1326,19 +1346,25 @@ onUnmounted(() => {
             </div>
             <div v-else class="tip-text">仅管理者可编辑本体</div>
 
-            <div class="workbench-subtitle">分析</div>
+            <div class="workbench-subtitle">配置</div>
+            <button class="btn btn-weight-config" @click="weightDialogVisible = true">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+              </svg>
+              关系权重配置
+            </button>
+          </div>
+        </div>
+
+        <div v-if="activeWorkbenchTab === 'analysis'" class="workbench-panel">
+          <div class="workbench-section">
+            <div class="workbench-title">分析</div>
             <button class="btn btn-bayesian" @click="bayesianDialogVisible = true">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"/>
                 <path d="M12 6v6l4 2"/>
               </svg>
               贝叶斯网络分析
-            </button>
-            <button class="btn btn-weight-config" @click="weightDialogVisible = true">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
-              </svg>
-              关系权重配置
             </button>
           </div>
         </div>
@@ -1588,6 +1614,63 @@ onUnmounted(() => {
         </div>
       </div>
 
+      <div class="rules-overlay" v-if="relationCreateChoiceVisible" @click.self="closeRelationCreateChoice()" @wheel.stop>
+        <div class="rules-panel relation-choice-panel" @click.stop>
+          <div class="rs-header">
+            <div class="rs-header-left">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              <h2>选择新增关系方式</h2>
+            </div>
+            <button class="rs-close" @click="closeRelationCreateChoice()">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="rs-body">
+            <div class="relation-choice-actions">
+              <button
+                type="button"
+                class="relation-choice-btn"
+                :class="{ active: relationCreateMode === 'canvas' }"
+                @click="chooseRelationCreateMode('canvas')"
+              >画布点选</button>
+              <button
+                type="button"
+                class="relation-choice-btn"
+                :class="{ active: relationCreateMode === 'dialog' }"
+                @click="chooseRelationCreateMode('dialog')"
+              >弹窗选择</button>
+            </div>
+
+            <div class="relation-choice-divider"></div>
+
+            <div class="relation-choice-label">示例</div>
+            <div class="relation-choice-examples">
+              <button type="button" class="relation-example-card" @click="chooseRelationCreateMode('canvas')">
+                <div class="rex-demo rex-demo--canvas">
+                  <div class="rex-node rex-node--a">源本体</div>
+                  <div class="rex-link-container"><div class="rex-link"></div></div>
+                  <div class="rex-node rex-node--b">目标本体</div>
+                  <div class="rex-hand"></div>
+                </div>
+                <span class="relation-example-text">画布点选：在画布上依次点击两个本体连线</span>
+              </button>
+              <button type="button" class="relation-example-card" @click="chooseRelationCreateMode('dialog')">
+                <div class="rex-demo rex-demo--dialog">
+                  <div class="rex-search-box">
+                    <span class="rex-search-text">搜索节点...</span>
+                  </div>
+                  <div class="rex-list-demo">
+                    <div class="rex-list-item rex-active">选中的源节点</div>
+                    <div class="rex-list-item">备选目标节点</div>
+                  </div>
+                </div>
+                <span class="relation-example-text">弹窗选择：通过搜索和列表快速选择节点</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="rules-overlay" v-if="relationDialogVisible" @click.self="closeRelationDialog()" @wheel.stop>
         <div class="rules-panel relation-panel" @click.stop>
           <div class="rs-header">
@@ -1803,7 +1886,7 @@ onUnmounted(() => {
               </svg>
               <h3>关系权重配置</h3>
             </div>
-            <button class="rd-close" @click="weightDialogVisible = false">
+            <button class="rd-close" @click="weightDialogVisible = false" aria-label="关闭">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </div>
@@ -1829,8 +1912,9 @@ onUnmounted(() => {
                 <button class="by-weight-add-btn" @click="addWeightMapping">添加</button>
               </div>
             </div>
-            <button v-if="isManager" class="by-run-btn" @click="saveWeightConfig(); weightDialogVisible = false" style="margin-top: 16px; width: 100%;">保存并关闭</button>
-            <button v-else class="by-run-btn" @click="weightDialogVisible = false" style="margin-top: 16px; width: 100%; background: #94a3b8;">关闭</button>
+            <div v-if="isManager" class="rd-actions">
+              <button class="by-run-btn rd-save-btn" @click="saveWeightConfig">保存</button>
+            </div>
           </div>
         </div>
       </div>
@@ -2497,6 +2581,11 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
+.project-top {
+  padding: 10px 12px 12px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
 .workbench-tabs {
   display: flex;
   gap: 8px;
@@ -2563,6 +2652,222 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 8px;
   margin-bottom: 12px;
+}
+
+.relation-choice-panel {
+  max-width: 520px;
+}
+
+.relation-choice-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.relation-choice-btn {
+  flex: 1;
+  height: 38px;
+  border: 1px solid #0f172a;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.relation-choice-btn:hover {
+  background: #f8fafc;
+}
+
+.relation-choice-btn.active {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.relation-choice-divider {
+  height: 1px;
+  background: #0f172a;
+  opacity: 0.55;
+  margin: 12px 0;
+}
+
+.relation-choice-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 10px;
+}
+
+.relation-choice-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.relation-example-card {
+  width: 100%;
+  height: auto;
+  min-height: 160px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.relation-example-card:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+}
+
+.relation-example-text {
+  margin-top: 14px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+/* 动态演示相关样式 */
+.rex-demo {
+  position: relative;
+  width: 100%;
+  height: 100px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+  overflow: hidden;
+}
+
+/* 画布点选动画 */
+.rex-demo--canvas {
+  background: radial-gradient(circle at 50% 50%, #f0f9ff, #f8fafc);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+}
+
+.rex-node {
+  position: relative;
+  z-index: 2;
+  padding: 4px 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #0f172a;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.rex-link-container {
+  position: absolute;
+  left: 90px;
+  right: 90px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 2px;
+  z-index: 1;
+}
+
+.rex-link {
+  width: 0%;
+  height: 100%;
+  background: #1e40af;
+  animation: rex-draw-line 2.5s infinite ease-out;
+}
+
+.rex-hand {
+  position: absolute;
+  top: 50%;
+  left: 40px;
+  width: 16px;
+  height: 16px;
+  background: rgba(30, 64, 175, 0.2);
+  border: 2px solid #1e40af;
+  border-radius: 50%;
+  z-index: 10;
+  transform: translate(-50%, -50%);
+  animation: rex-hand-move 2.5s infinite ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes rex-draw-line {
+  0%, 30% { width: 0%; opacity: 0; }
+  40%, 100% { width: 100%; opacity: 0.4; }
+}
+
+@keyframes rex-hand-move {
+  0%, 10% { left: 40px; opacity: 0; transform: translate(-50%, -50%) scale(1); }
+  15% { left: 40px; opacity: 1; transform: translate(-50%, -50%) scale(0.8); box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.3); }
+  25% { left: 40px; opacity: 1; transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(30, 64, 175, 0); }
+  45% { left: calc(100% - 40px); opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  50% { left: calc(100% - 40px); opacity: 1; transform: translate(-50%, -50%) scale(0.8); box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.3); }
+  60% { left: calc(100% - 40px); opacity: 1; transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(30, 64, 175, 0); }
+  75%, 100% { left: calc(100% - 40px); opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* 弹窗选择动画 */
+.rex-demo--dialog {
+  padding: 12px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+}
+
+.rex-search-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 6px 10px;
+  animation: rex-search-flash 3s infinite;
+}
+
+.rex-search-text {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.rex-list-demo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rex-list-item {
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  color: #64748b;
+  text-align: left;
+}
+
+.rex-active {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e40af;
+  animation: rex-item-click 3s infinite;
+}
+
+@keyframes rex-search-flash {
+  0%, 20% { border-color: #e2e8f0; background: #ffffff; }
+  30%, 50% { border-color: #3b82f6; background: #eff6ff; }
+  60%, 100% { border-color: #e2e8f0; background: #ffffff; }
+}
+
+@keyframes rex-item-click {
+  0%, 50% { background: #ffffff; border-color: #f1f5f9; }
+  60%, 100% { background: #eff6ff; border-color: #bfdbfe; }
 }
 
 .mode-toggle {
@@ -4633,6 +4938,83 @@ onUnmounted(() => {
   max-width: 94vw;
   max-height: 80vh;
   overflow-y: auto;
+}
+
+.rd-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #F1F5F9;
+  margin-bottom: 14px;
+}
+
+.rd-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rd-header-left svg {
+  color: #1E40AF;
+  flex-shrink: 0;
+}
+
+.rd-header-left h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.rd-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.rd-close:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10);
+}
+
+.rd-close:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.10);
+}
+
+.rd-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.rd-desc {
+  margin: 0 0 12px 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #475569;
+}
+
+.rd-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.rd-save-btn {
+  width: 100%;
 }
 
 .rd-readonly-hint {

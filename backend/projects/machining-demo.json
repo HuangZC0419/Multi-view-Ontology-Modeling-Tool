@@ -35,7 +35,8 @@
           "key": "出厂精度",
           "value": "0.005 mm"
         }
-      ]
+      ],
+      "origin": "manual"
     },
     {
       "id": "tool-material",
@@ -72,7 +73,8 @@
           "key": "晶粒尺寸",
           "value": "0.8 μm"
         }
-      ]
+      ],
+      "origin": "manual"
     },
     {
       "id": "cutting-speed",
@@ -109,7 +111,8 @@
           "key": "推荐范围",
           "value": "120-200 m/min"
         }
-      ]
+      ],
+      "origin": "manual"
     },
     {
       "id": "feed-rate",
@@ -146,7 +149,8 @@
           "key": "精加工推荐值",
           "value": "0.08-0.15 mm/r"
         }
-      ]
+      ],
+      "origin": "manual"
     },
     {
       "id": "depth-of-cut",
@@ -183,7 +187,8 @@
           "key": "精加工余量",
           "value": "0.5 mm"
         }
-      ]
+      ],
+      "origin": "manual"
     },
     {
       "id": "operator-skill",
@@ -220,7 +225,8 @@
           "key": "月均工时",
           "value": "176 h"
         }
-      ]
+      ],
+      "origin": "manual"
     },
     {
       "id": "workpiece-hardness",
@@ -257,7 +263,8 @@
           "key": "单位",
           "value": "HB"
         }
-      ]
+      ],
+      "origin": "manual"
     },
     {
       "id": "coolant-flow",
@@ -294,7 +301,8 @@
           "key": "单位",
           "value": "L/min"
         }
-      ]
+      ],
+      "origin": "manual"
     },
     {
       "id": "tool-wear",
@@ -331,7 +339,8 @@
           "key": "单位",
           "value": "mm"
         }
-      ]
+      ],
+      "origin": "manual"
     },
     {
       "id": "cutting-temp",
@@ -368,7 +377,8 @@
           "key": "采样频率",
           "value": "10 Hz"
         }
-      ]
+      ],
+      "origin": "manual"
     },
     {
       "id": "surface-roughness",
@@ -405,7 +415,8 @@
           "key": "检测频次",
           "value": "1 次/批次"
         }
-      ]
+      ],
+      "origin": "manual"
     },
     {
       "id": "dimensional-accuracy",
@@ -442,13 +453,14 @@
           "key": "单位",
           "value": "mm"
         }
-      ]
+      ],
+      "origin": "manual"
     },
     {
       "id": "machining-efficiency",
       "name": "加工效率",
-      "x": 774.6791481904311,
-      "y": 615.7587179044299,
+      "x": 845.9499020588914,
+      "y": 687.0294717728902,
       "parent_id": null,
       "attributes": [
         {
@@ -479,13 +491,14 @@
           "key": "单位",
           "value": "%"
         }
-      ]
+      ],
+      "origin": "manual"
     },
     {
       "id": "part-quality",
       "name": "工件质量",
-      "x": 1021.7722327142055,
-      "y": 202.265211857088,
+      "x": 1347.9128933871548,
+      "y": 171.56962026433985,
       "parent_id": null,
       "attributes": [
         {
@@ -516,13 +529,14 @@
           "key": "单位",
           "value": "%"
         }
-      ]
+      ],
+      "origin": "manual"
     },
     {
       "id": "production-cost",
       "name": "生产成本",
-      "x": 517.8325532380981,
-      "y": 615.809677285499,
+      "x": 509.65394213843865,
+      "y": 687.0804311539594,
       "parent_id": null,
       "attributes": [
         {
@@ -553,7 +567,8 @@
           "key": "单位",
           "value": "元/件"
         }
-      ]
+      ],
+      "origin": "manual"
     }
   ],
   "edges": [
@@ -564,7 +579,8 @@
       "relation": "约束",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.5
+      "weight": 0.5,
+      "origin": "manual"
     },
     {
       "id": "e2",
@@ -573,7 +589,8 @@
       "relation": "决定",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.9
+      "weight": 0.9,
+      "origin": "manual"
     },
     {
       "id": "e3",
@@ -582,7 +599,8 @@
       "relation": "加速",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.7
+      "weight": 0.7,
+      "origin": "manual"
     },
     {
       "id": "e4",
@@ -591,7 +609,8 @@
       "relation": "升高",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.7
+      "weight": 0.7,
+      "origin": "manual"
     },
     {
       "id": "e5",
@@ -600,7 +619,8 @@
       "relation": "影响",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.55
+      "weight": 0.55,
+      "origin": "manual"
     },
     {
       "id": "e6",
@@ -609,7 +629,8 @@
       "relation": "加速",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.7
+      "weight": 0.7,
+      "origin": "manual"
     },
     {
       "id": "e7",
@@ -618,7 +639,8 @@
       "relation": "升高",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.65
+      "weight": 0.65,
+      "origin": "manual"
     },
     {
       "id": "e8",
@@ -627,7 +649,8 @@
       "relation": "加重",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.75
+      "weight": 0.75,
+      "origin": "manual"
     },
     {
       "id": "e9",
@@ -636,7 +659,8 @@
       "relation": "升高",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.7
+      "weight": 0.7,
+      "origin": "manual"
     },
     {
       "id": "e10",
@@ -645,7 +669,8 @@
       "relation": "调控",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.65
+      "weight": 0.65,
+      "origin": "manual"
     },
     {
       "id": "e11",
@@ -654,7 +679,8 @@
       "relation": "调控",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.65
+      "weight": 0.65,
+      "origin": "manual"
     },
     {
       "id": "e12",
@@ -663,7 +689,8 @@
       "relation": "调控",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.65
+      "weight": 0.65,
+      "origin": "manual"
     },
     {
       "id": "e13",
@@ -672,7 +699,8 @@
       "relation": "加剧",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.7
+      "weight": 0.7,
+      "origin": "manual"
     },
     {
       "id": "e14",
@@ -681,7 +709,8 @@
       "relation": "影响",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.5
+      "weight": 0.5,
+      "origin": "manual"
     },
     {
       "id": "e15",
@@ -690,7 +719,8 @@
       "relation": "恶化",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.8
+      "weight": 0.8,
+      "origin": "manual"
     },
     {
       "id": "e16",
@@ -699,7 +729,8 @@
       "relation": "降低",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.75
+      "weight": 0.75,
+      "origin": "manual"
     },
     {
       "id": "e17",
@@ -708,7 +739,8 @@
       "relation": "降低",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.7
+      "weight": 0.7,
+      "origin": "manual"
     },
     {
       "id": "e18",
@@ -717,7 +749,8 @@
       "relation": "加剧",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.7
+      "weight": 0.7,
+      "origin": "manual"
     },
     {
       "id": "e19",
@@ -726,7 +759,8 @@
       "relation": "影响",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.5
+      "weight": 0.5,
+      "origin": "manual"
     },
     {
       "id": "e20",
@@ -735,7 +769,8 @@
       "relation": "决定",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.85
+      "weight": 0.85,
+      "origin": "manual"
     },
     {
       "id": "e21",
@@ -744,7 +779,8 @@
       "relation": "决定",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.9
+      "weight": 0.9,
+      "origin": "manual"
     },
     {
       "id": "e22",
@@ -753,7 +789,8 @@
       "relation": "影响",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.65
+      "weight": 0.65,
+      "origin": "manual"
     },
     {
       "id": "e23",
@@ -762,7 +799,8 @@
       "relation": "推高",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.65
+      "weight": 0.65,
+      "origin": "manual"
     },
     {
       "id": "e24",
@@ -771,7 +809,8 @@
       "relation": "抑制",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.6
+      "weight": 0.6,
+      "origin": "manual"
     },
     {
       "id": "e25",
@@ -780,7 +819,8 @@
       "relation": "减缓",
       "kind": "relation",
       "characteristics": [],
-      "weight": 0.55
+      "weight": 0.55,
+      "origin": "manual"
     }
   ],
   "inference_rules": [
