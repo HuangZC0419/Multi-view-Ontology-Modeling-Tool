@@ -1,16 +1,11 @@
 <script setup>
-import { ref, onMounted, watch, computed } from "vue";
+import { ref, onMounted, onUnmounted, watch, computed } from "vue";
 
 const props = defineProps({
   projectId: { type: String, required: true },
 });
 
-// API_BASE 常量定义
-const defaultApiBase =
-  typeof window !== "undefined"
-    ? `http://${window.location.hostname}:8000`
-    : "http://127.0.0.1:8000";
-const API_BASE = import.meta.env.VITE_API_BASE || defaultApiBase;
+const API_BASE = import.meta.env.VITE_API_BASE || "";
 
 const data = ref(null);
 const loading = ref(true);
@@ -38,154 +33,311 @@ async function loadData() {
 onMounted(loadData);
 watch(() => props.projectId, loadData);
 
-// 统计数据
+const sourceTypeStyleMap = {
+  dameng: { label: "达梦", color: "#7c3aed", fill: "#7c3aed", bg: "#f5f3ff", border: "#c4b5fd" },
+  excel: { label: "Excel", color: "#059669", fill: "#059669", bg: "#ecfdf5", border: "#a7f3d0" },
+  csv: { label: "CSV", color: "#d97706", fill: "#ea580c", bg: "#fff7ed", border: "#fdba74" },
+  manual: { label: "人工维护", color: "#64748b", fill: "#64748b", bg: "#f1f5f9", border: "#cbd5e1" },
+};
+
+function sourceTypeStyle(type) {
+  const key = (type || "").toLowerCase();
+  return sourceTypeStyleMap[key] || { label: type, color: "#64748b", fill: "#64748b", bg: "#f8fafc", border: "#e2e8f0" };
+}
+
 const summaryCards = computed(() => {
   if (!data.value) return [];
   const s = data.value.summary || {};
   return [
     {
-      label: "业务域数",
-      value: s.domain_count ?? (data.value.domains?.length ?? 0),
-      icon: "\u{1F4CA}",
-      color: "#2563eb",
-      bg: "#eff6ff",
-      borderColor: "#bfdbfe",
-    },
-    {
+      key: "nodes",
       label: "本体概念数",
       value: s.node_count ?? 0,
-      icon: "\u{1F9E9}",
+      icon: "nodes",
       color: "#059669",
-      bg: "#d1fae5",
-      borderColor: "#a7f3d0",
+      barColor: "#059669",
+      bg: "#ecfdf5",
     },
     {
-      label: "数据源数",
-      value: s.source_count ?? (data.value.data_sources?.length ?? 0),
-      icon: "\u{1F4E6}",
-      color: "#d97706",
-      bg: "#fffbeb",
-      borderColor: "#fcd34d",
-    },
-    {
+      key: "inferences",
       label: "推理关系数",
       value: s.inference_count ?? 0,
-      icon: "\u{1F50D}",
+      icon: "inferences",
       color: "#7c3aed",
+      barColor: "#7c3aed",
       bg: "#f5f3ff",
-      borderColor: "#c4b5fd",
     },
     {
-      label: "数据源分布",
-      value: formatSourceDist(s.source_distribution),
-      icon: "\u{1F310}",
-      color: "#0891b2",
-      bg: "#ecfeff",
-      borderColor: "#a5f3fc",
+      key: "sources",
+      label: "数据底座数",
+      value: s.source_count ?? (data.value.data_sources?.length ?? 0),
+      icon: "sources",
+      color: "#ea580c",
+      barColor: "#ea580c",
+      bg: "#fff7ed",
     },
   ];
 });
 
-/** 格式化数据源分布为简短字符串 */
-function formatSourceDist(dist) {
-  if (!dist) return "N/A";
-  if (typeof dist === "string") return dist;
-  const parts = [];
-  if (dist.dameng != null) parts.push(`达梦${dist.dameng}`);
-  if (dist.excel != null) parts.push(`Excel${dist.excel}`);
-  if (dist.csv != null) parts.push(`CSV${dist.csv}`);
-  return parts.length ? parts.join(" / ") : "N/A";
+const sourceGroups = computed(() => {
+  if (!data.value) return [];
+  const sources = data.value.data_sources || [];
+  const groups = [
+    { type: "dameng", sources: [] },
+    { type: "excel", sources: [] },
+    { type: "csv", sources: [] },
+  ];
+  for (const src of sources) {
+    const type = (src.type || "").toLowerCase();
+    const group = groups.find((g) => g.type === type);
+    if (group) {
+      group.sources.push(src);
+    }
+  }
+  const result = groups.filter((g) => g.sources.length > 0);
+
+  const manualNodeCount = data.value.summary?.manual_node_count || 0;
+  const manualEdgeCount = data.value.summary?.manual_edge_count || 0;
+  if (manualNodeCount > 0 || manualEdgeCount > 0) {
+    result.push({
+      type: "manual",
+      sources: [
+        {
+          id: "manual-src",
+          name: "人工维护数据",
+          type: "manual",
+          isManual: true,
+          covered_nodes: manualNodeCount,
+          edges_count: manualEdgeCount
+        }
+      ]
+    });
+  }
+
+  return result;
+});
+
+const COLLAPSE_LIMIT = 8;
+const expandedSources = ref(new Set());
+
+function toggleExpand(sourceId) {
+  const next = new Set(expandedSources.value);
+  if (next.has(sourceId)) {
+    next.delete(sourceId);
+  } else {
+    next.add(sourceId);
+  }
+  expandedSources.value = next;
 }
 
-// 数据源类型标签颜色映射
-const sourceTypeStyles = {
-  dameng: { bg: "#f5f3ff", color: "#6d28d9", border: "#c4b5fd", label: "达梦" },
-  excel: { bg: "#d1fae5", color: "#059669", border: "#a7f3d0", label: "Excel" },
-  csv: { bg: "#fffbeb", color: "#d97706", border: "#fcd34d", label: "CSV" },
-};
+// ========== 响应式二部图布局 ==========
+const svgContainer = ref(null);
+const containerWidth = ref(700);
 
-function sourceTypeStyle(type) {
-  const key = (type || "").toLowerCase();
-  return sourceTypeStyles[key] || { bg: "#f1f5f9", color: "#475569", border: "#e2e8f0", label: type };
+let resizeObserver = null;
+onMounted(() => {
+  if (svgContainer.value) {
+    resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const w = entry.contentRect.width;
+        if (w > 0) containerWidth.value = w;
+      }
+    });
+    resizeObserver.observe(svgContainer.value);
+  }
+});
+
+onUnmounted(() => {
+  if (resizeObserver) resizeObserver.disconnect();
+});
+
+// 处理 svgContainer 在数据加载完成后才渲染的情况
+watch(svgContainer, (el) => {
+  if (el && !resizeObserver) {
+    resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const w = entry.contentRect.width;
+        if (w > 0) containerWidth.value = w;
+      }
+    });
+    resizeObserver.observe(el);
+  }
+});
+
+const layoutParams = computed(() => {
+  const W = containerWidth.value;
+  const padding = 16;
+
+  const sourceX = 8;
+  const sourceW = Math.max(100, Math.floor(W * 0.20));
+  const sourceH = 40;
+
+  const gapArea = Math.floor(W * 0.08);
+  const midX = sourceX + sourceW + gapArea / 2;
+
+  const chipAreaStart = sourceX + sourceW + gapArea;
+  const chipAreaWidth = W - chipAreaStart - padding;
+
+  const chipGapX = 6;
+  const chipGapY = 8;
+  const minChipW = 80;
+  const maxChipW = 140;
+  const cols = Math.max(2, Math.floor((chipAreaWidth + chipGapX) / (minChipW + chipGapX)));
+
+  const chipW = Math.min(maxChipW, Math.max(minChipW,
+    Math.floor((chipAreaWidth - (cols - 1) * chipGapX) / cols)
+  ));
+  const chipH = 28;
+
+  const colW = chipW + chipGapX;
+  const rowH = chipH + chipGapY;
+
+  const groupGap = 32;
+
+  const sourceFontSize = Math.max(11, Math.min(13, Math.floor(W / 55)));
+  const chipFontSize = Math.max(10, Math.min(12, Math.floor(W / 65)));
+
+  const nameMaxLen = Math.floor(chipW / (chipFontSize * 0.6));
+
+  return {
+    padding, sourceX, sourceW, sourceH, gapArea, midX,
+    chipAreaStart, chipAreaWidth, chipGapX, chipGapY,
+    minChipW, maxChipW, cols, chipW, chipH, colW, rowH,
+    groupGap, sourceFontSize, chipFontSize, nameMaxLen,
+  };
+});
+
+function shortName(name, maxLen = 11) {
+  if (!name) return "";
+  return name.length > maxLen ? name.slice(0, maxLen - 1) + "…" : name;
 }
 
-// 业务域颜色序列
-const domainColors = [
-  { bar: "#ef4444", bg: "#fef2f2" },
-  { bar: "#f59e0b", bg: "#fffbeb" },
-  { bar: "#10b981", bg: "#d1fae5" },
-  { bar: "#3b82f6", bg: "#eff6ff" },
-  { bar: "#8b5cf6", bg: "#f5f3ff" },
-];
+const svgLayout = computed(() => {
+  if (!data.value?.data_sources?.length) return { groups: [], totalHeight: 0 };
 
-/** 获取业务域对应的颜色 */
-function domainColor(index) {
-  return domainColors[index % domainColors.length];
-}
-
-// 覆盖度相关计算属性
-const coverageItems = computed(() => {
-  if (!data.value?.data_sources) return [];
   const sources = data.value.data_sources;
-  const damengSources = sources.filter(
-    (s) => (s.type || "").toLowerCase() === "dameng"
-  );
-  const fileSources = sources.filter(
-    (s) => (s.type || "").toLowerCase() !== "dameng"
-  );
+  const manualNames = data.value?.summary?.manual_node_names || [];
+  if (!sources.length && !manualNames.length) return { groups: [], totalHeight: 0 };
 
-  return [
-    {
-      label: "达梦数据库",
-      count: damengSources.length,
-      total: sources.length,
-      pct: sources.length ? Math.round((damengSources.length / sources.length) * 100) : 0,
-      color: "#7c3aed",
-      bg: "#f5f3ff",
-    },
-    {
-      label: "文件数据源",
-      count: fileSources.length,
-      total: sources.length,
-      pct: sources.length ? Math.round((fileSources.length / sources.length) * 100) : 0,
-      color: "#10b981",
-      bg: "#d1fae5",
-    },
-  ];
+  const LP = layoutParams.value;
+  let y = LP.padding;
+  const groups = [];
+
+  function buildGroup(id, name, type, names) {
+    const fullCount = names.length;
+    const isExpanded = expandedSources.value.has(id);
+    const showAll = isExpanded || fullCount <= COLLAPSE_LIMIT;
+    const visibleCount = showAll ? fullCount : COLLAPSE_LIMIT;
+    const visibleNames = showAll ? names : names.slice(0, COLLAPSE_LIMIT);
+
+    const rows = fullCount === 0 ? 0 : Math.ceil(visibleCount / LP.cols);
+    let blockH = Math.max(rows * LP.rowH, LP.sourceH + 8);
+    const needsButton = fullCount > COLLAPSE_LIMIT;
+    if (needsButton && !isExpanded) {
+      blockH += 8 + LP.chipH;
+    }
+
+    const sourceY = y + (blockH - LP.sourceH) / 2;
+
+    const chips = [];
+    for (let i = 0; i < visibleCount; i++) {
+      const row = Math.floor(i / LP.cols);
+      const col = i % LP.cols;
+      chips.push({
+        name: visibleNames[i],
+        x: LP.chipAreaStart + col * LP.colW,
+        y: y + row * LP.rowH,
+      });
+    }
+
+    const buttonX = LP.chipAreaStart;
+    const buttonY = rows === 0 ? y + 4 : y + rows * LP.rowH + 6;
+
+    groups.push({
+      id, name, type,
+      sourceX: LP.sourceX, sourceY, sourceW: LP.sourceW, sourceH: LP.sourceH,
+      chips, rows, hasContent: fullCount > 0,
+      needsButton, hiddenCount: fullCount - COLLAPSE_LIMIT, isExpanded,
+      buttonX, buttonY, blockTop: y, blockH,
+      midX: LP.midX, chipX: LP.chipAreaStart,
+    });
+
+    y += blockH + LP.groupGap;
+  }
+
+  for (const src of sources) {
+    buildGroup(src.id, src.name, (src.type || "").toLowerCase(), src.covered_ontology_names || []);
+  }
+
+  if (manualNames.length > 0) {
+    buildGroup("src-manual", "人工维护", "manual", manualNames);
+  }
+
+  return { groups, totalHeight: y - LP.groupGap + LP.padding };
 });
+
+function chipPathY(chip) {
+  return chip.y + layoutParams.value.chipH / 2;
+}
+
+function getCurve(x1, y1, x2, y2) {
+  const dx = Math.abs(x2 - x1);
+  const cx = x1 + dx * 0.4;
+  return `M ${x1} ${y1} C ${cx} ${y1}, ${x2 - dx * 0.4} ${y2}, ${x2} ${y2}`;
+}
 </script>
 
 <template>
   <div class="leader-view">
-    <!-- 加载状态 -->
     <div v-if="loading" class="lv-loading">
       <div class="loading-spinner"></div>
       <span>正在加载宏观概览...</span>
     </div>
 
-    <!-- 错误状态 -->
     <div v-else-if="error" class="lv-error">
+      <div class="lv-error-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
       <p>数据加载失败：{{ error }}</p>
       <button class="btn-retry" @click="loadData">重试</button>
     </div>
 
-    <!-- 正常内容 -->
     <div v-else-if="data" class="lv-content">
-      <!-- 1. 统计卡片行 -->
       <section class="lv-section">
-        <h3 class="lv-section-title">核心指标</h3>
-        <div class="lv-summary-row">
+        <div class="lv-section-header">
+          <span class="section-bar"></span>
+          <span class="section-title">核心指标</span>
+        </div>
+        <div class="lv-summary-grid">
           <div
             v-for="card in summaryCards"
-            :key="card.label"
+            :key="card.key"
             class="lv-summary-card"
-            :style="{
-              borderLeftColor: card.color,
-              background: card.bg,
-            }"
+            :style="{ borderLeftColor: card.barColor }"
           >
-            <div class="sc-icon" :style="{ color: card.color }">
-              {{ card.icon }}
+            <div class="sc-icon-wrap">
+              <svg v-if="card.icon === 'nodes'" width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <circle cx="7" cy="7" r="3.5" :stroke="card.color" stroke-width="1.8"/>
+                <circle cx="17" cy="7" r="3.5" :stroke="card.color" stroke-width="1.8"/>
+                <circle cx="12" cy="18" r="3.5" :stroke="card.color" stroke-width="1.8"/>
+                <line x1="10" y1="8.5" x2="10.5" y2="16" :stroke="card.color" stroke-width="1.2" opacity="0.5"/>
+                <line x1="14" y1="8.5" x2="13.5" y2="16" :stroke="card.color" stroke-width="1.2" opacity="0.5"/>
+              </svg>
+              <svg v-else-if="card.icon === 'inferences'" width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <circle cx="5" cy="12" r="3" :stroke="card.color" stroke-width="1.8"/>
+                <circle cx="19" cy="12" r="3" :stroke="card.color" stroke-width="1.8"/>
+                <path d="M8 12 L16 12" :stroke="card.color" stroke-width="1.6" stroke-dasharray="3 2"/>
+                <path d="M5 12 L5 19 L13 19" :stroke="card.color" stroke-width="1.2" opacity="0.4"/>
+              </svg>
+              <svg v-else-if="card.icon === 'sources'" width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <ellipse cx="12" cy="5" rx="9" ry="3.5" :stroke="card.color" stroke-width="1.8"/>
+                <path d="M3 5 L3 19 A9 3.5 0 0 0 21 19 L21 5" :stroke="card.color" stroke-width="1.8" fill="none"/>
+                <ellipse cx="12" cy="12" rx="9" ry="3.5" :stroke="card.color" stroke-width="1" opacity="0.5"/>
+              </svg>
             </div>
             <div class="sc-body">
               <span class="sc-value">{{ card.value }}</span>
@@ -195,176 +347,230 @@ const coverageItems = computed(() => {
         </div>
       </section>
 
-      <!-- 2. 数据源全景表 -->
       <section class="lv-section">
-        <h3 class="lv-section-title">数据源全景</h3>
-        <div class="lv-table-wrap">
-          <table class="lv-table" v-if="data.data_sources?.length">
-            <thead>
-              <tr>
-                <th>数据源名称</th>
-                <th>类型</th>
-                <th>连接信息</th>
-                <th>包含表</th>
-                <th>支撑业务域</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="ds in data.data_sources" :key="ds.id || ds.name">
-                <td>
-                  <span class="ds-name">{{ ds.name }}</span>
-                </td>
-                <td>
-                  <span
-                    class="ds-type-tag"
-                    :style="{
-                      background: sourceTypeStyle(ds.type).bg,
-                      color: sourceTypeStyle(ds.type).color,
-                      borderColor: sourceTypeStyle(ds.type).border,
-                    }"
-                  >
-                    {{ sourceTypeStyle(ds.type).label }}
-                  </span>
-                </td>
-                <td>
-                  <span class="ds-connection">{{
-                    ds.connection_info || ds.host || "-"
-                  }}</span>
-                </td>
-                <td>
-                  <div class="ds-tables" v-if="ds.tables?.length">
-                    <span
-                      v-for="tbl in ds.tables.slice(0, 3)"
-                      :key="tbl"
-                      class="ds-table-chip"
-                      >{{ tbl }}</span
-                    >
-                    <span
-                      v-if="ds.tables.length > 3"
-                      class="ds-table-more"
-                      >+{{ ds.tables.length - 3 }} 更多</span
-                    >
-                  </div>
-                  <span v-else class="ds-na">-</span>
-                </td>
-                <td>
-                  <div
-                    class="ds-domains"
-                    v-if="data.source_domain_map?.[ds.id]?.length"
-                  >
-                    <span
-                      v-for="(dom, di) in data.source_domain_map[ds.id]"
-                      :key="dom"
-                      class="ds-domain-chip"
-                      :style="{
-                        background: domainColor(di).bg,
-                        color: domainColor(di).bar,
-                      }"
-                      >{{ dom }}</span
-                    >
-                  </div>
-                  <span v-else class="ds-na">-</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div v-else class="lv-empty">
-            <span>暂无数据源信息</span>
-          </div>
+        <div class="lv-section-header">
+          <span class="section-bar"></span>
+          <span class="section-title">数据底座</span>
         </div>
-      </section>
-
-      <!-- 3. 数据源 -> 业务域关系图 -->
-      <section class="lv-section">
-        <h3 class="lv-section-title">数据源与业务域关系</h3>
-        <div
-          class="lv-sd-grid"
-          v-if="data.domains?.length && data.data_sources?.length"
-        >
+        <div v-if="sourceGroups.length" class="lv-source-groups">
           <div
-            v-for="(domain, di) in data.domains"
-            :key="domain.id || domain.name"
-            class="lv-sd-domain-card"
-            :style="{ borderLeftColor: domainColor(di).bar }"
+            v-for="group in sourceGroups"
+            :key="group.type"
+            class="lv-source-group"
           >
-            <div class="sd-domain-header">
-              <span class="sd-domain-name">{{ domain.name }}</span>
+            <div class="lsg-header">
               <span
-                class="sd-domain-badge"
+                class="lsg-type-pill"
                 :style="{
-                  background: domainColor(di).bg,
-                  color: domainColor(di).bar,
+                  background: sourceTypeStyle(group.type).color,
+                  color: '#ffffff',
                 }"
               >
-                {{ domain.concept_count ?? domain.nodes?.length ?? 0 }} 概念
+                {{ sourceTypeStyle(group.type).label }}
               </span>
+              <span class="lsg-count">{{ group.sources.length }} 个数据源</span>
             </div>
-            <div class="sd-sources">
-              <span
-                v-for="sourceId in domain.source_ids || domain.sources || []"
-                :key="sourceId"
-                class="sd-source-link"
+            <div class="lsg-cards">
+              <div
+                v-for="src in group.sources"
+                :key="src.id"
+                class="lsg-card"
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="10"
-                  height="10"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path
-                    d="M5 12h14M12 5l7 7-7 7"
-                  />
-                </svg>
-                {{
-                  data.data_sources.find((ds) => ds.id === sourceId)?.name ||
-                  sourceId
-                }}
-              </span>
-              <span
-                v-if="
-                  !domain.source_ids?.length && !domain.sources?.length
-                "
-                class="sd-source-empty"
-                >暂无关联数据源</span
-              >
+                <div class="lsgc-top">
+                  <span class="lsgc-name">{{ src.name }}</span>
+                  <span
+                    class="lsgc-type-tag"
+                    :style="{
+                      background: sourceTypeStyle(group.type).bg,
+                      color: sourceTypeStyle(group.type).color,
+                      borderColor: sourceTypeStyle(group.type).border,
+                    }"
+                  >{{ sourceTypeStyle(group.type).label }}</span>
+                </div>
+                <div class="lsgc-stats">
+                  <template v-if="src.isManual">
+                    <div class="lsgc-stat">
+                      <span class="lsgc-stat-val">{{ src.covered_nodes ?? 0 }}</span>
+                      <span class="lsgc-stat-label">个本体</span>
+                    </div>
+                    <div class="lsgc-stat-divider"></div>
+                    <div class="lsgc-stat">
+                      <span class="lsgc-stat-val">{{ src.edges_count ?? 0 }}</span>
+                      <span class="lsgc-stat-label">条推理</span>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="lsgc-stat">
+                      <span class="lsgc-stat-val">{{ src.tables?.length ?? 0 }}</span>
+                      <span class="lsgc-stat-label">张表</span>
+                    </div>
+                    <div class="lsgc-stat-divider"></div>
+                    <div class="lsgc-stat">
+                      <span class="lsgc-stat-val">{{ src.covered_nodes ?? 0 }}</span>
+                      <span class="lsgc-stat-label">个本体</span>
+                    </div>
+                  </template>
+                </div>
+                <div v-if="src.tables?.length" class="lsgc-table-chips">
+                  <span
+                    v-for="tbl in src.tables"
+                    :key="tbl"
+                    class="lsgc-chip"
+                  >{{ tbl }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
         <div v-else class="lv-empty">
-          <span>暂无业务域与数据源关联信息</span>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round">
+            <ellipse cx="12" cy="5" rx="9" ry="3"/>
+            <path d="M3 5 L3 19 A9 3 0 0 0 21 19 L21 5"/>
+          </svg>
+          <span>暂无数据源信息</span>
         </div>
       </section>
 
-      <!-- 4. 数据源覆盖度分析 -->
       <section class="lv-section">
-        <h3 class="lv-section-title">数据源覆盖度分析</h3>
-        <div class="lv-coverage">
-          <div
-            v-for="item in coverageItems"
-            :key="item.label"
-            class="lv-coverage-item"
-          >
-            <div class="cov-header">
-              <span class="cov-label">{{ item.label }}</span>
-              <span class="cov-stat">{{ item.pct }}%</span>
-            </div>
-            <div class="cov-bar-wrap">
-              <div
-                class="cov-bar"
-                :style="{
-                  width: item.pct + '%',
-                  background: item.color,
-                }"
-              ></div>
-            </div>
-            <div class="cov-footer">
-              <span
-                >{{ item.count }} / {{ item.total }} 个数据源</span
-              >
-            </div>
+        <div class="lv-section-header">
+          <span class="section-bar"></span>
+          <span class="section-title">数据底座与本体支撑关系</span>
+          <div class="lv-legend-items">
+            <span class="lv-legend-item">
+              <span class="lv-legend-dot" style="background:#7c3aed"></span>达梦
+            </span>
+            <span class="lv-legend-item">
+              <span class="lv-legend-dot" style="background:#059669"></span>Excel
+            </span>
+            <span class="lv-legend-item">
+              <span class="lv-legend-dot" style="background:#ea580c"></span>CSV
+            </span>
+            <span v-if="data.summary.manual_node_names?.length" class="lv-legend-item">
+              <span class="lv-legend-dot" style="background:#64748b"></span>人工维护
+            </span>
           </div>
+        </div>
+        <div
+          v-if="svgLayout.groups.length"
+          class="lv-svg-wrap"
+          ref="svgContainer"
+        >
+          <svg
+            :width="containerWidth - 32"
+            :height="svgLayout.totalHeight"
+            :viewBox="`0 0 ${containerWidth - 32} ${svgLayout.totalHeight}`"
+            class="lv-svg"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <defs>
+              <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="120%">
+                <feDropShadow dx="0" dy="0.5" stdDeviation="1" flood-color="#000" flood-opacity="0.06"/>
+              </filter>
+              <filter id="chip-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#0f172a" flood-opacity="0.05"/>
+              </filter>
+            </defs>
+
+            <g
+              v-for="g in svgLayout.groups"
+              :key="g.id"
+            >
+              <path
+                v-for="chip in g.chips"
+                :key="'p-' + chip.name"
+                :d="getCurve(g.sourceX + g.sourceW, g.sourceY + g.sourceH / 2, chip.x, chipPathY(chip))"
+                fill="none"
+                :stroke="sourceTypeStyle(g.type).color"
+                stroke-opacity="0.35"
+                stroke-width="1.5"
+                class="animated-path"
+              />
+
+              <rect
+                :x="g.sourceX"
+                :y="g.sourceY"
+                :width="g.sourceW"
+                :height="g.sourceH"
+                :rx="8"
+                :fill="sourceTypeStyle(g.type).fill"
+                filter="url(#card-shadow)"
+              />
+              <text
+                :x="g.sourceX + g.sourceW / 2"
+                :y="g.sourceY + g.sourceH / 2 + 1"
+                text-anchor="middle"
+                dominant-baseline="central"
+                fill="#ffffff"
+                :font-size="layoutParams.sourceFontSize"
+                font-weight="700"
+                letter-spacing="0.02em"
+              >{{ shortName(g.name, layoutParams.nameMaxLen) }}</text>
+
+              <g v-for="chip in g.chips" :key="'c-' + chip.name">
+                <rect
+                  :x="chip.x"
+                  :y="chip.y"
+                  :width="layoutParams.chipW"
+                  :height="layoutParams.chipH"
+                  :rx="layoutParams.chipH / 2"
+                  fill="#ffffff"
+                  stroke="#e2e8f0"
+                  stroke-width="1"
+                  filter="url(#chip-shadow)"
+                />
+                <text
+                  :x="chip.x + layoutParams.chipW / 2"
+                  :y="chip.y + layoutParams.chipH / 2 + 1"
+                  text-anchor="middle"
+                  dominant-baseline="central"
+                  fill="#334155"
+                  :font-size="layoutParams.chipFontSize"
+                  font-weight="600"
+                >{{ shortName(chip.name, layoutParams.nameMaxLen) }}</text>
+              </g>
+
+              <g v-if="g.needsButton" class="svg-expand-btn" @click="toggleExpand(g.id)">
+                <rect
+                  :x="g.buttonX"
+                  :y="g.buttonY"
+                  :width="layoutParams.chipW"
+                  :height="layoutParams.chipH"
+                  :rx="layoutParams.chipH / 2"
+                  fill="#f8fafc"
+                  stroke="#cbd5e1"
+                  stroke-width="1"
+                  stroke-dasharray="2 2"
+                />
+                <text
+                  :x="g.buttonX + layoutParams.chipW / 2"
+                  :y="g.buttonY + layoutParams.chipH / 2 + 1"
+                  text-anchor="middle"
+                  dominant-baseline="central"
+                  fill="#64748b"
+                  :font-size="layoutParams.chipFontSize"
+                  font-weight="600"
+                >{{ g.isExpanded ? '收起' : '+' + g.hiddenCount + ' 个' }}</text>
+              </g>
+
+              <text
+                v-if="!g.hasContent"
+                :x="g.chipX"
+                :y="g.sourceY + g.sourceH / 2 + 1"
+                dominant-baseline="central"
+                fill="#94a3b8"
+                :font-size="layoutParams.chipFontSize"
+                font-style="italic"
+              >暂无关联本体</text>
+            </g>
+          </svg>
+        </div>
+        <div v-else class="lv-empty">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="9" y1="21" x2="9" y2="9"/>
+          </svg>
+          <span>暂无数据底座与本体关联信息</span>
         </div>
       </section>
     </div>
@@ -372,17 +578,16 @@ const coverageItems = computed(() => {
 </template>
 
 <style scoped>
-/* ======================== 容器 ======================== */
-
 .leader-view {
   flex: 1;
   overflow-y: auto;
-  padding: 24px 32px;
+  padding: 20px 28px;
   background: #f8fafc;
+  min-width: 0;
 }
 
 .leader-view::-webkit-scrollbar {
-  width: 5px;
+  width: 6px;
 }
 .leader-view::-webkit-scrollbar-track {
   background: transparent;
@@ -391,28 +596,29 @@ const coverageItems = computed(() => {
   background: #e2e8f0;
   border-radius: 3px;
 }
-
-/* ======================== 加载 / 错误 ======================== */
+.leader-view::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
 
 .lv-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  padding: 60px 20px;
+  gap: 16px;
+  padding: 80px 20px;
   color: #64748b;
   font-size: 14px;
   font-weight: 500;
 }
 
 .loading-spinner {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border: 3px solid #e2e8f0;
-  border-top-color: #2563eb;
+  border-top-color: #f97316;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 0.75s linear infinite;
 }
 
 @keyframes spin {
@@ -426,14 +632,24 @@ const coverageItems = computed(() => {
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  padding: 60px 20px;
+  padding: 80px 20px;
   color: #94a3b8;
   font-size: 14px;
   font-weight: 500;
 }
 
+.lv-error p {
+  margin: 0;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.lv-error-icon {
+  margin-bottom: 4px;
+}
+
 .btn-retry {
-  padding: 8px 20px;
+  padding: 8px 24px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   background: #ffffff;
@@ -448,334 +664,313 @@ const coverageItems = computed(() => {
   border-color: #94a3b8;
 }
 
-/* ======================== 内容区 ======================== */
-
 .lv-content {
   display: flex;
   flex-direction: column;
-  gap: 32px;
-  max-width: 1200px;
+  gap: 24px;
+  width: 100%;
 }
-
-/* ======================== 区块 ======================== */
 
 .lv-section {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
-.lv-section-title {
-  margin: 0;
+.lv-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 0;
+}
+
+.section-bar {
+  display: inline-block;
+  width: 4px;
+  height: 20px;
+  background: #f97316;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.section-title {
   font-size: 15px;
   font-weight: 700;
   color: #0f172a;
-  padding-left: 8px;
-  border-left: 3px solid #2563eb;
 }
 
-/* ======================== 统计卡片行 ======================== */
+.lv-legend-items {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+}
 
-.lv-summary-row {
+.lv-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+.lv-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.lv-summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
 
 .lv-summary-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 18px 20px;
+  gap: 16px;
+  padding: 22px 24px;
+  background: #ffffff;
   border-radius: 12px;
-  border: 1px solid transparent;
-  border-left-width: 4px;
-  border-left-style: solid;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f1f5f9;
+  border-left: 3px solid;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .lv-summary-card:hover {
   transform: translateY(-2px);
-  box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.05),
-    0 2px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-.sc-icon {
-  font-size: 28px;
+.sc-icon-wrap {
   flex-shrink: 0;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #f8fafc;
 }
 
 .sc-body {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .sc-value {
-  font-size: 26px;
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 800;
   color: #0f172a;
   font-variant-numeric: tabular-nums;
-  line-height: 1.2;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
 }
 
 .sc-label {
-  font-size: 12.5px;
-  font-weight: 500;
-  color: #64748b;
-}
-
-/* ======================== 数据源表格 ======================== */
-
-.lv-table-wrap {
-  overflow-x: auto;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-.lv-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.lv-table th {
-  text-align: left;
-  padding: 12px 16px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #475569;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
-  white-space: nowrap;
 }
 
-.lv-table td {
-  padding: 14px 16px;
-  border-bottom: 1px solid #f1f5f9;
-  color: #334155;
-  vertical-align: middle;
+.lv-source-groups {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: stretch;
 }
 
-.lv-table tbody tr:last-child td {
-  border-bottom: none;
+.lv-source-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+  min-width: 200px;
 }
 
-.lv-table tbody tr:hover {
-  background: #fafbfc;
+.lsg-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.ds-name {
-  font-weight: 600;
-  color: #0f172a;
-}
-
-.ds-type-tag {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 6px;
+.lsg-type-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 14px;
+  border-radius: 100px;
   font-size: 11.5px;
   font-weight: 700;
-  letter-spacing: 0.02em;
-  border: 1px solid;
+  letter-spacing: 0.03em;
 }
 
-.ds-connection {
-  font-family: "SF Mono", "Cascadia Code", ui-monospace, monospace;
-  font-size: 12px;
-  color: #64748b;
-  word-break: break-all;
-}
-
-.ds-tables {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-items: center;
-}
-
-.ds-table-chip {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: #f1f5f9;
-  font-family: "SF Mono", "Cascadia Code", ui-monospace, monospace;
-  font-size: 11.5px;
-  color: #334155;
+.lsg-count {
+  font-size: 12.5px;
   font-weight: 500;
-}
-
-.ds-table-more {
-  font-size: 11.5px;
   color: #94a3b8;
-  font-weight: 500;
 }
 
-.ds-domains {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.ds-domain-chip {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 11.5px;
-  font-weight: 600;
-}
-
-.ds-na {
-  color: #cbd5e1;
-  font-size: 13px;
-}
-
-/* ======================== 业务域卡片 ======================== */
-
-.lv-sd-grid {
+.lsg-cards {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex: 1;
 }
 
-.lv-sd-domain-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-left-width: 4px;
-  border-left-style: solid;
-  border-radius: 10px;
-  padding: 16px 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  transition: box-shadow 0.2s ease;
-}
-
-.lv-sd-domain-card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.sd-domain-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.sd-domain-name {
-  font-size: 15px;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.sd-domain-badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 6px;
-  font-size: 11.5px;
-  font-weight: 700;
-}
-
-.sd-sources {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-
-.sd-source-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  font-size: 12px;
-  font-weight: 500;
-  color: #475569;
-  transition: border-color 0.15s ease;
-}
-
-.sd-source-link:hover {
-  border-color: #cbd5e1;
-}
-
-.sd-source-empty {
-  font-size: 12px;
-  color: #cbd5e1;
-  font-style: italic;
-}
-
-/* ======================== 覆盖度分析 ======================== */
-
-.lv-coverage {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+.lsg-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-.lv-coverage-item {
+  padding: 18px 20px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 14px;
+  flex: 1;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.cov-header {
+.lsg-card:hover {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  border-color: #cbd5e1;
+}
+
+.lsgc-top {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
-.cov-label {
+.lsgc-name {
   font-size: 14px;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-.cov-stat {
-  font-size: 20px;
   font-weight: 700;
   color: #0f172a;
-  font-variant-numeric: tabular-nums;
-}
-
-.cov-bar-wrap {
-  height: 10px;
-  background: #f1f5f9;
-  border-radius: 5px;
+  font-family: "SF Mono", "Cascadia Code", ui-monospace, monospace;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.cov-bar {
-  height: 100%;
-  border-radius: 5px;
-  transition: width 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
+.lsgc-type-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-size: 10.5px;
+  font-weight: 700;
+  border: 1px solid;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
 }
 
-.cov-footer {
-  font-size: 12px;
-  color: #94a3b8;
+.lsgc-stats {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.lsgc-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.lsgc-stat-val {
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.lsgc-stat-label {
+  font-size: 11px;
   font-weight: 500;
+  color: #94a3b8;
 }
 
-/* ======================== 空状态 ======================== */
+.lsgc-stat-divider {
+  width: 1px;
+  height: 14px;
+  background: #e2e8f0;
+  flex-shrink: 0;
+}
+
+.lsgc-table-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.lsgc-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 5px;
+  background: #f1f5f9;
+  font-family: "SF Mono", "Cascadia Code", ui-monospace, monospace;
+  font-size: 11px;
+  color: #475569;
+  font-weight: 500;
+  border: 1px solid #e8ecf1;
+  line-height: 1.4;
+}
+
+.lv-svg-wrap {
+  border: 1px solid #e8ecf1;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  overflow-x: hidden;
+  padding: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.lv-svg-wrap::-webkit-scrollbar {
+  height: 6px;
+}
+.lv-svg-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+.lv-svg-wrap::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 3px;
+}
+
+.lv-svg {
+  display: block;
+  /* width and height are defined inline to prevent scaling up */
+}
+
+.svg-expand-btn {
+  cursor: pointer;
+}
+
+.svg-expand-btn:hover rect {
+  fill: #e2e8f0;
+  stroke: #94a3b8;
+}
+
+.svg-expand-btn:hover text {
+  fill: #334155;
+}
 
 .lv-empty {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
+  gap: 12px;
+  padding: 48px 20px;
   background: #ffffff;
   border: 1.5px dashed #e2e8f0;
   border-radius: 12px;
@@ -784,14 +979,46 @@ const coverageItems = computed(() => {
   font-weight: 500;
 }
 
-/* ======================== 响应式 ======================== */
+.lv-manual-hint {
+  font-size: 12px;
+  color: #94a3b8;
+  padding-top: 10px;
+  margin-top: 2px;
+  border-top: 1px solid #e8ecf1;
+}
 
-@media (max-width: 900px) {
+@media (max-width: 960px) {
+  .lv-summary-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+  }
+
+  .lv-summary-card {
+    padding: 16px 18px;
+    gap: 12px;
+  }
+
+  .sc-value {
+    font-size: 24px;
+  }
+
+  .lv-legend-items {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
   .leader-view {
     padding: 16px;
   }
-  .lv-summary-row {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+
+  .lv-summary-grid {
+    grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 640px) {
+  /* removed .lsg-cards specific grid override since it's flex column now */
+}
+
 </style>
