@@ -36,8 +36,8 @@ class FileParserConnector(DataSourceConnector):
             raise ValueError(f"不支持的文件格式: {self._file_type}")
 
     async def disconnect(self):
-        self._tables.clear()
-        self._columns.clear()
+        self._tables = []
+        self._columns = {}
         self._file_path = ""
         self._file_type = ""
 
@@ -84,7 +84,18 @@ class FileParserConnector(DataSourceConnector):
             if not header or all(h is None or str(h).strip() == "" for h in header):
                 continue
 
-            header = [str(h).strip() if h is not None else f"Column{i}" for i, h in enumerate(header)]
+            raw_header = [str(h).strip() if h is not None else f"Column{i}" for i, h in enumerate(header)]
+            header = []
+            seen = set()
+            for h in raw_header:
+                if h in seen:
+                    count = 1
+                    while f"{h}_{count}" in seen:
+                        count += 1
+                    h = f"{h}_{count}"
+                seen.add(h)
+                header.append(h)
+
             col_types = []
             row_count = 0
             for row in rows_iter:
@@ -117,7 +128,17 @@ class FileParserConnector(DataSourceConnector):
             ws = wb.sheet_by_index(sheet_idx)
             if ws.nrows < 1:
                 continue
-            header = [str(ws.cell_value(0, c)).strip() for c in range(ws.ncols)]
+            raw_header = [str(ws.cell_value(0, c)).strip() for c in range(ws.ncols)]
+            header = []
+            seen = set()
+            for h in raw_header:
+                if h in seen:
+                    count = 1
+                    while f"{h}_{count}" in seen:
+                        count += 1
+                    h = f"{h}_{count}"
+                seen.add(h)
+                header.append(h)
             preview_rows = min(ws.nrows, 21)
             col_types = []
             for r in range(1, preview_rows):
@@ -155,7 +176,17 @@ class FileParserConnector(DataSourceConnector):
         except StopIteration:
             wb.close()
             return []
-        header = [str(h).strip() if h is not None else f"Col{i}" for i, h in enumerate(header)]
+        raw_header = [str(h).strip() if h is not None else f"Col{i}" for i, h in enumerate(header)]
+        header = []
+        seen = set()
+        for h in raw_header:
+            if h in seen:
+                count = 1
+                while f"{h}_{count}" in seen:
+                    count += 1
+                h = f"{h}_{count}"
+            seen.add(h)
+            header.append(h)
         result = []
         for row in rows_iter:
             result.append({header[i]: row[i] if i < len(row) else None for i in range(len(header))})
@@ -190,9 +221,20 @@ class FileParserConnector(DataSourceConnector):
                 header = next(reader)
             except StopIteration:
                 return True
-            header = [h.strip() for h in header if h.strip()]
-            if not header:
+            raw_header = [h.strip() for h in header if h.strip()]
+            if not raw_header:
                 return True
+
+            header = []
+            seen = set()
+            for h in raw_header:
+                if h in seen:
+                    count = 1
+                    while f"{h}_{count}" in seen:
+                        count += 1
+                    h = f"{h}_{count}"
+                seen.add(h)
+                header.append(h)
 
             col_types = []
             row_count = 0
@@ -240,12 +282,29 @@ class FileParserConnector(DataSourceConnector):
                 dialect = csv.Sniffer().sniff(sample)
             except csv.Error:
                 dialect = "excel"
-            reader = csv.DictReader(f, dialect=dialect)
+            reader = csv.reader(f, dialect=dialect)
+            try:
+                header = next(reader)
+            except StopIteration:
+                return []
+            
+            raw_header = [str(h).strip() if h is not None else f"Col{i}" for i, h in enumerate(header)]
+            header = []
+            seen = set()
+            for h in raw_header:
+                if h in seen:
+                    count = 1
+                    while f"{h}_{count}" in seen:
+                        count += 1
+                    h = f"{h}_{count}"
+                seen.add(h)
+                header.append(h)
+            
             rows = []
             for i, row in enumerate(reader):
                 if i >= limit:
                     break
-                rows.append(dict(row))
+                rows.append({header[j]: row[j] if j < len(row) else None for j in range(len(header))})
             return rows
 
     def _infer_csv_type(self, val: str) -> str:

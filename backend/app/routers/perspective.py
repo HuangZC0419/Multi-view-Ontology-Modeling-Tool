@@ -27,7 +27,60 @@ def _load_perspective_config(project_id: str) -> dict:
     config_path = PROJECTS_DIR / f"{project_id}_perspective.json"
     if config_path.exists():
         return json.loads(config_path.read_text(encoding="utf-8"))
-    return {"domains": [], "mappings": [], "sources": []}
+    
+    # 如果不存在，则根据图数据自动生成默认映射，以保证视角联动
+    try:
+        graph = _load_project(project_id)
+        nodes = graph.get("nodes", [])
+        if not nodes:
+            return {"domains": [], "mappings": [], "sources": []}
+            
+        domain_id = f"domain-default"
+        domains = [{
+            "id": domain_id,
+            "name": "默认业务域",
+            "ontology_node_ids": [n["id"] for n in nodes],
+            "databases": ["系统默认数据源"]
+        }]
+        
+        sources = [{
+            "id": "src-default",
+            "name": "系统默认数据源",
+            "type": "manual",
+            "conn_info": {},
+            "tables": ["默认映射表"],
+            "covered_nodes": len(nodes),
+            "covered_domains": [domain_id],
+            "total_fields": sum(len(n.get("attributes", [])) for n in nodes)
+        }]
+        
+        mappings = []
+        for n in nodes:
+            field_mappings = []
+            for attr in n.get("attributes", []):
+                field_mappings.append({
+                    "field_name": attr.get("key", ""),
+                    "attribute_key": attr.get("key", ""),
+                    "data_type": "VARCHAR"
+                })
+            mappings.append({
+                "ontology_node_id": n["id"],
+                "source_type": "manual",
+                "source_name": "系统默认数据源",
+                "table_name": "默认映射表",
+                "field_mappings": field_mappings,
+                "node_name": n.get("name", ""),
+                "domain_id": domain_id
+            })
+            
+        return {
+            "project_name": project_id,
+            "domains": domains,
+            "sources": sources,
+            "mappings": mappings
+        }
+    except Exception:
+        return {"domains": [], "mappings": [], "sources": []}
 
 
 def _save_perspective_config(project_id: str, config: dict):

@@ -31,18 +31,21 @@ const editingValue = ref("");
 const isImporting = ref(false);
 const importError = ref("");
 
-// 初始化: 默认只展开前几个表，勾选全部
-function initExpanded() {
+// 初始化: 默认只展开前几个表，并且全选所有表和列
+function initSelection() {
   tablesList.value.forEach((t, idx) => {
     const name = typeof t === "string" ? t : t.name;
     expandedTables[name] = idx < 3; // 默认展开前3个表
+    selection.tables.push(name);
+    
+    const cols = columnsMap.value[name] || [];
+    selection.columns[name] = cols.map(c => (typeof c === "string" ? c : c.name));
   });
 }
 
-// 使用 watchEffect 或 onMounted 不行，因为 props 已经就绪。直接用 computed 不行。
 // 使用一个简单的标记确保只初始化一次
 if (tablesList.value.length > 0) {
-  initExpanded();
+  initSelection();
 }
 
 // ---------- 表选项 ----------
@@ -203,7 +206,7 @@ async function confirmImport() {
     }
 
     const data = await resp.json();
-    emit("import-done", data.nodes || []);
+    emit("import-done", data.nodes || [], data.edges || [], data.inference_rules || [], data.mutex_rules || []);
   } catch (err) {
     importError.value = err.message || "导入请求失败";
   } finally {
@@ -241,7 +244,7 @@ const selectedColumnCount = computed(() => {
         </div>
         <div class="sp-header-right">
           <span class="sp-stat">
-            已选 <strong>{{ selectedTableCount }}</strong> 表 / <strong>{{ selectedColumnCount }}</strong> 列
+            共 <strong>{{ selectedTableCount }}</strong> 表 / <strong>{{ selectedColumnCount }}</strong> 列
           </span>
         </div>
       </div>
@@ -265,15 +268,6 @@ const selectedColumnCount = computed(() => {
           >
             <!-- 表行 -->
             <div class="sp-table-row">
-              <label class="sp-check-label">
-                <input
-                  type="checkbox"
-                  :checked="isTableChecked(getTableName(table))"
-                  :indeterminate.prop="isTableIndeterminate(getTableName(table))"
-                  @change="toggleTable(getTableName(table))"
-                />
-              </label>
-
               <!-- 展开折叠 -->
               <button
                 class="sp-expand-btn"
@@ -340,17 +334,8 @@ const selectedColumnCount = computed(() => {
                 v-for="(col, cIdx) in (columnsMap[getTableName(table)] || [])"
                 :key="getColName(col)"
                 class="sp-column-row"
-                :class="{ selected: isColumnChecked(getTableName(table), getColName(col)) }"
               >
                 <div class="sp-col-indent">
-                  <label class="sp-check-label">
-                    <input
-                      type="checkbox"
-                      :checked="isColumnChecked(getTableName(table), getColName(col))"
-                      @change="toggleColumn(getTableName(table), getColName(col))"
-                    />
-                  </label>
-
                   <!-- 列名可编辑 -->
                   <div class="sp-column-info" @dblclick="startEdit(getTableName(table), getColName(col))">
                     <template v-if="editingCell && editingCell.table === getTableName(table) && editingCell.column === getColName(col)">

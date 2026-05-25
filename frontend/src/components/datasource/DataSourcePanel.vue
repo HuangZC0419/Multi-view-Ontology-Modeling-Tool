@@ -16,8 +16,8 @@ function onPreviewReady(data) {
   showFileDialog.value = false;
 }
 
-function onImportDone(nodes) {
-  emit("import-nodes", nodes);
+function onImportDone(nodes, edges, inf_rules, mut_rules) {
+  emit("import-nodes", nodes, edges, inf_rules, mut_rules);
   previewData.value = null;
 }
 

@@ -9,7 +9,7 @@ from fastapi import APIRouter, File, HTTPException, UploadFile
 from app.models import ImportSelection
 from app.connectors.dameng import SimDamengConnector, DamengConnector
 from app.connectors.file_parser import FileParserConnector
-from app.services.ontology_extract import extract_ontology_nodes
+from app.services.ontology_extract import extract_ontology_nodes, extract_ontology_from_data
 
 router = APIRouter(prefix="/api/datasource")
 
@@ -161,21 +161,34 @@ async def import_ontology(selection: ImportSelection):
     """提交用户勾选，生成本体节点"""
     source_id = selection.source_id
     nodes = []
+    edges = []
+    inf_rules = []
+    mut_rules = []
+
+    # 检查是否为特殊的本体关系表模板
+    is_template = "实体关系" in selection.tables or "实体属性" in selection.tables
 
     if source_id in _sessions:
         # 数据库来源
         connector, _ = _sessions[source_id]
-        tables = await connector.get_tables()
-        columns_map = {}
-        for t in tables:
-            if t.name in selection.tables:
-                cols = await connector.get_columns(t.name)
-                columns_map[t.name] = cols
-        nodes = extract_ontology_nodes(
-            tables=tables,
-            columns_map=columns_map,
-            selection=selection
-        )
+        if is_template:
+            relations_data = await connector.preview_data("实体关系", "", 10000) if "实体关系" in selection.tables else []
+            attributes_data = await connector.preview_data("实体属性", "", 10000) if "实体属性" in selection.tables else []
+            inference_data = await connector.preview_data("推理规则", "", 10000) if "推理规则" in selection.tables else []
+            mutex_data = await connector.preview_data("互斥规则", "", 10000) if "互斥规则" in selection.tables else []
+            nodes, edges, inf_rules, mut_rules = extract_ontology_from_data(relations_data, attributes_data, inference_data, mutex_data)
+        else:
+            tables = await connector.get_tables()
+            columns_map = {}
+            for t in tables:
+                if t.name in selection.tables:
+                    cols = await connector.get_columns(t.name)
+                    columns_map[t.name] = cols
+            nodes = extract_ontology_nodes(
+                tables=tables,
+                columns_map=columns_map,
+                selection=selection
+            )
     else:
         # 文件来源
         _ensure_upload_dir()
@@ -184,18 +197,31 @@ async def import_ontology(selection: ImportSelection):
             if path.exists():
                 parser = FileParserConnector()
                 await parser.connect({"file_path": str(path), "file_type": ext})
-                tables = await parser.get_tables()
-                columns_map = {}
-                for t in tables:
-                    if t.name in selection.tables:
-                        cols = await parser.get_columns(t.name)
-                        columns_map[t.name] = cols
+                if is_template:
+                    relations_data = await parser.preview_data("实体关系", limit=10000) if "实体关系" in selection.tables else []
+                    attributes_data = await parser.preview_data("实体属性", limit=10000) if "实体属性" in selection.tables else []
+                    inference_data = await parser.preview_data("推理规则", limit=10000) if "推理规则" in selection.tables else []
+                    mutex_data = await parser.preview_data("互斥规则", limit=10000) if "互斥规则" in selection.tables else []
+                    nodes, edges, inf_rules, mut_rules = extract_ontology_from_data(relations_data, attributes_data, inference_data, mutex_data)
+                else:
+                    tables = await parser.get_tables()
+                    columns_map = {}
+                    for t in tables:
+                        if t.name in selection.tables:
+                            cols = await parser.get_columns(t.name)
+                            columns_map[t.name] = cols
+                    nodes = extract_ontology_nodes(
+                        tables=tables,
+                        columns_map=columns_map,
+                        selection=selection
+                    )
                 await parser.disconnect()
-                nodes = extract_ontology_nodes(
-                    tables=tables,
-                    columns_map=columns_map,
-                    selection=selection
-                )
                 break
 
-    return {"nodes": nodes, "count": len(nodes)}
+    return {
+        "nodes": nodes,
+        "edges": edges,
+        "inference_rules": inf_rules,
+        "mutex_rules": mut_rules,
+        "count": len(nodes)
+    }

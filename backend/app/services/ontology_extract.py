@@ -3,7 +3,102 @@
 from __future__ import annotations
 
 import uuid
+import random
 from app.models import TableInfo, ColumnInfo, ImportSelection
+
+def extract_ontology_from_data(
+    relations_data: list[dict],
+    attributes_data: list[dict],
+    inference_data: list[dict] = None,
+    mutex_data: list[dict] = None
+) -> tuple[list[dict], list[dict], list[dict], list[dict]]:
+    """
+    从数据行中直接提取本体节点和关系。
+    relations_data: [{'头实体': 'A', '关系': 'B', '关系权重': 0.5, '尾实体': 'C'}, ...]
+    attributes_data: [{'实体名称': 'A', '属性名': 'attr1'}, ...]
+    inference_data: [{'关系1': 'A', '关系2': 'B', '推导关系': 'C'}, ...]
+    mutex_data: [{'关系1': 'A', '关系2': 'B'}, ...]
+    """
+    if inference_data is None:
+        inference_data = []
+    if mutex_data is None:
+        mutex_data = []
+        
+    nodes_map = {}
+    edges = []
+    inference_rules = []
+    mutex_rules = []
+    
+    # 1. 收集所有唯一的实体
+    entities = set()
+    for row in relations_data:
+        if row.get('头实体'): entities.add(row['头实体'])
+        if row.get('尾实体'): entities.add(row['尾实体'])
+    for row in attributes_data:
+        if row.get('实体名称'): entities.add(row['实体名称'])
+        
+    # 2. 生成节点
+    for i, name in enumerate(entities):
+        node_id = str(uuid.uuid4())
+        nodes_map[name] = {
+            "id": node_id,
+            "name": name,
+            "x": 100 + (i % 4) * 250 + random.randint(-20, 20),
+            "y": 100 + (i // 4) * 150 + random.randint(-20, 20),
+            "parent_id": None,
+            "attributes": []
+        }
+        
+    # 3. 填充属性
+    for row in attributes_data:
+        name = row.get('实体名称')
+        if name in nodes_map and row.get('属性名'):
+            nodes_map[name]['attributes'].append({
+                "key": row['属性名'],
+                "value": ""
+            })
+            
+    # 4. 生成边
+    for row in relations_data:
+        src_name = row.get('头实体')
+        tgt_name = row.get('尾实体')
+        if src_name in nodes_map and tgt_name in nodes_map:
+            edge_id = str(uuid.uuid4())
+            try:
+                weight = float(row.get('关系权重', 1.0))
+            except (ValueError, TypeError):
+                weight = 1.0
+                
+            edges.append({
+                "id": edge_id,
+                "source": nodes_map[src_name]["id"],
+                "target": nodes_map[tgt_name]["id"],
+                "relation": row.get('关系', ''),
+                "kind": "relation",
+                "characteristics": [],
+                "weight": weight
+            })
+
+    # 5. 生成推理规则
+    for row in inference_data:
+        if row.get('关系1') and row.get('关系2') and row.get('推导关系'):
+            inference_rules.append({
+                "id": str(uuid.uuid4()),
+                "rel1": row['关系1'],
+                "rel2": row['关系2'],
+                "inferred_rel": row['推导关系']
+            })
+
+    # 6. 生成互斥规则
+    for row in mutex_data:
+        if row.get('关系1') and row.get('关系2'):
+            mutex_rules.append({
+                "id": str(uuid.uuid4()),
+                "rel1": row['关系1'],
+                "rel2": row['关系2']
+            })
+            
+    return list(nodes_map.values()), edges, inference_rules, mutex_rules
 
 
 def extract_ontology_nodes(

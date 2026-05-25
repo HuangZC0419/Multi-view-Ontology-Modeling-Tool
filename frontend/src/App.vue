@@ -1095,9 +1095,18 @@ function onStats(stats) {
   perspectiveStats.value = stats;
 }
 
-function onImportNodes(importedNodes) {
+function onImportNodes(importedNodes, importedEdges, importedInfRules, importedMutRules) {
   if (importedNodes && importedNodes.length > 0) {
     nodes.value = [...nodes.value, ...importedNodes];
+    if (importedEdges && importedEdges.length > 0) {
+      edges.value = [...edges.value, ...importedEdges];
+    }
+    if (importedInfRules && importedInfRules.length > 0) {
+      inferenceRules.value = [...inferenceRules.value, ...importedInfRules];
+    }
+    if (importedMutRules && importedMutRules.length > 0) {
+      mutexRules.value = [...mutexRules.value, ...importedMutRules];
+    }
     syncGraph(currentProjectId.value);
   }
 }
@@ -1189,13 +1198,13 @@ onUnmounted(() => {
                 <span v-else class="ps-item-dot" style="width:6px;flex-shrink:0"></span>
                 <span class="ps-item-name" v-if="renamingProjectId !== proj.id">{{ proj.name }}</span>
                 <input v-else class="ps-rename-input" v-model="renameValue" @keyup.enter="finishRename(proj.id)" @keyup.esc="renamingProjectId = null" @blur="finishRename(proj.id)" @click.stop />
-                <div class="ps-item-actions" v-if="renamingProjectId !== proj.id">
+                <div class="ps-item-actions" v-if="renamingProjectId !== proj.id && isManager">
                   <button @click.stop="startRename(proj.id)" title="重命名"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
                   <button @click.stop="deleteProject(proj.id)" title="删除"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
                 </div>
               </div>
             </div>
-            <div class="ps-footer">
+            <div class="ps-footer" v-if="isManager">
               <button class="ps-new-btn" @click="createProject(); projectMenuOpen = false">+ 新建项目</button>
             </div>
           </div>
@@ -1918,8 +1927,7 @@ onUnmounted(() => {
             </div>
             <div class="attr-list">
               <div v-for="(attr, idx) in selectedNode.attributes" :key="idx" class="attr-item">
-                <input type="text" v-model="attr.key" @change="updateAttribute" placeholder="键" :disabled="!isManager" />
-                <input type="text" v-model="attr.value" @change="updateAttribute" placeholder="值" :disabled="!isManager" />
+                <input type="text" v-model="attr.key" @change="updateAttribute" placeholder="属性名" :disabled="!isManager" />
                 <button v-if="isManager" class="remove-btn" @click="removeAttribute(idx)">×</button>
               </div>
               <div v-if="!selectedNode.attributes?.length" class="empty-tip">暂无属性</div>

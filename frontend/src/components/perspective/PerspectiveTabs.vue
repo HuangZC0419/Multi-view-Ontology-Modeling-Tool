@@ -17,12 +17,9 @@ watch(
   }
 );
 
-// 领导视角和工程师视角仅 machining-demo 项目可用
-const showPerspectiveTabs = computed(() => props.projectId === "machining-demo");
-
 // 简化的标签定义：Heroicons 风格 SVG 图标，纯文字无 emoji
 const tabs = computed(() => {
-  const all = [
+  return [
     {
       key: "leader",
       label: "概览",
@@ -36,21 +33,6 @@ const tabs = computed(() => {
       label: "本体推理",
     },
   ];
-
-  // 非 machining-demo 项目只显示"本体推理"
-  if (!showPerspectiveTabs.value) {
-    return all.filter((t) => t.key === "process");
-  }
-  return all;
-});
-
-// 如果当前项目不支持概览/数据映射，且当前激活的 Tab 恰好是不可用的，则自动切回 process
-watch(showPerspectiveTabs, (available) => {
-  if (!available && (activeTab.value === "leader" || activeTab.value === "engineer")) {
-    activeTab.value = "process";
-    emit("update:modelValue", "process");
-    emit("change", "process");
-  }
 });
 
 function switchTab(key) {
