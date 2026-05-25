@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref, nextTick } from "vue";
+import { computed, onMounted, onUnmounted, ref, nextTick, watch } from "vue";
 import PerspectiveTabs from "./components/perspective/PerspectiveTabs.vue";
 import LeaderView from "./components/perspective/LeaderView.vue";
 import EngineerView from "./components/perspective/EngineerView.vue";
@@ -34,6 +34,9 @@ const currentProjectId = ref(null);
 const projectMenuOpen = ref(false);
 const renamingProjectId = ref(null);
 const renameValue = ref('');
+
+const activeWorkbenchTab = ref("project");
+const relationCreateMode = ref("canvas");
 
 const draggingNodeId = ref(null);
 const dragOffset = ref({ x: 0, y: 0 });
@@ -128,12 +131,11 @@ const contextMenu = ref({
 // 节点折叠状态 (记录被折叠的节点 ID)
 const collapsedNodeIds = ref(new Set());
 
-// 侧边栏折叠面板状态
-const activeAccordion = ref("causal");
-
-function toggleAccordion(key) {
-  activeAccordion.value = activeAccordion.value === key ? "" : key;
-}
+watch(relationCreateMode, (val) => {
+  try {
+    localStorage.setItem("benti_relation_create_mode", val);
+  } catch {}
+});
 
 // ========================
 // 弹窗逻辑
@@ -203,6 +205,11 @@ function closePrompt() {
 const rulesDialogVisible = ref(false);
 const activeTab = ref('mutex'); // 'mutex' | 'inference'
 
+const relationDialogVisible = ref(false);
+const relationDraft = ref({ sourceId: "", targetId: "", relation: "", weight: 0.65 });
+const sourceQuery = ref("");
+const targetQuery = ref("");
+
 // 贝叶斯分析
 const bayesianDialogVisible = ref(false);
 const bayesianTab = ref('upstream'); // 'upstream' | 'downstream' | 'overview'
@@ -232,6 +239,16 @@ const highlightEnabled = ref(false);
 const newMutex = ref({ rel1: '', rel2: '' });
 const newInference = ref({ rel1: '', rel2: '', inferred_rel: '' });
 const uniqueRelations = computed(() => Array.from(new Set(edges.value.map(e => e.relation))).filter(Boolean));
+const filteredSourceNodes = computed(() => {
+  const q = sourceQuery.value.trim().toLowerCase();
+  if (!q) return nodes.value.slice(0, 20);
+  return nodes.value.filter(n => (n.name || '').toLowerCase().includes(q)).slice(0, 20);
+});
+const filteredTargetNodes = computed(() => {
+  const q = targetQuery.value.trim().toLowerCase();
+  if (!q) return nodes.value.slice(0, 20);
+  return nodes.value.filter(n => (n.name || '').toLowerCase().includes(q)).slice(0, 20);
+});
 const maxIncoming = computed(() => {
   if (!overviewResult.value?.vulnerability_ranking?.length) return 1;
   return Math.max(...overviewResult.value.vulnerability_ranking.map(v => v.incoming_links), 1);
@@ -543,6 +560,7 @@ async function createProject() {
     await loadProjects();
     projects.value = projects.value.filter(p => p.id !== proj.id).concat([proj]);
     await switchProject(proj.id);
+    activeWorkbenchTab.value = "import";
     statusMessage.value = "项目已新建";
   } catch (error) {
     statusMessage.value = `新建项目失败：${error.message}`;
@@ -693,10 +711,22 @@ async function addOntology(x = null, y = null) {
   if (!name) return;
 
   try {
+    let px = x;
+    let py = y;
+    if (px === null || py === null) {
+      if (canvasRef.value) {
+        const rect = canvasRef.value.getBoundingClientRect();
+        px = (rect.width / 2 - viewOffset.value.x) / zoom.value;
+        py = (rect.height / 2 - viewOffset.value.y) / zoom.value;
+      } else {
+        px = (120 - viewOffset.value.x) / zoom.value;
+        py = (120 - viewOffset.value.y) / zoom.value;
+      }
+    }
     const node = await createNode({
       name,
-      x: x !== null ? x : (120 + Math.random() * 220 - viewOffset.value.x) / zoom.value,
-      y: y !== null ? y : (120 + Math.random() * 220 - viewOffset.value.y) / zoom.value
+      x: px,
+      y: py
     });
     selectedNodeId.value = node.id;
     statusMessage.value = "已新增本体";
@@ -763,6 +793,67 @@ function cancelConnectMode() {
   connectSourceId.value = null;
 }
 
+function beginCanvasPickRelation() {
+  connectMode.value = true;
+  connectSourceId.value = null;
+  currentPerspective.value = "process";
+  statusMessage.value = "连线：请先点击源本体";
+}
+
+function openRelationDialog() {
+  relationDraft.value = { sourceId: "", targetId: "", relation: "", weight: 0.65 };
+  sourceQuery.value = "";
+  targetQuery.value = "";
+  relationDialogVisible.value = true;
+}
+
+function closeRelationDialog() {
+  relationDialogVisible.value = false;
+}
+
+function selectRelationSource(id) {
+  relationDraft.value = { ...relationDraft.value, sourceId: id };
+}
+
+function selectRelationTarget(id) {
+  relationDraft.value = { ...relationDraft.value, targetId: id };
+}
+
+async function confirmRelationDialog() {
+  const sourceId = relationDraft.value.sourceId;
+  const targetId = relationDraft.value.targetId;
+  const relation = (relationDraft.value.relation || "").trim();
+  const weight = Number(relationDraft.value.weight);
+
+  if (!sourceId || !targetId) {
+    statusMessage.value = "请选择源节点和目标节点";
+    return;
+  }
+  if (sourceId === targetId) {
+    statusMessage.value = "源节点和目标节点不能相同";
+    return;
+  }
+  if (!relation) {
+    statusMessage.value = "请输入关系名称";
+    return;
+  }
+
+  try {
+    await createEdge({
+      source: sourceId,
+      target: targetId,
+      relation,
+      kind: "relation",
+      weight: Number.isFinite(weight) ? Math.max(0, Math.min(1, weight)) : 0.65
+    });
+    statusMessage.value = "已创建本体关系";
+    closeRelationDialog();
+    currentPerspective.value = "process";
+  } catch (error) {
+    statusMessage.value = `创建关系失败：${error.message}`;
+  }
+}
+
 async function onClickNode(nodeId) {
   selectedNodeId.value = nodeId;
   selectedEdgeId.value = null;
@@ -771,7 +862,7 @@ async function onClickNode(nodeId) {
 
   if (!connectSourceId.value) {
     connectSourceId.value = nodeId;
-    statusMessage.value = "已设置起始本体，请选择目标本体";
+    statusMessage.value = "已选择源本体，请点击目标本体";
     return;
   }
 
@@ -811,7 +902,7 @@ function startDrag(event, node) {
 function startPanning(event) {
   if (event.button !== 0) return; // 仅左键平移
   // 弹窗或右键菜单打开时，不启动平移
-  if (promptState.value.visible || confirmState.value.visible || contextMenu.value.visible || rulesDialogVisible.value || bayesianDialogVisible.value || weightDialogVisible.value || projectMenuOpen.value) return;
+  if (promptState.value.visible || confirmState.value.visible || contextMenu.value.visible || relationDialogVisible.value || rulesDialogVisible.value || bayesianDialogVisible.value || weightDialogVisible.value || projectMenuOpen.value) return;
   isPanning.value = true;
   panStart.value = {
     x: event.clientX - viewOffset.value.x,
@@ -892,6 +983,10 @@ function openHelp() {
 
 function handleGlobalKeyDown(e) {
   if (e.key === "Escape") {
+    if (relationDialogVisible.value) {
+      closeRelationDialog();
+      return;
+    }
     if (connectMode.value) {
       cancelConnectMode();
       statusMessage.value = "已取消连线模式";
@@ -1064,6 +1159,8 @@ function onImportNodes(importedNodes, importedEdges, importedInfRules, importedM
       mutexRules.value = [...mutexRules.value, ...importedMutRules];
     }
     syncGraph(currentProjectId.value);
+    currentPerspective.value = "process";
+    statusMessage.value = "已导入数据";
   }
 }
 
@@ -1107,6 +1204,13 @@ onMounted(() => {
     }
   }
 
+  try {
+    const savedMode = localStorage.getItem("benti_relation_create_mode");
+    if (savedMode === "canvas" || savedMode === "dialog") {
+      relationCreateMode.value = savedMode;
+    }
+  } catch {}
+
   loadProjects();
   window.addEventListener("pointermove", onPointerMove);
   window.addEventListener("pointerup", onPointerUp);
@@ -1141,86 +1245,88 @@ onUnmounted(() => {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
         </div>
         <h2>本体建模系统</h2>
-        <div class="project-selector" @click.stop>
-          <button class="ps-trigger" @click="projectMenuOpen = !projectMenuOpen">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-            <span class="ps-current-name">{{ projects.find(p => p.id === currentProjectId)?.name || '选择项目' }}</span>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-          <div class="ps-dropdown" v-if="projectMenuOpen">
-            <div class="ps-list">
-              <div v-for="proj in projects" :key="proj.id" class="ps-item" :class="{ active: currentProjectId === proj.id }" @click="switchProject(proj.id); projectMenuOpen = false">
-                <svg class="ps-item-dot" v-if="currentProjectId === proj.id" width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="#1E40AF"/></svg>
-                <span v-else class="ps-item-dot" style="width:6px;flex-shrink:0"></span>
-                <span class="ps-item-name" v-if="renamingProjectId !== proj.id">{{ proj.name }}</span>
-                <input v-else class="ps-rename-input" v-model="renameValue" @keyup.enter="finishRename(proj.id)" @keyup.esc="renamingProjectId = null" @blur="finishRename(proj.id)" @click.stop />
-                <div class="ps-item-actions" v-if="renamingProjectId !== proj.id && isManager">
-                  <button @click.stop="startRename(proj.id)" title="重命名"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
-                  <button @click.stop="deleteProject(proj.id)" title="删除"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+      </div>
+
+      <div class="workbench-tabs">
+        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'project' }" @click="activeWorkbenchTab = 'project'">项目</button>
+        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'import' }" @click="activeWorkbenchTab = 'import'">数据导入</button>
+        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'modeling' }" @click="activeWorkbenchTab = 'modeling'">建模</button>
+      </div>
+
+      <div class="sidebar-content">
+        <div v-if="activeWorkbenchTab === 'project'" class="workbench-panel">
+          <div class="workbench-section">
+            <div class="workbench-title">项目</div>
+            <div class="project-selector" @click.stop>
+              <button class="ps-trigger" @click="projectMenuOpen = !projectMenuOpen">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                <span class="ps-current-name">{{ projects.find(p => p.id === currentProjectId)?.name || '选择项目' }}</span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="ps-dropdown" v-if="projectMenuOpen">
+                <div class="ps-list">
+                  <div v-for="proj in projects" :key="proj.id" class="ps-item" :class="{ active: currentProjectId === proj.id }" @click="switchProject(proj.id); projectMenuOpen = false">
+                    <svg class="ps-item-dot" v-if="currentProjectId === proj.id" width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="#1E40AF"/></svg>
+                    <span v-else class="ps-item-dot" style="width:6px;flex-shrink:0"></span>
+                    <span class="ps-item-name" v-if="renamingProjectId !== proj.id">{{ proj.name }}</span>
+                    <input v-else class="ps-rename-input" v-model="renameValue" @keyup.enter="finishRename(proj.id)" @keyup.esc="renamingProjectId = null" @blur="finishRename(proj.id)" @click.stop />
+                    <div class="ps-item-actions" v-if="renamingProjectId !== proj.id && isManager">
+                      <button @click.stop="startRename(proj.id)" title="重命名"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+                      <button @click.stop="deleteProject(proj.id)" title="删除"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+                    </div>
+                  </div>
+                </div>
+                <div class="ps-footer" v-if="isManager">
+                  <button class="ps-new-btn" @click="createProject(); projectMenuOpen = false">+ 新建项目</button>
                 </div>
               </div>
             </div>
-            <div class="ps-footer" v-if="isManager">
-              <button class="ps-new-btn" @click="createProject(); projectMenuOpen = false">+ 新建项目</button>
+          </div>
+        </div>
+
+        <div v-if="activeWorkbenchTab === 'import'" class="workbench-panel">
+          <div class="workbench-section">
+            <div class="workbench-title">数据导入</div>
+            <DataSourcePanel v-if="isManager" @import-nodes="onImportNodes" />
+            <div v-else class="tip-text">仅管理者可导入数据</div>
+          </div>
+        </div>
+
+        <div v-if="activeWorkbenchTab === 'modeling'" class="workbench-panel">
+          <div class="workbench-section">
+            <div class="workbench-title">建模</div>
+            <div v-if="isManager" class="workbench-actions">
+              <button class="btn btn-primary" @click="addOntology(null, null)">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                新增节点
+              </button>
+              <div class="relation-row">
+                <button class="btn btn-outline" @click="relationCreateMode === 'canvas' ? beginCanvasPickRelation() : openRelationDialog()">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  新增关系
+                </button>
+                <div class="mode-toggle">
+                  <button class="mode-btn" :class="{ active: relationCreateMode === 'canvas' }" @click="relationCreateMode = 'canvas'">画布点选</button>
+                  <button class="mode-btn" :class="{ active: relationCreateMode === 'dialog' }" @click="relationCreateMode = 'dialog'">弹窗选择</button>
+                </div>
+              </div>
+
+              <button class="btn btn-secondary" @click="syncGraph">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                保存当前画布
+              </button>
+              <button class="btn btn-danger" @click="clearGraph">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                一键清空画布
+              </button>
+              <button class="btn btn-secondary" @click="rulesDialogVisible = true">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                关系逻辑规则设置
+              </button>
             </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="sidebar-content">
-        <!-- ===== 管理者：画布编辑 ===== -->
-        <div class="accordion-group" v-if="isManager">
-          <div class="accordion-header" @click="toggleAccordion('canvas')">
-            <svg class="accordion-arrow" :class="{ open: activeAccordion === 'canvas' }" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-            <span>画布编辑</span>
-          </div>
-          <div class="accordion-body" v-show="activeAccordion === 'canvas'">
-            <button class="btn btn-primary" @click="addOntology(null, null)">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              新增独立本体
-            </button>
-            <button class="btn btn-secondary" @click="syncGraph">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-              保存当前画布
-            </button>
-            <button class="btn btn-danger" @click="clearGraph">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-              一键清空画布
-            </button>
-          </div>
-        </div>
+            <div v-else class="tip-text">仅管理者可编辑本体</div>
 
-        <!-- ===== 管理者：关系与规则 ===== -->
-        <div class="accordion-group" v-if="isManager">
-          <div class="accordion-header" @click="toggleAccordion('relation')">
-            <svg class="accordion-arrow" :class="{ open: activeAccordion === 'relation' }" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-            <span>关系与规则</span>
-          </div>
-          <div class="accordion-body" v-show="activeAccordion === 'relation'">
-            <button
-              class="btn btn-outline"
-              :class="{ active: connectMode }"
-              :disabled="!selectedNodeId && !connectMode"
-              @click="connectMode ? cancelConnectMode() : enableConnectMode()"
-            >
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-              {{ connectMode ? '取消连线 (Esc)' : '开启连线模式' }}
-            </button>
-            <p class="tip-text" v-if="connectMode">请在画布点击目标本体</p>
-            <button class="btn btn-secondary" @click="rulesDialogVisible = true">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-              关系逻辑规则设置
-            </button>
-          </div>
-        </div>
-
-        <!-- ===== 所有用户：因果分析 ===== -->
-        <div class="accordion-group">
-          <div class="accordion-header" @click="toggleAccordion('causal')">
-            <svg class="accordion-arrow" :class="{ open: activeAccordion === 'causal' }" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-            <span>因果分析</span>
-          </div>
-          <div class="accordion-body" v-show="activeAccordion === 'causal'">
+            <div class="workbench-subtitle">分析</div>
             <button class="btn btn-bayesian" @click="bayesianDialogVisible = true">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"/>
@@ -1234,17 +1340,6 @@ onUnmounted(() => {
               </svg>
               关系权重配置
             </button>
-          </div>
-        </div>
-
-        <!-- ===== 管理者：数据导入 ===== -->
-        <div class="accordion-group" v-if="isManager">
-          <div class="accordion-header" @click="toggleAccordion('import')">
-            <svg class="accordion-arrow" :class="{ open: activeAccordion === 'import' }" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-            <span>数据导入</span>
-          </div>
-          <div class="accordion-body" v-show="activeAccordion === 'import'">
-            <DataSourcePanel @import-nodes="onImportNodes" />
           </div>
         </div>
       </div>
@@ -1487,6 +1582,54 @@ onUnmounted(() => {
                 </div>
                 <span class="rs-empty-text">暂无顺承推理规则</span>
                 <span class="rs-empty-hint">在上方表单中添加第一条规则</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rules-overlay" v-if="relationDialogVisible" @click.self="closeRelationDialog()" @wheel.stop>
+        <div class="rules-panel relation-panel" @click.stop>
+          <div class="rs-header">
+            <div class="rs-header-left">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              <h2>新增关系</h2>
+            </div>
+            <button class="rs-close" @click="closeRelationDialog()">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          <div class="rs-body">
+            <div class="rel-grid">
+              <div class="rel-col">
+                <label class="rs-label">源节点</label>
+                <input class="rs-input" v-model="sourceQuery" placeholder="搜索源节点" />
+                <div class="rel-list">
+                  <button v-for="n in filteredSourceNodes" :key="n.id" class="rel-item" :class="{ selected: relationDraft.sourceId === n.id }" @click="selectRelationSource(n.id)">{{ n.name }}</button>
+                </div>
+              </div>
+              <div class="rel-col">
+                <label class="rs-label">目标节点</label>
+                <input class="rs-input" v-model="targetQuery" placeholder="搜索目标节点" />
+                <div class="rel-list">
+                  <button v-for="n in filteredTargetNodes" :key="n.id" class="rel-item" :class="{ selected: relationDraft.targetId === n.id }" @click="selectRelationTarget(n.id)">{{ n.name }}</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="rel-form">
+              <div class="rs-form-row">
+                <label class="rs-label">关系名称</label>
+                <input class="rs-input" type="text" list="rel-list" v-model="relationDraft.relation" placeholder="例如：影响、约束、决定" />
+              </div>
+              <div class="rs-form-row">
+                <label class="rs-label">权重 (0-1)</label>
+                <input class="rs-input" type="number" min="0" max="1" step="0.05" v-model="relationDraft.weight" />
+              </div>
+              <div class="rel-actions">
+                <button class="btn btn-outline" @click="closeRelationDialog()">取消</button>
+                <button class="btn btn-primary" @click="confirmRelationDialog()">创建关系</button>
               </div>
             </div>
           </div>
@@ -2354,6 +2497,102 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
+.workbench-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.workbench-tab {
+  flex: 1;
+  height: 34px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.workbench-tab:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.workbench-tab.active {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+
+.workbench-panel {
+  padding: 0 12px;
+}
+
+.workbench-section {
+  padding: 10px 0 4px 0;
+}
+
+.workbench-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #475569;
+  letter-spacing: 0.02em;
+  margin-bottom: 10px;
+}
+
+.workbench-subtitle {
+  margin-top: 16px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #475569;
+  letter-spacing: 0.02em;
+}
+
+.workbench-actions {
+  display: flex;
+  flex-direction: column;
+}
+
+.relation-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.mode-toggle {
+  display: flex;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.mode-btn {
+  flex: 1;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.mode-btn.active {
+  background: #ffffff;
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+
 /* ---------- 项目选择器 ---------- */
 .project-selector {
   position: relative;
@@ -2801,6 +3040,74 @@ onUnmounted(() => {
   box-shadow: -8px 0 32px rgba(15, 23, 42, 0.12);
   animation: rules-panel-in 0.2s cubic-bezier(0.22, 0.61, 0.36, 1);
   overflow: hidden;
+}
+
+.rules-panel.relation-panel {
+  width: 560px;
+}
+
+.rel-grid {
+  display: flex;
+  gap: 14px;
+}
+
+.rel-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rel-list {
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  background: #FFFFFF;
+  overflow: auto;
+  max-height: 240px;
+}
+
+.rel-item {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.rel-item:last-child {
+  border-bottom: none;
+}
+
+.rel-item:hover {
+  background: #F8FAFC;
+}
+
+.rel-item.selected {
+  background: #EFF6FF;
+  color: #1E40AF;
+}
+
+.rel-form {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rel-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.rel-actions .btn {
+  margin-bottom: 0;
 }
 
 @keyframes rules-panel-in {
