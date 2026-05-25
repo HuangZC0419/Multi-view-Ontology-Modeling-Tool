@@ -23,64 +23,235 @@ def _load_project(project_id: str) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _normalize_source_type(origin: str) -> str:
+    origin = (origin or "").strip()
+    if ":" in origin:
+        origin = origin.split(":", 1)[0].strip()
+    if not origin:
+        return "manual"
+    if origin in {"excel", "csv", "dameng", "manual"}:
+        return origin
+    if origin == "sim_dameng":
+        return "dameng"
+    # 兼容旧版本：文件导入时曾把 file_id(uuid) 直接写入 origin
+    if len(origin) == 36 and origin.count("-") == 4:
+        return "excel"
+    return "manual"
+
+
+def _source_name_for_type(source_type: str) -> str:
+    if source_type == "excel":
+        return "导入的Excel数据源"
+    if source_type == "csv":
+        return "导入的CSV数据源"
+    if source_type == "dameng":
+        return "达梦数据库"
+    return "系统默认数据源"
+
+
+def _parse_origin(origin: str) -> tuple[str, str]:
+    raw = (origin or "").strip()
+    source_type = _normalize_source_type(raw)
+    if ":" in raw:
+        _, explicit_name = raw.split(":", 1)
+        explicit_name = explicit_name.strip()
+        if explicit_name:
+            return source_type, explicit_name
+    return source_type, _source_name_for_type(source_type)
+
+
+def _source_table_label(source_type: str, source_name: str) -> str:
+    if source_type in {"excel", "csv"}:
+        return source_name
+    if source_type == "manual":
+        return "人工维护"
+    return "默认映射表"
+
+
+def _origin_to_source(origin: str) -> tuple[str, str, str]:
+    source_type, source_name = _parse_origin(origin)
+    if source_type == "manual":
+        source_name = "人工维护数据"
+    table_label = _source_table_label(source_type, source_name)
+    return source_type, source_name, table_label
+
+
+def _build_sources_from_nodes(nodes: list[dict], domain_id: str) -> list[dict]:
+    groups: dict[tuple[str, str, str], dict] = {}
+    for n in nodes:
+        source_type, source_name, table_label = _origin_to_source(n.get("origin", "manual"))
+        key = (source_type, source_name, table_label)
+        if key not in groups:
+            groups[key] = {
+                "id": f"src-{source_type}-{len(groups) + 1}",
+                "name": source_name,
+                "type": source_type,
+                "conn_info": {},
+                "tables": [table_label],
+                "covered_nodes": 0,
+                "covered_domains": [domain_id],
+                "total_fields": 0,
+            }
+        groups[key]["covered_nodes"] += 1
+        groups[key]["total_fields"] += len(n.get("attributes", []) or [])
+    return list(groups.values())
+
+
+def _ensure_nodes_in_domains(domains: list[dict], nodes: list[dict]) -> list[dict]:
+    if not domains:
+        return domains
+
+    node_ids = [n["id"] for n in nodes if n.get("id")]
+    assigned = set()
+    for d in domains:
+        for nid in d.get("ontology_node_ids", []) or []:
+            assigned.add(nid)
+
+    missing = [nid for nid in node_ids if nid not in assigned]
+    if not missing:
+        return domains
+
+    target = None
+    for d in domains:
+        if d.get("id") == "domain-default":
+            target = d
+            break
+    if target is None:
+        target = domains[0]
+
+    target.setdefault("ontology_node_ids", [])
+    for nid in missing:
+        target["ontology_node_ids"].append(nid)
+    return domains
+
+
+def _build_default_perspective_config(project_id: str, graph: dict) -> dict:
+    nodes = graph.get("nodes", [])
+    if not nodes:
+        return {"project_name": project_id, "domains": [], "mappings": [], "sources": []}
+
+    domain_id = "domain-default"
+
+    domains = [{
+        "id": domain_id,
+        "name": "默认业务域",
+        "ontology_node_ids": [n["id"] for n in nodes],
+        "databases": []
+    }]
+
+    sources = _build_sources_from_nodes(nodes, domain_id)
+    domains[0]["databases"] = [s["name"] for s in sources]
+
+    mappings = []
+    for n in nodes:
+        source_type, source_name, table_label = _origin_to_source(n.get("origin", "manual"))
+        field_mappings = []
+        for attr in n.get("attributes", []):
+            field_mappings.append({
+                "field_name": attr.get("key", ""),
+                "attribute_key": attr.get("key", ""),
+                "data_type": "VARCHAR"
+            })
+        mappings.append({
+            "ontology_node_id": n["id"],
+            "source_type": source_type,
+            "source_name": source_name,
+            "table_name": table_label,
+            "field_mappings": field_mappings,
+            "node_name": n.get("name", ""),
+            "domain_id": domain_id
+        })
+
+    return {
+        "project_name": project_id,
+        "domains": domains,
+        "sources": sources,
+        "mappings": mappings
+    }
+
+
+def _normalize_perspective_config(project_id: str, graph: dict, config: dict) -> dict:
+    normalized = dict(config)
+    normalized.setdefault("project_name", project_id)
+    normalized.setdefault("domains", [])
+    normalized.setdefault("sources", [])
+    normalized.setdefault("mappings", [])
+
+    if not normalized["sources"] and not normalized["mappings"]:
+        return _build_default_perspective_config(project_id, graph)
+
+    nodes = graph.get("nodes", [])
+    if not nodes:
+        return normalized
+
+    domains = [dict(d) for d in normalized.get("domains", [])]
+    mappings = [dict(m) for m in normalized.get("mappings", [])]
+
+    # 以图数据的 origin 为准：逐节点校正 mapping 的来源信息，并补全缺失节点的 mapping
+    derived_by_node: dict[str, dict] = {}
+    for n in nodes:
+        nid = n.get("id")
+        if not nid:
+            continue
+        source_type, source_name, table_label = _origin_to_source(n.get("origin", "manual"))
+        field_mappings = []
+        for attr in n.get("attributes", []):
+            field_mappings.append({
+                "field_name": attr.get("key", ""),
+                "attribute_key": attr.get("key", ""),
+                "data_type": "VARCHAR"
+            })
+        derived_by_node[nid] = {
+            "ontology_node_id": nid,
+            "source_type": source_type,
+            "source_name": source_name,
+            "table_name": table_label,
+            "field_mappings": field_mappings,
+            "node_name": n.get("name", ""),
+        }
+
+    mapping_map = {m.get("ontology_node_id"): m for m in mappings if m.get("ontology_node_id")}
+    for nid, derived in derived_by_node.items():
+        existing = mapping_map.get(nid)
+        if existing is None:
+            mappings.append({
+                **derived,
+                "domain_id": "",
+            })
+            continue
+        existing["source_type"] = derived["source_type"]
+        existing["source_name"] = derived["source_name"]
+        existing["table_name"] = derived["table_name"]
+
+    # sources 统一从图数据重建，确保 Excel + 人工维护能同时出现
+    sources = _build_sources_from_nodes(nodes, "domain-default")
+
+    # domains：确保新增节点归属某个域
+    if not domains:
+        domains = [{
+            "id": "domain-default",
+            "name": "默认业务域",
+            "ontology_node_ids": [n["id"] for n in nodes if n.get("id")],
+            "databases": [s["name"] for s in sources],
+        }]
+    else:
+        domains = _ensure_nodes_in_domains(domains, nodes)
+        if domains and not (domains[0].get("databases") or []):
+            domains[0]["databases"] = [s["name"] for s in sources]
+
+    normalized["domains"] = domains
+    normalized["sources"] = sources
+    normalized["mappings"] = mappings
+    return normalized
+
+
 def _load_perspective_config(project_id: str) -> dict:
+    graph = _load_project(project_id)
     config_path = PROJECTS_DIR / f"{project_id}_perspective.json"
     if config_path.exists():
-        return json.loads(config_path.read_text(encoding="utf-8"))
-    
-    # 如果不存在，则根据图数据自动生成默认映射，以保证视角联动
-    try:
-        graph = _load_project(project_id)
-        nodes = graph.get("nodes", [])
-        if not nodes:
-            return {"domains": [], "mappings": [], "sources": []}
-            
-        domain_id = f"domain-default"
-        domains = [{
-            "id": domain_id,
-            "name": "默认业务域",
-            "ontology_node_ids": [n["id"] for n in nodes],
-            "databases": ["系统默认数据源"]
-        }]
-        
-        sources = [{
-            "id": "src-default",
-            "name": "系统默认数据源",
-            "type": "manual",
-            "conn_info": {},
-            "tables": ["默认映射表"],
-            "covered_nodes": len(nodes),
-            "covered_domains": [domain_id],
-            "total_fields": sum(len(n.get("attributes", [])) for n in nodes)
-        }]
-        
-        mappings = []
-        for n in nodes:
-            field_mappings = []
-            for attr in n.get("attributes", []):
-                field_mappings.append({
-                    "field_name": attr.get("key", ""),
-                    "attribute_key": attr.get("key", ""),
-                    "data_type": "VARCHAR"
-                })
-            mappings.append({
-                "ontology_node_id": n["id"],
-                "source_type": "manual",
-                "source_name": "系统默认数据源",
-                "table_name": "默认映射表",
-                "field_mappings": field_mappings,
-                "node_name": n.get("name", ""),
-                "domain_id": domain_id
-            })
-            
-        return {
-            "project_name": project_id,
-            "domains": domains,
-            "sources": sources,
-            "mappings": mappings
-        }
-    except Exception:
-        return {"domains": [], "mappings": [], "sources": []}
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+        return _normalize_perspective_config(project_id, graph, config)
+    return _build_default_perspective_config(project_id, graph)
 
 
 def _save_perspective_config(project_id: str, config: dict):
@@ -124,11 +295,9 @@ async def get_leader_view(project_id: str):
             if src.id in d.databases or src.name in d.databases
         ]
 
-    mapped_node_ids = set()
-    for m in mappings:
-        mapped_node_ids.add(m.get("ontology_node_id", ""))
-    manual_node_ids = [n["id"] for n in graph.get("nodes", []) if n["id"] not in mapped_node_ids]
-    manual_node_names = [node_map[nid] for nid in manual_node_ids if nid in node_map]
+    manual_node_ids = [n["id"] for n in graph.get("nodes", []) if n.get("origin", "manual") == "manual"]
+    manual_node_names = [n.get("name", n["id"]) for n in graph.get("nodes", []) if n.get("origin", "manual") == "manual"]
+    manual_edge_count = sum(1 for e in graph.get("edges", []) if e.get("origin", "manual") == "manual")
 
     return LeaderViewData(
         summary={
@@ -142,7 +311,7 @@ async def get_leader_view(project_id: str):
                 "csv": sum(1 for s in sources if s.type == "csv"),
             },
             "manual_node_count": len(manual_node_ids),
-            "manual_edge_count": len(graph.get("edges", [])),
+            "manual_edge_count": manual_edge_count,
             "manual_node_names": manual_node_names,
         },
         data_sources=sources,

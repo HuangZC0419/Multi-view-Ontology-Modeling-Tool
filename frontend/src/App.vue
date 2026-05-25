@@ -115,9 +115,6 @@ const confirmState = ref({
   resolve: null
 });
 
-// 已有节点重挂载（转为子本体）状态
-const reparentMode = ref(false);
-const reparentSourceId = ref(null);
 
 // 右键菜单状态
 const contextMenu = ref({
@@ -539,26 +536,37 @@ async function switchProject(id) {
 }
 
 async function createProject() {
-  const name = await customPrompt("新建项目", "", "输入项目名称");
-  if (!name) return;
-  const proj = await request("/api/projects", { method: "POST", body: JSON.stringify({ name }) });
-  projects.value.push(proj);
-  await switchProject(proj.id);
+  try {
+    const name = await customPrompt("新建项目", "", "输入项目名称");
+    if (!name) return;
+    const proj = await request("/api/projects", { method: "POST", body: JSON.stringify({ name }) });
+    await loadProjects();
+    projects.value = projects.value.filter(p => p.id !== proj.id).concat([proj]);
+    await switchProject(proj.id);
+    statusMessage.value = "项目已新建";
+  } catch (error) {
+    statusMessage.value = `新建项目失败：${error.message}`;
+  }
 }
 
 async function deleteProject(id) {
   const proj = projects.value.find(p => p.id === id);
   if (!proj) return;
-  const confirmed = await customConfirm("删除项目", `确定删除项目"${proj.name}"吗？`);
-  if (!confirmed) return;
-  await request(`/api/projects/${id}`, { method: "DELETE" });
-  projects.value = projects.value.filter(p => p.id !== id);
-  if (currentProjectId.value === id) {
-    currentProjectId.value = projects.value[0]?.id || null;
-    if (currentProjectId.value) await loadGraph(currentProjectId.value);
-    else { nodes.value = []; edges.value = []; }
+  try {
+    const confirmed = await customConfirm("删除项目", `确定删除项目"${proj.name}"吗？`);
+    if (!confirmed) return;
+    await request(`/api/projects/${id}`, { method: "DELETE" });
+    projects.value = projects.value.filter(p => p.id !== id);
+    projectMenuOpen.value = false;
+    if (currentProjectId.value === id) {
+      currentProjectId.value = projects.value[0]?.id || null;
+      if (currentProjectId.value) await loadGraph(currentProjectId.value);
+      else { nodes.value = []; edges.value = []; inferenceRules.value = []; mutexRules.value = []; }
+    }
+    statusMessage.value = "项目已删除";
+  } catch (error) {
+    statusMessage.value = `删除项目失败：${error.message}`;
   }
-  statusMessage.value = "项目已删除";
 }
 
 function startRename(id) {
@@ -586,10 +594,16 @@ async function request(path, options = {}) {
     headers,
     ...options
   });
+  const text = await response.text();
   if (!response.ok) {
-    throw new Error(await response.text());
+    throw new Error(text || `HTTP ${response.status}`);
   }
-  return response.json();
+  if (response.status === 204 || !text) return null;
+  const contentType = response.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return JSON.parse(text);
+  }
+  return text;
 }
 
 async function loadGraph(projectId) {
@@ -657,13 +671,6 @@ async function createEdge(payload) {
   // 同样重新加载以保持同步
   await loadGraph();
   return edge;
-}
-
-async function reparentNode(nodeId, newParentId) {
-  return request(`/api/nodes/${nodeId}/reparent`, {
-    method: "POST",
-    body: JSON.stringify({ new_parent_id: newParentId })
-  });
 }
 
 async function clearGraph() {
@@ -748,8 +755,6 @@ function enableConnectMode() {
   }
   connectMode.value = true;
   connectSourceId.value = selectedNodeId.value;
-  reparentMode.value = false;
-  reparentSourceId.value = null;
   statusMessage.value = "连线模式：请点击目标本体";
 }
 
@@ -758,54 +763,9 @@ function cancelConnectMode() {
   connectSourceId.value = null;
 }
 
-function enableReparentMode(nodeId = null) {
-  const sourceId = nodeId || selectedNodeId.value;
-  if (!sourceId) {
-    statusMessage.value = "请先选择要移动的本体";
-    return;
-  }
-  reparentMode.value = true;
-  reparentSourceId.value = sourceId;
-  connectMode.value = false;
-  connectSourceId.value = null;
-  statusMessage.value = "子本体模式：请点击目标父本体";
-}
-
-function cancelReparentMode() {
-  reparentMode.value = false;
-  reparentSourceId.value = null;
-}
-
-function startReparentFromMenu(nodeId) {
-  hideContextMenu();
-  selectedNodeId.value = nodeId;
-  enableReparentMode(nodeId);
-}
-
 async function onClickNode(nodeId) {
   selectedNodeId.value = nodeId;
   selectedEdgeId.value = null;
-  if (reparentMode.value) {
-    if (!reparentSourceId.value) {
-      reparentSourceId.value = nodeId;
-      statusMessage.value = "已设置待移动本体，请选择目标父本体";
-      return;
-    }
-    if (reparentSourceId.value === nodeId) {
-      statusMessage.value = "目标父本体不能与当前本体相同";
-      return;
-    }
-    try {
-      await reparentNode(reparentSourceId.value, nodeId);
-      await loadGraph();
-      statusMessage.value = "已更新父子关系";
-    } catch (error) {
-      statusMessage.value = `更新父子关系失败：${error.message}`;
-    } finally {
-      cancelReparentMode();
-    }
-    return;
-  }
 
   if (!connectMode.value) return;
 
@@ -935,10 +895,6 @@ function handleGlobalKeyDown(e) {
     if (connectMode.value) {
       cancelConnectMode();
       statusMessage.value = "已取消连线模式";
-    }
-    if (reparentMode.value) {
-      cancelReparentMode();
-      statusMessage.value = "已取消子本体模式";
     }
   }
 }
@@ -1251,16 +1207,6 @@ onUnmounted(() => {
               {{ connectMode ? '取消连线 (Esc)' : '开启连线模式' }}
             </button>
             <p class="tip-text" v-if="connectMode">请在画布点击目标本体</p>
-            <button
-              class="btn btn-outline"
-              :class="{ active: reparentMode }"
-              :disabled="!selectedNodeId && !reparentMode"
-              @click="reparentMode ? cancelReparentMode() : enableReparentMode()"
-            >
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="21" x2="12" y2="8"/><polyline points="5 15 12 8 19 15"/></svg>
-              {{ reparentMode ? '取消子本体模式' : '转为子本体模式' }}
-            </button>
-            <p class="tip-text" v-if="reparentMode">先选待移动本体，再点目标父本体</p>
             <button class="btn btn-secondary" @click="rulesDialogVisible = true">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
               关系逻辑规则设置
@@ -1399,9 +1345,6 @@ onUnmounted(() => {
           <div class="menu-item" v-if="isManager" @click="startConnectionFromMenu(contextMenu.nodeId)">
             <svg class="menu-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> 从此节点连线
           </div>
-          <div class="menu-item" v-if="isManager" @click="startReparentFromMenu(contextMenu.nodeId)">
-            <svg class="menu-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="21" x2="12" y2="8"/><polyline points="5 15 12 8 19 15"/></svg> 将此节点转为子本体
-          </div>
           <div class="menu-divider" v-if="hasChildren(contextMenu.nodeId)"></div>
           <div class="menu-item" v-if="hasChildren(contextMenu.nodeId)" @click="toggleCollapse(contextMenu.nodeId)">
             <svg class="menu-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="3" x2="12" y2="21"/><polyline points="8 8 12 4 16 8"/><polyline points="8 16 12 20 16 16"/></svg> {{ collapsedNodeIds.has(contextMenu.nodeId) ? '展开子节点' : '折叠子节点' }}
@@ -1412,37 +1355,6 @@ onUnmounted(() => {
             <svg class="menu-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 在此新增独立本体
           </div>
         </template>
-      </div>
-
-      <!-- 自定义 Prompt 弹窗 -->
-      <div class="prompt-overlay" v-if="promptState.visible" @click.self="cancelPrompt">
-        <div class="prompt-dialog">
-          <h3>{{ promptState.title }}</h3>
-          <input
-            ref="promptInputRef"
-            type="text"
-            v-model="promptState.value"
-            :placeholder="promptState.placeholder"
-            @keyup.enter="submitPrompt"
-            @keyup.esc="cancelPrompt"
-          />
-          <div class="prompt-actions">
-            <button class="btn btn-secondary" @click="cancelPrompt">取消</button>
-            <button class="btn btn-primary" @click="submitPrompt">确定</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 自定义 Confirm 弹窗 -->
-      <div class="prompt-overlay" v-if="confirmState.visible" @click.self="handleConfirm(false)">
-        <div class="prompt-dialog">
-          <h3>{{ confirmState.title }}</h3>
-          <p class="confirm-message">{{ confirmState.message }}</p>
-          <div class="prompt-actions">
-            <button class="btn btn-secondary" @click="handleConfirm(false)">取消</button>
-            <button class="btn btn-danger" @click="handleConfirm(true)">确定清空</button>
-          </div>
-        </div>
       </div>
 
       <!-- 关系规则管理 - 右侧全高面板 -->
@@ -1968,6 +1880,37 @@ onUnmounted(() => {
         </button>
       </div>
     </aside>
+
+    <!-- 自定义 Prompt 弹窗（全局：避免只在本体推理视角可用） -->
+    <div class="prompt-overlay" v-if="promptState.visible" @click.self="cancelPrompt">
+      <div class="prompt-dialog">
+        <h3>{{ promptState.title }}</h3>
+        <input
+          ref="promptInputRef"
+          type="text"
+          v-model="promptState.value"
+          :placeholder="promptState.placeholder"
+          @keyup.enter="submitPrompt"
+          @keyup.esc="cancelPrompt"
+        />
+        <div class="prompt-actions">
+          <button class="btn btn-secondary" @click="cancelPrompt">取消</button>
+          <button class="btn btn-primary" @click="submitPrompt">确定</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 自定义 Confirm 弹窗（全局：避免只在本体推理视角可用） -->
+    <div class="prompt-overlay" v-if="confirmState.visible" @click.self="handleConfirm(false)">
+      <div class="prompt-dialog">
+        <h3>{{ confirmState.title }}</h3>
+        <p class="confirm-message">{{ confirmState.message }}</p>
+        <div class="prompt-actions">
+          <button class="btn btn-secondary" @click="handleConfirm(false)">取消</button>
+          <button class="btn btn-danger" @click="handleConfirm(true)">确定</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 

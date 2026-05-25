@@ -86,6 +86,7 @@ const sourceGroups = computed(() => {
     { type: "dameng", sources: [] },
     { type: "excel", sources: [] },
     { type: "csv", sources: [] },
+    { type: "manual", sources: [] },
   ];
   for (const src of sources) {
     const type = (src.type || "").toLowerCase();
@@ -94,27 +95,26 @@ const sourceGroups = computed(() => {
       group.sources.push(src);
     }
   }
-  const result = groups.filter((g) => g.sources.length > 0);
 
+  const manualGroup = groups.find((g) => g.type === "manual");
+  const hasManualSource = (manualGroup?.sources?.length || 0) > 0;
+
+  // 兼容旧后端：如果后端没有把 manual 作为 data_sources 返回，则用 summary 补一个“人工维护”数据源
   const manualNodeCount = data.value.summary?.manual_node_count || 0;
   const manualEdgeCount = data.value.summary?.manual_edge_count || 0;
-  if (manualNodeCount > 0 || manualEdgeCount > 0) {
-    result.push({
+  if (!hasManualSource && (manualNodeCount > 0 || manualEdgeCount > 0) && manualGroup) {
+    manualGroup.sources.push({
+      id: "manual-src",
+      name: "人工维护数据",
       type: "manual",
-      sources: [
-        {
-          id: "manual-src",
-          name: "人工维护数据",
-          type: "manual",
-          isManual: true,
-          covered_nodes: manualNodeCount,
-          edges_count: manualEdgeCount
-        }
-      ]
+      isManual: true,
+      covered_nodes: manualNodeCount,
+      edges_count: manualEdgeCount,
+      tables: ["人工维护"],
     });
   }
 
-  return result;
+  return groups.filter((g) => g.sources.length > 0);
 });
 
 const COLLAPSE_LIMIT = 8;
@@ -219,7 +219,14 @@ const svgLayout = computed(() => {
     rawGroups.push({ id: src.id, name: src.name, type: (src.type || "").toLowerCase(), names: src.covered_ontology_names || [] });
   }
   if (manualNames.length > 0) {
-    rawGroups.push({ id: "src-manual", name: "人工维护", type: "manual", names: manualNames });
+    const existingManual = rawGroups.find((g) => g.type === "manual");
+    if (existingManual) {
+      const set = new Set(existingManual.names || []);
+      for (const n of manualNames) set.add(n);
+      existingManual.names = Array.from(set);
+    } else {
+      rawGroups.push({ id: "src-manual", name: "人工维护数据", type: "manual", names: manualNames });
+    }
   }
   
   const groupCount = rawGroups.length;

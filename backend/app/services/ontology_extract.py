@@ -10,7 +10,8 @@ def extract_ontology_from_data(
     relations_data: list[dict],
     attributes_data: list[dict],
     inference_data: list[dict] = None,
-    mutex_data: list[dict] = None
+    mutex_data: list[dict] = None,
+    source_name: str = ""
 ) -> tuple[list[dict], list[dict], list[dict], list[dict]]:
     """
     从数据行中直接提取本体节点和关系。
@@ -46,7 +47,8 @@ def extract_ontology_from_data(
             "x": 100 + (i % 4) * 250 + random.randint(-20, 20),
             "y": 100 + (i // 4) * 150 + random.randint(-20, 20),
             "parent_id": None,
-            "attributes": []
+            "attributes": [],
+            "origin": source_name
         }
         
     # 3. 填充属性
@@ -76,7 +78,8 @@ def extract_ontology_from_data(
                 "relation": row.get('关系', ''),
                 "kind": "relation",
                 "characteristics": [],
-                "weight": weight
+                "weight": weight,
+                "origin": source_name
             })
 
     # 5. 生成推理规则
@@ -109,7 +112,8 @@ def extract_ontology_nodes(
     start_y: float = 120,
     spacing_x: float = 220,
     spacing_y: float = 140,
-    columns_per_row: int = 3
+    columns_per_row: int = 3,
+    source_name: str = ""
 ) -> list[dict]:
     """根据用户勾选，生成本体节点列表。
 
@@ -143,7 +147,8 @@ def extract_ontology_nodes(
             "x": x,
             "y": y,
             "parent_id": None,
-            "attributes": []
+            "attributes": [],
+            "origin": source_name
         })
 
         # 获取勾选的列
@@ -189,7 +194,8 @@ def extract_ontology_nodes(
                 "x": child_x + child_count * 180,
                 "y": child_y,
                 "parent_id": parent_id,
-                "attributes": child_attrs
+                "attributes": child_attrs,
+                "origin": source_name
             })
             child_count += 1
 

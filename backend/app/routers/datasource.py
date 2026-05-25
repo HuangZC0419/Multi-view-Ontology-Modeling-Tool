@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import uuid
 from pathlib import Path
@@ -21,6 +22,30 @@ _sessions: dict[str, tuple] = {}
 
 def _ensure_upload_dir():
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _upload_meta_path(file_id: str) -> Path:
+    return UPLOAD_DIR / f"{file_id}.meta.json"
+
+
+def _save_upload_meta(file_id: str, file_name: str, file_type: str) -> None:
+    _upload_meta_path(file_id).write_text(
+        json.dumps({
+            "file_name": file_name,
+            "file_type": file_type,
+        }, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
+def _load_upload_meta(file_id: str) -> dict:
+    meta_path = _upload_meta_path(file_id)
+    if not meta_path.exists():
+        return {}
+    try:
+        return json.loads(meta_path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
 
 
 # ============================================================
@@ -114,6 +139,7 @@ async def upload_file(file: UploadFile = File(...)):
     content = await file.read()
     with open(save_path, "wb") as f:
         f.write(content)
+    _save_upload_meta(file_id, file.filename or save_name, ext)
 
     parser = FileParserConnector()
     await parser.connect({"file_path": str(save_path), "file_type": ext})
@@ -169,14 +195,13 @@ async def import_ontology(selection: ImportSelection):
     is_template = "实体关系" in selection.tables or "实体属性" in selection.tables
 
     if source_id in _sessions:
-        # 数据库来源
-        connector, _ = _sessions[source_id]
+        connector, db_type = _sessions[source_id]
         if is_template:
             relations_data = await connector.preview_data("实体关系", "", 10000) if "实体关系" in selection.tables else []
             attributes_data = await connector.preview_data("实体属性", "", 10000) if "实体属性" in selection.tables else []
             inference_data = await connector.preview_data("推理规则", "", 10000) if "推理规则" in selection.tables else []
             mutex_data = await connector.preview_data("互斥规则", "", 10000) if "互斥规则" in selection.tables else []
-            nodes, edges, inf_rules, mut_rules = extract_ontology_from_data(relations_data, attributes_data, inference_data, mutex_data)
+            nodes, edges, inf_rules, mut_rules = extract_ontology_from_data(relations_data, attributes_data, inference_data, mutex_data, source_name=db_type)
         else:
             tables = await connector.get_tables()
             columns_map = {}
@@ -187,22 +212,27 @@ async def import_ontology(selection: ImportSelection):
             nodes = extract_ontology_nodes(
                 tables=tables,
                 columns_map=columns_map,
-                selection=selection
+                selection=selection,
+                source_name=db_type
             )
     else:
-        # 文件来源
         _ensure_upload_dir()
         for ext in (".xlsx", ".xls", ".csv"):
             path = UPLOAD_DIR / f"{source_id}{ext}"
             if path.exists():
                 parser = FileParserConnector()
                 await parser.connect({"file_path": str(path), "file_type": ext})
+                origin_type = "csv" if ext == ".csv" else "excel"
+                upload_meta = _load_upload_meta(source_id)
+                original_file_name = upload_meta.get("file_name", "").strip()
+                origin_name = f"{origin_type}:{original_file_name}" if original_file_name else origin_type
+                
                 if is_template:
                     relations_data = await parser.preview_data("实体关系", limit=10000) if "实体关系" in selection.tables else []
                     attributes_data = await parser.preview_data("实体属性", limit=10000) if "实体属性" in selection.tables else []
                     inference_data = await parser.preview_data("推理规则", limit=10000) if "推理规则" in selection.tables else []
                     mutex_data = await parser.preview_data("互斥规则", limit=10000) if "互斥规则" in selection.tables else []
-                    nodes, edges, inf_rules, mut_rules = extract_ontology_from_data(relations_data, attributes_data, inference_data, mutex_data)
+                    nodes, edges, inf_rules, mut_rules = extract_ontology_from_data(relations_data, attributes_data, inference_data, mutex_data, source_name=origin_name)
                 else:
                     tables = await parser.get_tables()
                     columns_map = {}
@@ -213,7 +243,8 @@ async def import_ontology(selection: ImportSelection):
                     nodes = extract_ontology_nodes(
                         tables=tables,
                         columns_map=columns_map,
-                        selection=selection
+                        selection=selection,
+                        source_name=origin_name
                     )
                 await parser.disconnect()
                 break

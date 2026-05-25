@@ -53,7 +53,8 @@ const DOMAIN_COLORS = ['#E65100', '#059669', '#2563EB', '#7C3AED', '#DC2626', '#
 const SOURCE_STYLES = {
   dameng: { bg: '#EDE9FE', text: '#7C3AED', label: '达梦', badge: '#A78BFA' },
   excel: { bg: '#DCFCE7', text: '#16A34A', label: 'Excel', badge: '#4ADE80' },
-  csv: { bg: '#FFF7ED', text: '#EA580C', label: 'CSV', badge: '#FB923C' }
+  csv: { bg: '#FFF7ED', text: '#EA580C', label: 'CSV', badge: '#FB923C' },
+  manual: { bg: '#F1F5F9', text: '#64748B', label: '人工维护', badge: '#94A3B8' }
 }
 
 function getSourceStyle(type) {

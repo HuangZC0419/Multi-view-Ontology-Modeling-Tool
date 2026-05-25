@@ -1,0 +1,882 @@
+{
+  "nodes": [
+    {
+      "id": "670f3a11-c233-4489-b783-1531f64f6bec",
+      "name": "切削速度",
+      "x": 91.0,
+      "y": 100.0,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "当前值",
+          "value": ""
+        },
+        {
+          "key": "最大值",
+          "value": ""
+        },
+        {
+          "key": "最小值",
+          "value": ""
+        },
+        {
+          "key": "步长",
+          "value": ""
+        },
+        {
+          "key": "主轴转速",
+          "value": ""
+        },
+        {
+          "key": "单位",
+          "value": ""
+        },
+        {
+          "key": "推荐范围",
+          "value": ""
+        }
+      ],
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "f258252c-226f-45be-9713-ac2cff29b2bc",
+      "name": "工件材料硬度",
+      "x": 340.0,
+      "y": 83.0,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "硬度值",
+          "value": ""
+        },
+        {
+          "key": "最大值",
+          "value": ""
+        },
+        {
+          "key": "最小值",
+          "value": ""
+        },
+        {
+          "key": "材料牌号",
+          "value": ""
+        },
+        {
+          "key": "热处理状态",
+          "value": ""
+        },
+        {
+          "key": "抗拉强度",
+          "value": ""
+        },
+        {
+          "key": "单位",
+          "value": ""
+        }
+      ],
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "1455de12-a40d-44e3-a5b8-05af54e9ed0d",
+      "name": "尺寸精度",
+      "x": 611.0,
+      "y": 98.0,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "尺寸公差",
+          "value": ""
+        },
+        {
+          "key": "标称尺寸",
+          "value": ""
+        },
+        {
+          "key": "公差等级",
+          "value": ""
+        },
+        {
+          "key": "检测方法",
+          "value": ""
+        },
+        {
+          "key": "上偏差",
+          "value": ""
+        },
+        {
+          "key": "下偏差",
+          "value": ""
+        },
+        {
+          "key": "单位",
+          "value": ""
+        }
+      ],
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "a09cfe2e-8b4f-46fa-b6d8-2bedb459bce4",
+      "name": "冷却液流量",
+      "x": 863.0,
+      "y": 97.0,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "流量值",
+          "value": ""
+        },
+        {
+          "key": "最大值",
+          "value": ""
+        },
+        {
+          "key": "最小值",
+          "value": ""
+        },
+        {
+          "key": "冷却液类型",
+          "value": ""
+        },
+        {
+          "key": "压力",
+          "value": ""
+        },
+        {
+          "key": "浓度",
+          "value": ""
+        },
+        {
+          "key": "单位",
+          "value": ""
+        }
+      ],
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "0aa459a1-fff3-4806-a6a6-53fc79e58ab8",
+      "name": "生产成本",
+      "x": 108.0,
+      "y": 242.0,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "总成本",
+          "value": ""
+        },
+        {
+          "key": "材料成本",
+          "value": ""
+        },
+        {
+          "key": "工时成本",
+          "value": ""
+        },
+        {
+          "key": "设备折旧",
+          "value": ""
+        },
+        {
+          "key": "刀具消耗",
+          "value": ""
+        },
+        {
+          "key": "能耗成本",
+          "value": ""
+        },
+        {
+          "key": "单位",
+          "value": ""
+        }
+      ],
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "a118c49c-f2ec-423f-87ef-85fd3b1b3d94",
+      "name": "加工效率",
+      "x": 337.0,
+      "y": 267.0,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "效率评分",
+          "value": ""
+        },
+        {
+          "key": "最小评分",
+          "value": ""
+        },
+        {
+          "key": "产出数量",
+          "value": ""
+        },
+        {
+          "key": "稼动率",
+          "value": ""
+        },
+        {
+          "key": "单件工时",
+          "value": ""
+        },
+        {
+          "key": "废品率",
+          "value": ""
+        },
+        {
+          "key": "单位",
+          "value": ""
+        }
+      ],
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "22fb065d-d58c-4255-ba00-78484297d39a",
+      "name": "工件质量",
+      "x": 598.0,
+      "y": 248.0,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "质量等级",
+          "value": ""
+        },
+        {
+          "key": "合格率",
+          "value": ""
+        },
+        {
+          "key": "缺陷数上限",
+          "value": ""
+        },
+        {
+          "key": "检测频次",
+          "value": ""
+        },
+        {
+          "key": "批次号",
+          "value": ""
+        },
+        {
+          "key": "关键尺寸CPK",
+          "value": ""
+        },
+        {
+          "key": "单位",
+          "value": ""
+        }
+      ],
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "880c3377-925e-4643-a3fb-33fe6785e801",
+      "name": "切削深度",
+      "x": 868.0,
+      "y": 258.0,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "当前值",
+          "value": ""
+        },
+        {
+          "key": "最大值",
+          "value": ""
+        },
+        {
+          "key": "最小值",
+          "value": ""
+        },
+        {
+          "key": "单位",
+          "value": ""
+        },
+        {
+          "key": "切削类型",
+          "value": ""
+        },
+        {
+          "key": "走刀次数",
+          "value": ""
+        },
+        {
+          "key": "精加工余量",
+          "value": ""
+        }
+      ],
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "6cc8e8cf-06cc-41e9-8ded-432bd9208770",
+      "name": "刀具材料",
+      "x": 120.0,
+      "y": 414.0,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "材料类型",
+          "value": ""
+        },
+        {
+          "key": "涂层",
+          "value": ""
+        },
+        {
+          "key": "硬度",
+          "value": ""
+        },
+        {
+          "key": "耐热温度",
+          "value": ""
+        },
+        {
+          "key": "适用工件材料",
+          "value": ""
+        },
+        {
+          "key": "抗弯强度",
+          "value": ""
+        },
+        {
+          "key": "晶粒尺寸",
+          "value": ""
+        }
+      ],
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "e7d3695d-2f2a-4b63-ad64-5d72ebddef26",
+      "name": "切削温度",
+      "x": 365.0,
+      "y": 387.0,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "当前值",
+          "value": ""
+        },
+        {
+          "key": "最大值",
+          "value": ""
+        },
+        {
+          "key": "最小值",
+          "value": ""
+        },
+        {
+          "key": "测温方式",
+          "value": ""
+        },
+        {
+          "key": "报警阈值",
+          "value": ""
+        },
+        {
+          "key": "单位",
+          "value": ""
+        },
+        {
+          "key": "采样频率",
+          "value": ""
+        }
+      ],
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "15931866-968d-4389-bf18-659185fa8024",
+      "name": "进给量",
+      "x": 619.0,
+      "y": 420.0,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "当前值",
+          "value": ""
+        },
+        {
+          "key": "最大值",
+          "value": ""
+        },
+        {
+          "key": "最小值",
+          "value": ""
+        },
+        {
+          "key": "步长",
+          "value": ""
+        },
+        {
+          "key": "单位",
+          "value": ""
+        },
+        {
+          "key": "粗加工推荐值",
+          "value": ""
+        },
+        {
+          "key": "精加工推荐值",
+          "value": ""
+        }
+      ],
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "d249a210-3500-484d-8e76-b850412af991",
+      "name": "表面粗糙度",
+      "x": 833.0,
+      "y": 384.0,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "当前值",
+          "value": ""
+        },
+        {
+          "key": "上限",
+          "value": ""
+        },
+        {
+          "key": "下限",
+          "value": ""
+        },
+        {
+          "key": "检测标准",
+          "value": ""
+        },
+        {
+          "key": "单位",
+          "value": ""
+        },
+        {
+          "key": "取样长度",
+          "value": ""
+        },
+        {
+          "key": "检测频次",
+          "value": ""
+        }
+      ],
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "26f488b3-c5d6-46cb-a1c8-dd25885009f6",
+      "name": "刀具磨损",
+      "x": 83.0,
+      "y": 557.0,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "磨损量",
+          "value": ""
+        },
+        {
+          "key": "失效阈值",
+          "value": ""
+        },
+        {
+          "key": "最小值",
+          "value": ""
+        },
+        {
+          "key": "剩余寿命",
+          "value": ""
+        },
+        {
+          "key": "磨损状态",
+          "value": ""
+        },
+        {
+          "key": "已加工件数",
+          "value": ""
+        },
+        {
+          "key": "单位",
+          "value": ""
+        }
+      ],
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "87d71cdd-9588-4a8d-8fb4-1cbb93b8208a",
+      "name": "操作人员技能",
+      "x": 362.0,
+      "y": 570.0,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "技能等级",
+          "value": ""
+        },
+        {
+          "key": "证书类型",
+          "value": ""
+        },
+        {
+          "key": "从业年限",
+          "value": ""
+        },
+        {
+          "key": "培训记录",
+          "value": ""
+        },
+        {
+          "key": "操作设备数",
+          "value": ""
+        },
+        {
+          "key": "事故率",
+          "value": ""
+        },
+        {
+          "key": "月均工时",
+          "value": ""
+        }
+      ],
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "c089a2f9-c992-4827-a7aa-991b39110d16",
+      "name": "机床刚性",
+      "x": 605.0,
+      "y": 534.0,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "刚性等级",
+          "value": ""
+        },
+        {
+          "key": "机床型号",
+          "value": ""
+        },
+        {
+          "key": "最大承重",
+          "value": ""
+        },
+        {
+          "key": "主轴功率",
+          "value": ""
+        },
+        {
+          "key": "导轨类型",
+          "value": ""
+        },
+        {
+          "key": "最大转速",
+          "value": ""
+        },
+        {
+          "key": "出厂精度",
+          "value": ""
+        }
+      ],
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "2eaacd98-454a-41e2-82f1-d1e20de5a563",
+      "name": "奥特曼2",
+      "x": 1045.8131238137153,
+      "y": 621.7167784330721,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "16091db5-f512-4aff-820f-dd2ca33daf2f",
+      "name": "23",
+      "x": -267.86651997417346,
+      "y": 169.12211764156922,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    }
+  ],
+  "edges": [
+    {
+      "id": "0858cac9-96fe-4027-bd4d-10f83455e2b3",
+      "source": "c089a2f9-c992-4827-a7aa-991b39110d16",
+      "target": "1455de12-a40d-44e3-a5b8-05af54e9ed0d",
+      "relation": "约束",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.5,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "417b8199-1b6d-4c34-b036-0ece7f7f0570",
+      "source": "6cc8e8cf-06cc-41e9-8ded-432bd9208770",
+      "target": "26f488b3-c5d6-46cb-a1c8-dd25885009f6",
+      "relation": "决定",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.9,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "7d37cdcf-2858-414b-a464-d9eb7f25635a",
+      "source": "670f3a11-c233-4489-b783-1531f64f6bec",
+      "target": "26f488b3-c5d6-46cb-a1c8-dd25885009f6",
+      "relation": "加速",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "c980f0a4-bed8-44a5-b470-6e0916e6661d",
+      "source": "670f3a11-c233-4489-b783-1531f64f6bec",
+      "target": "e7d3695d-2f2a-4b63-ad64-5d72ebddef26",
+      "relation": "升高",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "ee7a9df6-d421-44bb-b899-5f7c951f2b7b",
+      "source": "15931866-968d-4389-bf18-659185fa8024",
+      "target": "d249a210-3500-484d-8e76-b850412af991",
+      "relation": "影响",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.55,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "9d996c3f-92ac-42a7-97aa-5c94b88e942d",
+      "source": "15931866-968d-4389-bf18-659185fa8024",
+      "target": "26f488b3-c5d6-46cb-a1c8-dd25885009f6",
+      "relation": "加速",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "c6205160-a922-48c3-ae39-14914e382816",
+      "source": "15931866-968d-4389-bf18-659185fa8024",
+      "target": "e7d3695d-2f2a-4b63-ad64-5d72ebddef26",
+      "relation": "升高",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.65,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "e5fdcf86-1064-481a-920a-ce7b30bf7fdb",
+      "source": "880c3377-925e-4643-a3fb-33fe6785e801",
+      "target": "26f488b3-c5d6-46cb-a1c8-dd25885009f6",
+      "relation": "加重",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.75,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "2a697b77-54a6-4ff6-8374-2ecead948c8f",
+      "source": "880c3377-925e-4643-a3fb-33fe6785e801",
+      "target": "e7d3695d-2f2a-4b63-ad64-5d72ebddef26",
+      "relation": "升高",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "ccca0171-8228-4925-89b1-ed612c70c25a",
+      "source": "87d71cdd-9588-4a8d-8fb4-1cbb93b8208a",
+      "target": "670f3a11-c233-4489-b783-1531f64f6bec",
+      "relation": "调控",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.65,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "37243fd7-af0f-4b73-ae97-06c4558cbf2c",
+      "source": "87d71cdd-9588-4a8d-8fb4-1cbb93b8208a",
+      "target": "15931866-968d-4389-bf18-659185fa8024",
+      "relation": "调控",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.65,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "73049345-4f0b-424f-9899-9b382b26e88b",
+      "source": "87d71cdd-9588-4a8d-8fb4-1cbb93b8208a",
+      "target": "880c3377-925e-4643-a3fb-33fe6785e801",
+      "relation": "调控",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.65,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "9b5b4f1c-c2c4-40c2-8351-e5aa44275a61",
+      "source": "f258252c-226f-45be-9713-ac2cff29b2bc",
+      "target": "26f488b3-c5d6-46cb-a1c8-dd25885009f6",
+      "relation": "加剧",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "da30f1b6-0a70-46c8-93e5-12a122e9e6e2",
+      "source": "f258252c-226f-45be-9713-ac2cff29b2bc",
+      "target": "d249a210-3500-484d-8e76-b850412af991",
+      "relation": "影响",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.5,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "aa211a84-9b66-4cbf-84eb-2861f9bf8b58",
+      "source": "26f488b3-c5d6-46cb-a1c8-dd25885009f6",
+      "target": "d249a210-3500-484d-8e76-b850412af991",
+      "relation": "恶化",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.8,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "121af4de-99da-4099-9d82-10702f4cb977",
+      "source": "26f488b3-c5d6-46cb-a1c8-dd25885009f6",
+      "target": "1455de12-a40d-44e3-a5b8-05af54e9ed0d",
+      "relation": "降低",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.75,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "b6e2eea8-f66b-48ee-9499-1766b3bee47b",
+      "source": "26f488b3-c5d6-46cb-a1c8-dd25885009f6",
+      "target": "a118c49c-f2ec-423f-87ef-85fd3b1b3d94",
+      "relation": "降低",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "ecbc353f-c6cd-4087-84f2-7329e0403fb6",
+      "source": "e7d3695d-2f2a-4b63-ad64-5d72ebddef26",
+      "target": "26f488b3-c5d6-46cb-a1c8-dd25885009f6",
+      "relation": "加剧",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "da14621a-6eef-4dd4-b53c-d02b71f70876",
+      "source": "e7d3695d-2f2a-4b63-ad64-5d72ebddef26",
+      "target": "d249a210-3500-484d-8e76-b850412af991",
+      "relation": "影响",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.5,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "b647f31d-fed4-4a37-b4f3-91b981f83ea9",
+      "source": "d249a210-3500-484d-8e76-b850412af991",
+      "target": "22fb065d-d58c-4255-ba00-78484297d39a",
+      "relation": "决定",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.85,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "117b74c6-8c19-4300-a06b-2eec7926f2d5",
+      "source": "1455de12-a40d-44e3-a5b8-05af54e9ed0d",
+      "target": "22fb065d-d58c-4255-ba00-78484297d39a",
+      "relation": "决定",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.9,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "272bb411-dfb6-4001-9004-ba788838d127",
+      "source": "a118c49c-f2ec-423f-87ef-85fd3b1b3d94",
+      "target": "0aa459a1-fff3-4806-a6a6-53fc79e58ab8",
+      "relation": "影响",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.65,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "21702e67-0452-4894-be92-09bf2da29b56",
+      "source": "26f488b3-c5d6-46cb-a1c8-dd25885009f6",
+      "target": "0aa459a1-fff3-4806-a6a6-53fc79e58ab8",
+      "relation": "推高",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.65,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "2b941caf-2f8a-4cbe-ab9c-f4e678a7892c",
+      "source": "a09cfe2e-8b4f-46fa-b6d8-2bedb459bce4",
+      "target": "e7d3695d-2f2a-4b63-ad64-5d72ebddef26",
+      "relation": "抑制",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.6,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "f0fcd6f1-07c5-45ce-ae99-ea658cffb6bd",
+      "source": "a09cfe2e-8b4f-46fa-b6d8-2bedb459bce4",
+      "target": "26f488b3-c5d6-46cb-a1c8-dd25885009f6",
+      "relation": "减缓",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.55,
+      "origin": "excel:机械加工本体关系表.xlsx"
+    },
+    {
+      "id": "8742ec83-b4eb-4bdf-999a-1881a922c8a0",
+      "source": "2eaacd98-454a-41e2-82f1-d1e20de5a563",
+      "target": "d249a210-3500-484d-8e76-b850412af991",
+      "relation": "关联",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": null,
+      "origin": "manual"
+    }
+  ],
+  "inference_rules": [
+    {
+      "id": "721a8890-a8bc-482c-acbe-d97d3aacabc1",
+      "rel1": "加速",
+      "rel2": "恶化",
+      "inferred_rel": "间接导致"
+    },
+    {
+      "id": "eeb70cef-4ed1-4c71-bc81-3f3afef48e3f",
+      "rel1": "调控",
+      "rel2": "加速",
+      "inferred_rel": "间接影响"
+    },
+    {
+      "id": "2da12371-164e-45ab-9f3b-afc326607d88",
+      "rel1": "升高",
+      "rel2": "加剧",
+      "inferred_rel": "间接加剧"
+    }
+  ],
+  "mutex_rules": [
+    {
+      "id": "d85f235b-af50-4a4d-aa70-ef0a62d5b886",
+      "rel1": "抑制",
+      "rel2": "加速"
+    }
+  ],
+  "relation_weights": {}
+}

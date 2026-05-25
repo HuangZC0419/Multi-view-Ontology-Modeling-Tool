@@ -38,6 +38,7 @@ class OntologyNode(BaseModel):
     y: float
     parent_id: str | None = None
     attributes: list[dict[str, str]] = Field(default_factory=list)
+    origin: str = "manual"
 
 
 class OntologyEdge(BaseModel):
@@ -48,6 +49,7 @@ class OntologyEdge(BaseModel):
     kind: Literal["parent-child", "relation"]
     characteristics: list[str] = Field(default_factory=list)
     weight: float | None = None
+    origin: str = "manual"
 
 
 class InferenceRule(BaseModel):
