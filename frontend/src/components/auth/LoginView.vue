@@ -46,259 +46,237 @@ async function handleLogin() {
 
 <template>
   <div class="login-shell">
-    <!-- 背景光晕球体 -->
-    <div class="bg-orb orb-1"></div>
-    <div class="bg-orb orb-2"></div>
-    <div class="bg-orb orb-3"></div>
+    <div class="login-card">
+      <!-- 左侧品牌面板 -->
+      <div class="brand-panel">
+        <div class="brand-content">
+          <div class="brand-icon-box">
+            <svg class="brand-icon-svg" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="本体建模系统图标">
+              <circle cx="24" cy="8" r="5"/>
+              <circle cx="10" cy="38" r="5"/>
+              <circle cx="38" cy="38" r="5"/>
+              <line x1="20.5" y1="11.4" x2="13.5" y2="33.5"/>
+              <line x1="27.5" y1="11.4" x2="34.5" y2="33.5"/>
+              <line x1="16" y1="38" x2="32" y2="38"/>
+            </svg>
+          </div>
+          <h1>本体建模系统</h1>
+          <p class="brand-sub">ONTOLOGY MODELING SYSTEM</p>
 
-    <!-- 浮动粒子 -->
-    <div class="particle p-1"></div>
-    <div class="particle p-2"></div>
-    <div class="particle p-3"></div>
-    <div class="particle p-4"></div>
-    <div class="particle p-5"></div>
-    <div class="particle p-6"></div>
-
-    <!-- 主玻璃卡片 -->
-    <div class="glass-card">
-      <!-- 左侧品牌区 -->
-      <div class="brand-zone">
-        <div class="brand-icon-box">
-          <svg class="brand-icon-svg" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="本体建模系统图标">
-            <circle cx="24" cy="8" r="5"/>
-            <circle cx="10" cy="38" r="5"/>
-            <circle cx="38" cy="38" r="5"/>
-            <line x1="20.5" y1="11.4" x2="13.5" y2="33.5"/>
-            <line x1="27.5" y1="11.4" x2="34.5" y2="33.5"/>
-            <line x1="16" y1="38" x2="32" y2="38"/>
-          </svg>
+          <!-- 同心圆几何装饰 -->
+          <div class="geo-decor">
+            <div class="geo-ring outer"></div>
+            <div class="geo-ring middle"></div>
+            <div class="geo-dot"></div>
+          </div>
         </div>
-        <h1>本体建模系统</h1>
-        <p class="brand-sub">ONTOLOGY MODELING SYSTEM</p>
       </div>
 
-      <!-- 右侧表单区 -->
-      <div class="form-zone">
-        <form class="login-form" @submit.prevent="handleLogin">
-          <div class="field">
-            <label for="username">用户名</label>
-            <input
-              id="username"
-              v-model="username"
-              name="username"
-              type="text"
-              placeholder="输入用户名"
-              autocomplete="username"
-              @keyup.enter="handleLogin"
-            />
+      <!-- 右侧表单面板 -->
+      <div class="form-panel">
+        <div class="form-wrap">
+          <div class="form-header">
+            <h2>欢迎回来</h2>
+            <p>登录以访问您的工作台</p>
           </div>
 
-          <div class="field">
-            <label for="password">密码</label>
-            <input
-              id="password"
-              v-model="password"
-              name="password"
-              type="password"
-              placeholder="输入密码"
-              autocomplete="current-password"
-              @keyup.enter="handleLogin"
-            />
-          </div>
+          <form class="login-form" @submit.prevent="handleLogin">
+            <div class="field">
+              <label for="username">用户名</label>
+              <input
+                id="username"
+                v-model="username"
+                name="username"
+                type="text"
+                placeholder="输入用户名"
+                autocomplete="username"
+                @keyup.enter="handleLogin"
+              />
+            </div>
 
-          <div v-if="errorMsg" class="form-error">{{ errorMsg }}</div>
+            <div class="field">
+              <label for="password">密码</label>
+              <input
+                id="password"
+                v-model="password"
+                name="password"
+                type="password"
+                placeholder="输入密码"
+                autocomplete="current-password"
+                @keyup.enter="handleLogin"
+              />
+            </div>
 
-          <button type="submit" class="submit-btn" :disabled="loading">
-            <template v-if="!loading">登 录</template>
-            <template v-else>
-              <span class="spinner"></span> 验证中...
-            </template>
-          </button>
-        </form>
+            <div v-if="errorMsg" class="form-error">{{ errorMsg }}</div>
+
+            <button type="submit" class="submit-btn" :disabled="loading">
+              <template v-if="!loading">登 录</template>
+              <template v-else>
+                <span class="spinner"></span> 验证中...
+              </template>
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-</style>
-
 <style scoped>
 /* ==========================================================
-   全局与背景
+   外层容器：8px 留白
    ========================================================== */
 .login-shell {
-  --primary: #2563eb;
-  --primary-light: #3b82f6;
-  --primary-dark: #1d4ed8;
-
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 100vw;
   height: 100vh;
-  overflow: hidden;
-  background: linear-gradient(135deg, #0f2744 0%, #1a3a6b 25%, #1e40af 50%, #2560d0 75%, #3075f0 100%);
-  font-family: "Plus Jakarta Sans", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  padding: 8px;
+  background: #f8f9fa;
+  box-sizing: border-box;
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* 光晕球体 */
-.bg-orb {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.orb-1 {
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(96,165,250,0.12) 0%, rgba(37,99,235,0.05) 40%, transparent 70%);
-  top: 50%;
-  left: 50%;
-  transform: translate(-65%, -45%);
-  animation: orb-breathe-1 8s ease-in-out infinite;
-}
-
-.orb-2 {
-  width: 350px;
-  height: 350px;
-  background: radial-gradient(circle, rgba(147,197,253,0.08) 0%, rgba(59,130,246,0.03) 40%, transparent 70%);
-  top: 50%;
-  left: 50%;
-  transform: translate(-25%, -55%);
-  animation: orb-breathe-2 6s ease-in-out infinite;
-}
-
-.orb-3 {
-  width: 250px;
-  height: 250px;
-  background: radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 60%);
-  bottom: -60px;
-  right: -40px;
-  animation: orb-drift 12s ease-in-out infinite alternate;
-}
-
-@keyframes orb-breathe-1 {
-  0%, 100% { transform: translate(-65%, -45%) scale(1); opacity: 1; }
-  50% { transform: translate(-65%, -45%) scale(1.08); opacity: 0.7; }
-}
-
-@keyframes orb-breathe-2 {
-  0%, 100% { transform: translate(-25%, -55%) scale(1.05); opacity: 0.8; }
-  50% { transform: translate(-25%, -55%) scale(0.95); opacity: 1; }
-}
-
-@keyframes orb-drift {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(-30px, -20px); }
-}
-
-/* 浮动粒子 */
-.particle {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.p-1 { width: 4px; height: 4px; background: rgba(147,197,253,0.5); top: 15%; left: 20%; box-shadow: 0 0 8px rgba(147,197,253,0.3); animation: float-1 7s ease-in-out infinite alternate; }
-.p-2 { width: 3px; height: 3px; background: rgba(96,165,250,0.4); top: 22%; right: 25%; box-shadow: 0 0 6px rgba(96,165,250,0.25); animation: float-2 5s ease-in-out infinite alternate; }
-.p-3 { width: 5px; height: 5px; background: rgba(59,130,246,0.35); bottom: 20%; left: 30%; box-shadow: 0 0 10px rgba(59,130,246,0.2); animation: float-3 9s ease-in-out infinite alternate; }
-.p-4 { width: 3px; height: 3px; background: rgba(191,219,254,0.5); bottom: 28%; right: 20%; box-shadow: 0 0 6px rgba(191,219,254,0.3); animation: float-4 6s ease-in-out infinite alternate; }
-.p-5 { width: 2px; height: 2px; background: rgba(147,197,253,0.4); top: 40%; right: 15%; box-shadow: 0 0 6px rgba(147,197,253,0.2); animation: float-5 8s ease-in-out infinite alternate; }
-.p-6 { width: 4px; height: 4px; background: rgba(96,165,250,0.3); top: 60%; left: 22%; box-shadow: 0 0 8px rgba(96,165,250,0.15); animation: float-6 10s ease-in-out infinite alternate; }
-
-@keyframes float-1 { 0% { transform: translate(0, 0); } 100% { transform: translate(30px, -20px); } }
-@keyframes float-2 { 0% { transform: translate(0, 0); } 100% { transform: translate(-25px, 15px); } }
-@keyframes float-3 { 0% { transform: translate(0, 0); } 100% { transform: translate(-20px, -25px); } }
-@keyframes float-4 { 0% { transform: translate(0, 0); } 100% { transform: translate(20px, 20px); } }
-@keyframes float-5 { 0% { transform: translate(0, 0); } 100% { transform: translate(-30px, -15px); } }
-@keyframes float-6 { 0% { transform: translate(0, 0); } 100% { transform: translate(35px, 10px); } }
-
-/* ==========================================================
-   玻璃拟态卡片
-   ========================================================== */
-.glass-card {
-  position: relative;
-  z-index: 2;
+.login-card {
   display: flex;
-  align-items: center;
-  gap: 40px;
-  width: 540px;
-  max-width: 92vw;
-  padding: 40px 44px 36px;
-  background: rgba(255,255,255,0.1);
-  -webkit-backdrop-filter: blur(24px);
-  backdrop-filter: blur(24px);
-  border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 24px;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.25), 0 0 0 0.5px rgba(255,255,255,0.08) inset;
-  animation: card-enter 0.6s ease-out;
-}
-
-@keyframes card-enter {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 /* ==========================================================
-   品牌区（左侧）
+   左侧品牌面板 (38%)
    ========================================================== */
-.brand-zone {
-  flex: 0 0 auto;
-  text-align: center;
+.brand-panel {
+  flex: 0 0 38%;
+  background: #f4f6f8;
+  display: flex;
+  align-items: flex-start;
+  padding: 44px 40px;
+  min-width: 0;
+}
+
+.brand-content {
+  display: flex;
+  flex-direction: column;
 }
 
 .brand-icon-box {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(37,99,235,0.3), rgba(59,130,246,0.15));
-  border: 1px solid rgba(255,255,255,0.12);
-  margin-bottom: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #1e293b;
+  margin-bottom: 14px;
 }
 
 .brand-icon-svg {
-  width: 30px;
-  height: 30px;
-  color: rgba(255,255,255,0.9);
+  width: 22px;
+  height: 22px;
+  color: #ffffff;
 }
 
-.brand-zone h1 {
-  margin: 0;
-  font-size: 22px;
+.brand-content h1 {
+  margin: 0 0 3px 0;
+  font-size: 20px;
   font-weight: 800;
-  color: #ffffff;
+  color: #1e293b;
   letter-spacing: 0.02em;
-  white-space: nowrap;
   line-height: 1.3;
 }
 
 .brand-sub {
-  margin: 4px 0 0 0;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  color: rgba(255,255,255,0.4);
+  margin: 0;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #94a3b8;
+}
+
+/* 同心圆几何装饰 */
+.geo-decor {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin-top: 36px;
+}
+
+.geo-ring {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.geo-ring.outer {
+  width: 100px;
+  height: 100px;
+  border: 2px solid #d1d5db;
+  top: 0;
+  left: 0;
+}
+
+.geo-ring.middle {
+  width: 60px;
+  height: 60px;
+  border: 1.5px solid #e5e7eb;
+  top: 20px;
+  left: 20px;
+}
+
+.geo-dot {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #1e293b;
+  opacity: 0.08;
+  top: 36px;
+  left: 36px;
 }
 
 /* ==========================================================
-   表单区（右侧）
+   右侧表单面板 (62%)
    ========================================================== */
-.form-zone {
+.form-panel {
   flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
   min-width: 0;
+  padding: 40px;
 }
 
+.form-wrap {
+  width: 300px;
+  max-width: 100%;
+}
+
+.form-header {
+  margin-bottom: 28px;
+}
+
+.form-header h2 {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+}
+
+.form-header p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* 表单 */
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 .field {
@@ -310,43 +288,42 @@ async function handleLogin() {
 .field label {
   font-size: 12px;
   font-weight: 600;
-  color: rgba(255,255,255,0.7);
+  color: #334155;
   letter-spacing: 0.02em;
 }
 
 .field input {
   width: 100%;
   padding: 12px 14px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 10px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
   font-size: 14px;
-  color: #ffffff;
+  color: #1e293b;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   box-sizing: border-box;
   font-family: inherit;
 }
 
 .field input::placeholder {
-  color: rgba(255,255,255,0.3);
+  color: #94a3b8;
 }
 
 .field input:focus {
-  border-color: rgba(255,255,255,0.5);
-  box-shadow: 0 0 0 3px rgba(96,165,250,0.25);
-  background: rgba(255,255,255,0.12);
+  border-color: #94a3b8;
+  box-shadow: 0 0 0 3px rgba(148,163,184,0.15);
 }
 
 /* 错误提示 */
 .form-error {
   padding: 9px 14px;
-  background: rgba(220,38,38,0.15);
-  border: 1px solid rgba(220,38,38,0.3);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
   border-radius: 8px;
   font-size: 12px;
   font-weight: 500;
-  color: #fca5a5;
+  color: #dc2626;
   text-align: center;
 }
 
@@ -358,28 +335,26 @@ async function handleLogin() {
   gap: 8px;
   width: 100%;
   padding: 13px 0;
-  margin-top: 4px;
-  background: rgba(255,255,255,0.9);
-  color: var(--primary-dark);
+  margin-top: 6px;
+  background: #1e293b;
+  color: #ffffff;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  transition: background 0.2s ease, transform 0.15s ease;
   letter-spacing: 0.06em;
   font-family: inherit;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: #ffffff;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+  background: #0f172a;
   transform: translateY(-1px);
 }
 
 .submit-btn:focus-visible {
-  outline: 2px solid rgba(96,165,250,0.6);
+  outline: 2px solid #94a3b8;
   outline-offset: 2px;
 }
 
@@ -388,7 +363,7 @@ async function handleLogin() {
 }
 
 .submit-btn:disabled {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -396,8 +371,8 @@ async function handleLogin() {
   display: inline-block;
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(30,64,175,0.2);
-  border-top-color: var(--primary-dark);
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #ffffff;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -409,71 +384,76 @@ async function handleLogin() {
 /* ==========================================================
    响应式
    ========================================================== */
-@media (max-width: 640px) {
-  .glass-card {
+@media (max-width: 768px) {
+  .login-card {
     flex-direction: column;
-    gap: 24px;
-    width: 92vw;
-    padding: 32px 28px 28px;
   }
 
-  .brand-zone h1 {
-    font-size: 20px;
+  .brand-panel {
+    flex: 0 0 auto;
+    padding: 28px 24px 20px;
   }
 
-  .brand-sub {
-    font-size: 8px;
+  .geo-decor {
+    display: none;
   }
 
-  .brand-icon-box {
-    width: 44px;
-    height: 44px;
-    margin-bottom: 8px;
-  }
-
-  .brand-icon-svg {
-    width: 24px;
-    height: 24px;
-  }
-}
-
-@media (max-width: 400px) {
-  .glass-card {
-    padding: 24px 20px 22px;
-    border-radius: 18px;
+  .brand-content {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
   }
 
   .brand-icon-box {
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    margin-bottom: 0;
   }
 
   .brand-icon-svg {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
   }
 
-  .brand-zone h1 {
-    font-size: 18px;
+  .brand-content h1 {
+    font-size: 16px;
   }
 
   .brand-sub {
     display: none;
   }
 
-  .field input {
-    padding: 10px 12px;
-    font-size: 13px;
+  .form-panel {
+    flex: 1 1 auto;
+    align-items: flex-start;
+    padding: 24px;
   }
 }
 
-/* 尊重用户减少动画偏好 */
-@media (prefers-reduced-motion: reduce) {
-  .bg-orb,
-  .particle,
-  .glass-card {
-    animation: none;
+@media (max-width: 480px) {
+  .login-shell {
+    padding: 4px;
+  }
+
+  .login-card {
+    border-radius: 8px;
+  }
+
+  .brand-panel {
+    padding: 18px 16px 14px;
+  }
+
+  .form-panel {
+    padding: 16px;
+  }
+
+  .form-wrap {
+    width: 100%;
+  }
+
+  .form-header h2 {
+    font-size: 16px;
   }
 }
 </style>
