@@ -216,4 +216,264 @@ async function handleLogin() {
 @keyframes float-4 { 0% { transform: translate(0, 0); } 100% { transform: translate(20px, 20px); } }
 @keyframes float-5 { 0% { transform: translate(0, 0); } 100% { transform: translate(-30px, -15px); } }
 @keyframes float-6 { 0% { transform: translate(0, 0); } 100% { transform: translate(35px, 10px); } }
+
+/* ==========================================================
+   玻璃拟态卡片
+   ========================================================== */
+.glass-card {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  width: 540px;
+  max-width: 92vw;
+  padding: 40px 44px 36px;
+  background: rgba(255,255,255,0.1);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 24px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.25), 0 0 0 0.5px rgba(255,255,255,0.08) inset;
+  animation: card-enter 0.6s ease-out;
+}
+
+@keyframes card-enter {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================
+   品牌区（左侧）
+   ========================================================== */
+.brand-zone {
+  flex: 0 0 auto;
+  text-align: center;
+}
+
+.brand-icon-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(37,99,235,0.3), rgba(59,130,246,0.15));
+  border: 1px solid rgba(255,255,255,0.12);
+  margin-bottom: 12px;
+}
+
+.brand-icon-svg {
+  width: 30px;
+  height: 30px;
+  color: rgba(255,255,255,0.9);
+}
+
+.brand-zone h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+.brand-sub {
+  margin: 4px 0 0 0;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: rgba(255,255,255,0.4);
+}
+
+/* ==========================================================
+   表单区（右侧）
+   ========================================================== */
+.form-zone {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 0.02em;
+}
+
+.field input {
+  width: 100%;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  font-size: 14px;
+  color: #ffffff;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.field input::placeholder {
+  color: rgba(255,255,255,0.3);
+}
+
+.field input:focus {
+  border-color: rgba(255,255,255,0.5);
+  box-shadow: 0 0 0 3px rgba(96,165,250,0.25);
+  background: rgba(255,255,255,0.12);
+}
+
+/* 错误提示 */
+.form-error {
+  padding: 9px 14px;
+  background: rgba(220,38,38,0.15);
+  border: 1px solid rgba(220,38,38,0.3);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fca5a5;
+  text-align: center;
+}
+
+/* 登录按钮 */
+.submit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 13px 0;
+  margin-top: 4px;
+  background: rgba(255,255,255,0.9);
+  color: var(--primary-dark);
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  letter-spacing: 0.06em;
+  font-family: inherit;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #ffffff;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+  transform: translateY(-1px);
+}
+
+.submit-btn:focus-visible {
+  outline: 2px solid rgba(96,165,250,0.6);
+  outline-offset: 2px;
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submit-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(30,64,175,0.2);
+  border-top-color: var(--primary-dark);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ==========================================================
+   响应式
+   ========================================================== */
+@media (max-width: 640px) {
+  .glass-card {
+    flex-direction: column;
+    gap: 24px;
+    width: 92vw;
+    padding: 32px 28px 28px;
+  }
+
+  .brand-zone h1 {
+    font-size: 20px;
+  }
+
+  .brand-sub {
+    font-size: 8px;
+  }
+
+  .brand-icon-box {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 8px;
+  }
+
+  .brand-icon-svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+@media (max-width: 400px) {
+  .glass-card {
+    padding: 24px 20px 22px;
+    border-radius: 18px;
+  }
+
+  .brand-icon-box {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+  }
+
+  .brand-icon-svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .brand-zone h1 {
+    font-size: 18px;
+  }
+
+  .brand-sub {
+    display: none;
+  }
+
+  .field input {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+}
+
+/* 尊重用户减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .bg-orb,
+  .particle,
+  .glass-card {
+    animation: none;
+  }
+}
 </style>
