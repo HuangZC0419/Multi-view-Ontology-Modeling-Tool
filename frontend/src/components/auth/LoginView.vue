@@ -47,11 +47,11 @@ async function handleLogin() {
 <template>
   <div class="login-shell">
     <div class="login-card">
-      <!-- 左侧品牌面板 -->
-      <div class="brand-panel">
-        <div class="brand-content">
-          <div class="brand-icon-box">
-            <svg class="brand-icon-svg" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="本体建模系统图标">
+      <!-- 左侧品牌区 -->
+      <div class="brand-side">
+        <div class="brand-inner">
+          <div class="brand-logo">
+            <svg viewBox="0 0 48 48" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="24" cy="8" r="5"/>
               <circle cx="10" cy="38" r="5"/>
               <circle cx="38" cy="38" r="5"/>
@@ -61,55 +61,44 @@ async function handleLogin() {
             </svg>
           </div>
           <h1>本体建模系统</h1>
-          <p class="brand-sub">ONTOLOGY MODELING SYSTEM</p>
-
-          <!-- 同心圆几何装饰 -->
-          <div class="geo-decor">
-            <div class="geo-ring outer"></div>
-            <div class="geo-ring middle"></div>
-            <div class="geo-dot"></div>
-          </div>
+          <p class="brand-desc">ONTOLOGY MODELING SYSTEM</p>
         </div>
       </div>
 
-      <!-- 右侧表单面板 -->
-      <div class="form-panel">
-        <div class="form-wrap">
+      <!-- 右侧表单区 -->
+      <div class="form-side">
+        <div class="form-card">
           <div class="form-header">
             <h2>欢迎回来</h2>
             <p>登录以访问您的工作台</p>
           </div>
 
-          <form class="login-form" @submit.prevent="handleLogin">
-            <div class="field">
-              <label for="username">用户名</label>
-              <input
-                id="username"
-                v-model="username"
-                name="username"
-                type="text"
-                placeholder="输入用户名"
-                autocomplete="username"
-                @keyup.enter="handleLogin"
-              />
-            </div>
+          <form @submit.prevent="handleLogin">
+            <label for="username">用户名</label>
+            <input
+              id="username"
+              v-model="username"
+              name="username"
+              type="text"
+              placeholder="输入用户名"
+              autocomplete="username"
+              @keyup.enter="handleLogin"
+            />
 
-            <div class="field">
-              <label for="password">密码</label>
-              <input
-                id="password"
-                v-model="password"
-                name="password"
-                type="password"
-                placeholder="输入密码"
-                autocomplete="current-password"
-                @keyup.enter="handleLogin"
-              />
-            </div>
+            <label for="password">密码</label>
+            <input
+              id="password"
+              v-model="password"
+              name="password"
+              type="password"
+              placeholder="输入密码"
+              autocomplete="current-password"
+              @keyup.enter="handleLogin"
+            />
 
             <div v-if="errorMsg" class="form-error">{{ errorMsg }}</div>
 
-            <button type="submit" class="submit-btn" :disabled="loading">
+            <button type="submit" :disabled="loading">
               <template v-if="!loading">登 录</template>
               <template v-else>
                 <span class="spinner"></span> 验证中...
@@ -123,17 +112,13 @@ async function handleLogin() {
 </template>
 
 <style scoped>
-/* ==========================================================
-   外层容器：8px 留白
-   ========================================================== */
 .login-shell {
   width: 100vw;
   height: 100vh;
   padding: 8px;
-  background: #f8f9fa;
+  background: #f8fafc;
   box-sizing: border-box;
-  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
 .login-card {
@@ -143,114 +128,57 @@ async function handleLogin() {
   background: #ffffff;
   border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  border: 1px solid #e2e8f0;
 }
 
-/* ==========================================================
-   左侧品牌面板 (38%)
-   ========================================================== */
-.brand-panel {
-  flex: 0 0 38%;
-  background: #f4f6f8;
+/* ======== 左侧品牌区 ======== */
+.brand-side {
+  flex: 0 0 40%;
+  background: #f1f5f9;
   display: flex;
   align-items: flex-start;
-  padding: 44px 40px;
-  min-width: 0;
+  padding: 48px 44px;
 }
 
-.brand-content {
-  display: flex;
-  flex-direction: column;
+.brand-logo {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
 }
 
-.brand-icon-box {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: #1e293b;
-  margin-bottom: 14px;
+.brand-logo svg {
+  width: 48px;
+  height: 48px;
 }
 
-.brand-icon-svg {
-  width: 22px;
-  height: 22px;
-  color: #ffffff;
-}
-
-.brand-content h1 {
-  margin: 0 0 3px 0;
-  font-size: 20px;
-  font-weight: 800;
+.brand-inner h1 {
+  margin: 0 0 4px 0;
+  font-size: 22px;
+  font-weight: 700;
   color: #1e293b;
-  letter-spacing: 0.02em;
-  line-height: 1.3;
+  letter-spacing: -0.025em;
 }
 
-.brand-sub {
+.brand-desc {
   margin: 0;
-  font-size: 8px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  letter-spacing: 0.08em;
 }
 
-/* 同心圆几何装饰 */
-.geo-decor {
-  position: relative;
-  width: 100px;
-  height: 100px;
-  margin-top: 36px;
-}
-
-.geo-ring {
-  position: absolute;
-  border-radius: 50%;
-}
-
-.geo-ring.outer {
-  width: 100px;
-  height: 100px;
-  border: 2px solid #d1d5db;
-  top: 0;
-  left: 0;
-}
-
-.geo-ring.middle {
-  width: 60px;
-  height: 60px;
-  border: 1.5px solid #e5e7eb;
-  top: 20px;
-  left: 20px;
-}
-
-.geo-dot {
-  position: absolute;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: #1e293b;
-  opacity: 0.08;
-  top: 36px;
-  left: 36px;
-}
-
-/* ==========================================================
-   右侧表单面板 (62%)
-   ========================================================== */
-.form-panel {
+/* ======== 右侧表单区 ======== */
+.form-side {
   flex: 1 1 auto;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff;
-  min-width: 0;
   padding: 40px;
 }
 
-.form-wrap {
-  width: 300px;
+.form-card {
+  width: 340px;
   max-width: 100%;
 }
 
@@ -260,110 +188,95 @@ async function handleLogin() {
 
 .form-header h2 {
   margin: 0 0 4px 0;
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 1.15rem;
+  font-weight: 600;
   color: #1e293b;
-  letter-spacing: -0.01em;
 }
 
 .form-header p {
   margin: 0;
-  font-size: 13px;
+  font-size: 0.875rem;
   color: #64748b;
 }
 
-/* 表单 */
-.login-form {
+/* 表单元素 — 对齐 RAG 设计系统 */
+form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
 }
 
-.field {
+label {
   display: flex;
   flex-direction: column;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
   gap: 6px;
+  margin-bottom: 14px;
 }
 
-.field label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #334155;
-  letter-spacing: 0.02em;
-}
-
-.field input {
-  width: 100%;
-  padding: 12px 14px;
-  background: #f8fafc;
-  border: 1.5px solid #e2e8f0;
+input {
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 8px 14px;
+  min-height: 44px;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
-  font-size: 14px;
+  background-color: #f8fafc;
   color: #1e293b;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.2s ease;
   box-sizing: border-box;
-  font-family: inherit;
+  width: 100%;
 }
 
-.field input::placeholder {
+input::placeholder {
   color: #94a3b8;
 }
 
-.field input:focus {
-  border-color: #94a3b8;
-  box-shadow: 0 0 0 3px rgba(148,163,184,0.15);
+input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  background-color: #ffffff;
 }
 
-/* 错误提示 */
 .form-error {
-  padding: 9px 14px;
+  padding: 10px 14px;
   background: #fef2f2;
   border: 1px solid #fecaca;
   border-radius: 8px;
-  font-size: 12px;
+  font-size: 0.875rem;
   font-weight: 500;
   color: #dc2626;
   text-align: center;
+  margin-bottom: 14px;
 }
 
-/* 登录按钮 */
-.submit-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 13px 0;
-  margin-top: 6px;
-  background: #1e293b;
+button {
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 8px 20px;
+  min-height: 44px;
+  background-color: #2563eb;
   color: #ffffff;
   border: none;
   border-radius: 8px;
-  font-size: 15px;
-  font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.15s ease;
-  letter-spacing: 0.06em;
-  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  margin-top: 4px;
 }
 
-.submit-btn:hover:not(:disabled) {
-  background: #0f172a;
+button:hover:not(:disabled) {
+  background-color: #1d4ed8;
   transform: translateY(-1px);
 }
 
-.submit-btn:focus-visible {
-  outline: 2px solid #94a3b8;
-  outline-offset: 2px;
-}
-
-.submit-btn:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.submit-btn:disabled {
-  opacity: 0.5;
+button:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
@@ -381,53 +294,44 @@ async function handleLogin() {
   to { transform: rotate(360deg); }
 }
 
-/* ==========================================================
-   响应式
-   ========================================================== */
+/* ======== 响应式 ======== */
 @media (max-width: 768px) {
   .login-card {
     flex-direction: column;
   }
 
-  .brand-panel {
+  .brand-side {
     flex: 0 0 auto;
-    padding: 28px 24px 20px;
+    padding: 28px 24px;
   }
 
-  .geo-decor {
-    display: none;
+  .brand-logo {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 10px;
   }
 
-  .brand-content {
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
+  .brand-logo svg {
+    width: 36px;
+    height: 36px;
   }
 
-  .brand-icon-box {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    margin-bottom: 0;
+  .brand-inner h1 {
+    font-size: 18px;
   }
 
-  .brand-icon-svg {
-    width: 18px;
-    height: 18px;
+  .brand-desc {
+    font-size: 10px;
   }
 
-  .brand-content h1 {
-    font-size: 16px;
-  }
-
-  .brand-sub {
-    display: none;
-  }
-
-  .form-panel {
+  .form-side {
     flex: 1 1 auto;
     align-items: flex-start;
     padding: 24px;
+  }
+
+  .form-card {
+    width: 100%;
   }
 }
 
@@ -440,20 +344,12 @@ async function handleLogin() {
     border-radius: 8px;
   }
 
-  .brand-panel {
-    padding: 18px 16px 14px;
+  .brand-side {
+    padding: 20px 18px;
   }
 
-  .form-panel {
-    padding: 16px;
-  }
-
-  .form-wrap {
-    width: 100%;
-  }
-
-  .form-header h2 {
-    font-size: 16px;
+  .form-side {
+    padding: 18px;
   }
 }
 </style>
