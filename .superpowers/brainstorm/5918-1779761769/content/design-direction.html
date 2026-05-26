@@ -1,0 +1,80 @@
+<h2>你更喜欢哪种"突出感"的设计方向？</h2>
+<p class="subtitle">这三种风格都能解决"右侧留白过大"和"缺乏视觉冲击力"的问题，但氛围完全不同</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="dark-tech" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="display:flex;height:220px;border-radius:8px;overflow:hidden">
+        <div style="flex:1;background:linear-gradient(160deg, #0a0e27 0%, #0f172a 40%, #1a1f3a 100%);display:flex;align-items:center;justify-content:center;position:relative">
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:140px;height:140px;border-radius:50%;background:radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%)"></div>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:80px;height:80px;border-radius:50%;background:radial-gradient(circle, rgba(59,130,246,0.25) 0%, transparent 60%)"></div>
+          <div style="color:#60a5fa;font-size:22px;font-weight:800;z-index:1;letter-spacing:0.05em">本体建模</div>
+        </div>
+        <div style="flex:1;background:#0f172a;display:flex;align-items:center;justify-content:center">
+          <div style="background:rgba(30,41,59,0.8);border:1px solid rgba(59,130,246,0.2);border-radius:12px;padding:20px 24px;width:70%">
+            <div style="color:#e2e8f0;font-size:13px;font-weight:600;margin-bottom:12px">欢迎回来</div>
+            <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(71,85,105,0.3);border-radius:6px;height:8px;margin-bottom:8px"></div>
+            <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(71,85,105,0.3);border-radius:6px;height:8px;margin-bottom:12px"></div>
+            <div style="background:linear-gradient(135deg,#2563eb,#1d4ed8);border-radius:6px;height:10px;width:100%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>深空科技感 Dark Tech</h3>
+      <p>深色背景 + 发光蓝色点缀，强对比带来沉浸式的专业感，适合技术类/科研系统</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="gradient" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="display:flex;height:220px;border-radius:8px;overflow:hidden">
+        <div style="flex:1;background:linear-gradient(160deg, #1e40af 0%, #3b82f6 50%, #6366f1 100%);display:flex;align-items:center;justify-content:center;position:relative">
+          <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%, rgba(255,255,255,0.1) 0%, transparent 60%)"></div>
+          <div style="color:#fff;font-size:24px;font-weight:800;z-index:1;text-shadow:0 2px 20px rgba(0,0,0,0.15)">本体建模</div>
+        </div>
+        <div style="flex:1;background:#ffffff;display:flex;align-items:center;justify-content:center">
+          <div style="border:1px solid #e2e8f0;border-radius:12px;padding:20px 24px;width:70%;box-shadow:0 4px 24px rgba(0,0,0,0.06)">
+            <div style="color:#1e293b;font-size:13px;font-weight:600;margin-bottom:12px">欢迎回来</div>
+            <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;height:8px;margin-bottom:8px"></div>
+            <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;height:8px;margin-bottom:12px"></div>
+            <div style="background:linear-gradient(135deg,#2563eb,#1d4ed8);border-radius:6px;height:10px;width:100%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>渐变冲击感 Gradient Impact</h3>
+      <p>靛蓝到紫罗兰的强烈渐变，左侧大面积色彩冲击 + 右侧纯净白色，现代 SaaS 风格</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="glassmorphism" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="display:flex;height:220px;border-radius:8px;overflow:hidden;position:relative">
+        <div style="flex:1;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);display:flex;align-items:center;justify-content:center;position:relative">
+          <div style="position:absolute;width:100px;height:100px;border-radius:24px;background:rgba(255,255,255,0.1);transform:rotate(45deg);top:20px;left:30px"></div>
+          <div style="position:absolute;width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,0.08);bottom:40px;right:40px"></div>
+          <div style="color:#fff;font-size:22px;font-weight:800;z-index:1;text-shadow:0 2px 16px rgba(0,0,0,0.2);text-align:center">
+            <div style="font-size:28px;margin-bottom:4px">🧠</div>
+            本体建模
+          </div>
+        </div>
+        <div style="flex:1;background:linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);display:flex;align-items:center;justify-content:center">
+          <div style="background:rgba(255,255,255,0.7);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.5);border-radius:16px;padding:20px 24px;width:70%;box-shadow:0 8px 32px rgba(0,0,0,0.08)">
+            <div style="color:#1e293b;font-size:13px;font-weight:600;margin-bottom:12px">欢迎回来</div>
+            <div style="background:rgba(241,245,249,0.6);border:1px solid rgba(226,232,240,0.5);border-radius:8px;height:8px;margin-bottom:8px"></div>
+            <div style="background:rgba(241,245,249,0.6);border:1px solid rgba(226,232,240,0.5);border-radius:8px;height:8px;margin-bottom:12px"></div>
+            <div style="background:linear-gradient(135deg,#667eea,#764ba2);border-radius:8px;height:10px;width:100%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>毛玻璃轻盈感 Glassmorphism</h3>
+      <p>紫蓝渐变背景 + 玻璃拟态卡片层叠，多层深度感，柔美现代，适合注重体验的系统</p>
+    </div>
+  </div>
+
+</div>

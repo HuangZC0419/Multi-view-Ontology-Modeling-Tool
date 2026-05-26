@@ -1,0 +1,106 @@
+<h2>方案 B 最终设计预览</h2>
+<p class="subtitle">浅灰左侧板 · 白色右侧表单 · 8px留白 · 非对称布局</p>
+
+<div style="margin-bottom:24px">
+  <div class="mockup">
+    <div class="mockup-header">登录页完整效果 (1440x900)</div>
+    <div class="mockup-body">
+      <div style="height:420px;border-radius:8px;overflow:hidden;background:#f8f9fa;position:relative;padding:8px">
+        <div style="background:#fff;border-radius:12px;height:100%;display:flex;overflow:hidden">
+
+          <!-- 左侧浅灰面板 (38%) -->
+          <div style="flex:0 0 38%;background:#f4f6f8;position:relative;display:flex;align-items:flex-start;padding:44px 40px">
+            <div>
+              <!-- 品牌图标 -->
+              <div style="width:40px;height:40px;border-radius:10px;background:#1e293b;display:flex;align-items:center;justify-content:center;margin-bottom:14px">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="4" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/>
+                  <line x1="10" y1="6.5" x2="7" y2="16"/><line x1="14" y1="6.5" x2="17" y2="16"/><line x1="8" y1="19" x2="16" y2="19"/>
+                </svg>
+              </div>
+              <div style="font-size:20px;font-weight:800;color:#1e293b;margin-bottom:3px">本体建模系统</div>
+              <div style="font-size:8px;color:#94a3b8;letter-spacing:0.12em;font-weight:600">ONTOLOGY MODELING SYSTEM</div>
+
+              <!-- 几何装饰圆 -->
+              <div style="margin-top:36px;position:relative;width:100px;height:100px">
+                <div style="position:absolute;width:100px;height:100px;border-radius:50%;border:2px solid #d1d5db"></div>
+                <div style="position:absolute;width:60px;height:60px;border-radius:50%;border:1.5px solid #e5e7eb;top:20px;left:20px"></div>
+                <div style="position:absolute;width:28px;height:28px;border-radius:50%;background:#1e293b;top:36px;left:36px;opacity:0.08"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 右侧白色表单区 (62%) -->
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px">
+            <div style="width:300px">
+              <div style="margin-bottom:28px">
+                <div style="color:#1e293b;font-size:18px;font-weight:700;margin-bottom:4px">欢迎回来</div>
+                <div style="color:#64748b;font-size:13px">登录以访问您的工作台</div>
+              </div>
+
+              <div style="margin-bottom:16px">
+                <div style="color:#334155;font-size:12px;font-weight:600;margin-bottom:6px">用户名</div>
+                <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;height:13px;width:100%"></div>
+              </div>
+              <div style="margin-bottom:8px">
+                <div style="color:#334155;font-size:12px;font-weight:600;margin-bottom:6px">密码</div>
+                <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;height:13px;width:100%"></div>
+              </div>
+
+              <div style="margin-top:22px;background:#1e293b;border-radius:8px;height:14px;width:100%"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>设计规格</h3>
+  <div class="split">
+    <div class="pros">
+      <h4>布局</h4>
+      <ul>
+        <li>外层容器：8px 灰色底 + 8px padding</li>
+        <li>内层卡片：白色圆角 12px，左右 flex</li>
+        <li>左面板：38%宽，#f4f6f8 浅灰底</li>
+        <li>右面板：62%宽，白色底，表单居中</li>
+        <li>品牌区：左上角固定位置</li>
+      </ul>
+    </div>
+    <div class="pros">
+      <h4>配色</h4>
+      <ul>
+        <li>底色：#f8f9fa（外层留白区）</li>
+        <li>左面板：#f4f6f8 浅灰</li>
+        <li>右面板：#ffffff 纯白</li>
+        <li>文字/按钮：#1e293b 深灰</li>
+        <li>装饰圆：#d1d5db 灰色线条</li>
+        <li>品牌图标：深灰方块+白色SVG</li>
+      </ul>
+    </div>
+  </div>
+  <div class="split" style="margin-top:16px">
+    <div class="pros">
+      <h4>装饰</h4>
+      <ul>
+        <li>左面板底部：三个同心圆（几何装饰）</li>
+        <li>最外层：2px 灰线圆 100px</li>
+        <li>中层：1.5px 浅灰线圆 60px</li>
+        <li>内层：深灰填充实心圆 28px</li>
+        <li>无CSS动画，纯静态几何</li>
+      </ul>
+    </div>
+    <div class="pros">
+      <h4>响应式</h4>
+      <ul>
+        <li>&gt;768px：左右分栏 38/62</li>
+        <li>≤768px：上下堆叠，左面板变顶部条</li>
+        <li>≤480px：进一步缩小留白和字号</li>
+        <li>8px 外层 padding 在所有尺寸保持</li>
+      </ul>
+    </div>
+  </div>
+</div>

@@ -131,6 +131,23 @@ const contextMenu = ref({
 // 节点折叠状态 (记录被折叠的节点 ID)
 const collapsedNodeIds = ref(new Set());
 
+// OCR 导入状态
+const ocrFile = ref(null);
+const ocrLoading = ref(false);
+const ocrResult = ref(null);
+const ocrCandidates = ref([]);
+const ocrDialogVisible = ref(false);
+const ocrPreviewUrl = ref("");
+const ocrPreviewText = ref("");
+const ocrPreviewType = ref("");
+
+// LLM OCR 暂停使用状态（部署至内网，暂停使用）
+const llmOcrPaused = ref(true);
+
+const selectedOcrEntities = computed(() =>
+  ocrCandidates.value.filter((item) => item.selected).map((item) => item.text)
+);
+
 watch(relationCreateMode, (val) => {
   try {
     localStorage.setItem("benti_relation_create_mode", val);
@@ -921,7 +938,7 @@ function startDrag(event, node) {
 function startPanning(event) {
   if (event.button !== 0) return; // 仅左键平移
   // 弹窗或右键菜单打开时，不启动平移
-  if (promptState.value.visible || confirmState.value.visible || contextMenu.value.visible || relationDialogVisible.value || relationCreateChoiceVisible.value || rulesDialogVisible.value || bayesianDialogVisible.value || weightDialogVisible.value || projectMenuOpen.value) return;
+  if (promptState.value.visible || confirmState.value.visible || contextMenu.value.visible || relationDialogVisible.value || relationCreateChoiceVisible.value || rulesDialogVisible.value || bayesianDialogVisible.value || weightDialogVisible.value || ocrDialogVisible.value || projectMenuOpen.value) return;
   isPanning.value = true;
   panStart.value = {
     x: event.clientX - viewOffset.value.x,
@@ -994,6 +1011,115 @@ function formatSymbol(text) {
   }
 
   return text;
+}
+
+// ========================
+// OCR 导入功能
+// ========================
+
+function setOcrFile(file) {
+  ocrFile.value = file;
+  ocrResult.value = null;
+  ocrCandidates.value = [];
+  ocrDialogVisible.value = false;
+
+  if (ocrPreviewUrl.value) {
+    URL.revokeObjectURL(ocrPreviewUrl.value);
+    ocrPreviewUrl.value = "";
+  }
+  ocrPreviewText.value = "";
+  ocrPreviewType.value = "";
+
+  if (file) {
+    if (file.type.startsWith("image/")) {
+      ocrPreviewType.value = "image";
+      ocrPreviewUrl.value = URL.createObjectURL(file);
+    } else {
+      ocrPreviewType.value = "text";
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        ocrPreviewText.value = e.target.result;
+      };
+      reader.readAsText(file);
+    }
+  }
+}
+
+function onOcrFileChange(event) {
+  const file = event.target.files?.[0] || null;
+  setOcrFile(file);
+}
+
+async function useSampleOcrFile() {
+  try {
+    const response = await fetch(`${API_BASE}/api/ocr/sample-file`);
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+    const blob = await response.blob();
+    const sampleFile = new File([blob], "test.png", { type: blob.type || "image/png" });
+    setOcrFile(sampleFile);
+    statusMessage.value = "已加载示例文件 test.png，可直接开始识别";
+  } catch (error) {
+    statusMessage.value = `加载示例文件失败：${error.message}`;
+  }
+}
+
+function toggleAllOcrCandidates(checked) {
+  ocrCandidates.value = ocrCandidates.value.map((item) => ({ ...item, selected: checked }));
+}
+
+async function runOcrExtract(engine = "local") {
+  if (!ocrFile.value) {
+    statusMessage.value = "请先选择文件";
+    return;
+  }
+  try {
+    ocrLoading.value = true;
+    const formData = new FormData();
+    formData.append("file", ocrFile.value);
+    const result = await request(`/api/ocr/extract`, {
+      method: "POST",
+      body: formData
+    });
+    ocrResult.value = result;
+    ocrCandidates.value = (result.entities || []).map((text) => ({
+      text,
+      selected: true
+    }));
+    ocrDialogVisible.value = true;
+    statusMessage.value = `OCR 识别完成：${ocrCandidates.value.length} 项`;
+  } catch (error) {
+    statusMessage.value = `OCR 识别失败：${error.message}`;
+  } finally {
+    ocrLoading.value = false;
+  }
+}
+
+async function importOcrToCanvas() {
+  const entities = selectedOcrEntities.value;
+  if (!entities.length) {
+    statusMessage.value = "请至少勾选一项再导入";
+    return;
+  }
+  try {
+    const payload = {
+      entities,
+      start_x: 120 - viewOffset.value.x,
+      start_y: 120 - viewOffset.value.y,
+      spacing_x: 180,
+      spacing_y: 120
+    };
+    const result = await request("/api/ocr/import", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+    await loadGraph();
+    ocrDialogVisible.value = false;
+    statusMessage.value = `已导入 ${result.created_count} 项，跳过 ${result.skipped_entities.length} 项`;
+  } catch (error) {
+    statusMessage.value = `导入失败：${error.message}`;
+  }
 }
 
 function openHelp() {
@@ -1313,6 +1439,37 @@ onUnmounted(() => {
             <div class="workbench-title">数据导入</div>
             <DataSourcePanel v-if="isManager" @import-nodes="onImportNodes" />
             <div v-else class="tip-text">仅管理者可导入数据</div>
+
+            <!-- OCR 图片识别导入 -->
+            <div v-if="isManager" class="ocr-import-group">
+              <div class="workbench-subtitle">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                OCR 图片识别
+              </div>
+              <p class="ocr-hint">从图片 / TXT / CSV 文件中提取实体并导入画布</p>
+
+              <input
+                class="file-input"
+                type="file"
+                accept=".png,.jpg,.jpeg,.bmp,.webp,.txt,.csv"
+                @change="onOcrFileChange"
+              />
+              <div class="ocr-file-name" v-if="ocrFile">{{ ocrFile.name }}</div>
+
+              <div class="ocr-btn-row">
+                <button class="btn btn-secondary ocr-action-btn" :disabled="ocrLoading" @click="useSampleOcrFile">
+                  加载示例图片
+                </button>
+                <button class="btn btn-primary ocr-action-btn" :disabled="!ocrFile || ocrLoading" @click="runOcrExtract('local')">
+                  {{ ocrLoading ? "识别中..." : "开始识别" }}
+                </button>
+              </div>
+
+              <button class="btn btn-outline ocr-result-btn" v-if="ocrResult" @click="ocrDialogVisible = true">
+                查看识别结果 ({{ ocrCandidates.length }} 项)
+              </button>
+
+            </div>
           </div>
         </div>
 
@@ -1914,6 +2071,53 @@ onUnmounted(() => {
             </div>
             <div v-if="isManager" class="rd-actions">
               <button class="by-run-btn rd-save-btn" @click="saveWeightConfig">保存</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OCR 结果弹窗 -->
+      <div class="rules-overlay" v-if="ocrDialogVisible" @click.self="ocrDialogVisible = false" @wheel.stop>
+        <div class="rules-panel ocr-dialog" @click.stop>
+          <div class="rs-header">
+            <div class="rs-header-left">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <h2>OCR 识别结果</h2>
+            </div>
+            <button class="rs-close" @click="ocrDialogVisible = false">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          <div class="rs-body">
+            <div class="ocr-split-layout">
+              <!-- 左侧：原始文件预览 -->
+              <div class="ocr-preview-panel">
+                <div class="rs-label">上传文件预览</div>
+                <div class="ocr-preview-content">
+                  <img v-if="ocrPreviewType === 'image'" :src="ocrPreviewUrl" alt="预览图" class="ocr-preview-img" />
+                  <pre v-else-if="ocrPreviewType === 'text'">{{ ocrPreviewText }}</pre>
+                  <div v-else class="ocr-preview-empty">暂无预览</div>
+                </div>
+              </div>
+
+              <!-- 右侧：识别实体选择 -->
+              <div class="ocr-panel" v-if="ocrResult">
+                <div class="rs-label">提取实体 (模式：{{ ocrResult.mode }}，共 {{ ocrCandidates.length }} 项)</div>
+                <div class="ocr-actions">
+                  <button class="btn btn-ghost" @click="toggleAllOcrCandidates(true)">全选</button>
+                  <button class="btn btn-ghost" @click="toggleAllOcrCandidates(false)">全不选</button>
+                </div>
+                <div class="ocr-list">
+                  <label class="ocr-item" v-for="(item, idx) in ocrCandidates" :key="`${item.text}-${idx}`">
+                    <input type="checkbox" v-model="item.selected" />
+                    <span :title="item.text">{{ item.text }}</span>
+                  </label>
+                </div>
+                <button class="btn btn-primary" :disabled="selectedOcrEntities.length === 0" @click="importOcrToCanvas">
+                  一键导入勾选项 ({{ selectedOcrEntities.length }})
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -5563,6 +5767,238 @@ onUnmounted(() => {
 
   .ov-vuln-num {
     font-size: 36px;
+  }
+}
+
+/* ==========================================================
+   OCR 导入样式
+   ========================================================== */
+
+.ocr-import-group {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 2px solid #e2e8f0;
+}
+
+.ocr-import-group .workbench-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 0;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.ocr-hint {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.ocr-file-name {
+  font-size: 12px;
+  color: #475569;
+  margin-bottom: 10px;
+  padding: 4px 8px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  word-break: break-all;
+}
+
+.ocr-btn-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ocr-action-btn {
+  flex: 1;
+  width: auto !important;
+  margin-bottom: 0 !important;
+}
+
+.ocr-result-btn {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.file-input {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #334155;
+  padding: 8px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.file-input:focus-visible {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.llm-paused-badge {
+  padding: 6px 10px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #92400e;
+  line-height: 1.4;
+}
+
+.ocr-dialog {
+  width: 80vw !important;
+  max-width: 1200px !important;
+}
+
+.ocr-split-layout {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+  overflow: hidden;
+  min-height: 400px;
+}
+
+.ocr-preview-panel {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ocr-preview-content {
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  margin: 8px;
+  border-radius: 6px;
+  border: 1px solid #f1f5f9;
+}
+
+.ocr-preview-img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  object-fit: contain;
+  margin: auto;
+}
+
+.ocr-preview-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.ocr-preview-content pre {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  color: #334155;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.6;
+}
+
+.ocr-panel {
+  flex: 1.3;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 16px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ocr-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ocr-actions .btn {
+  margin-bottom: 0;
+  padding: 6px 14px;
+  font-size: 13px;
+  width: auto;
+}
+
+.ocr-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 12px;
+  margin-bottom: 12px;
+  min-height: 200px;
+}
+
+.ocr-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.ocr-item:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.ocr-item:has(input:checked) {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.ocr-item input[type="checkbox"] {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+  accent-color: #2563eb;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ocr-item span {
+  font-size: 14px;
+  color: #1e293b;
+  line-height: 1.5;
+  word-break: break-word;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .ocr-dialog {
+    width: 95vw !important;
+  }
+  .ocr-split-layout {
+    flex-direction: column;
   }
 }
 

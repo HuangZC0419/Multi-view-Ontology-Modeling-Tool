@@ -1,0 +1,106 @@
+<h2>白色浅色系 · 非对称布局 · 几何装饰</h2>
+<p class="subtitle">三种方案都满足：8px留白、浅色主调、非对称排版、几何色块装饰</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="clean-geo" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="height:260px;border-radius:8px;overflow:hidden;background:#f8f9fa;position:relative;padding:8px">
+        <div style="background:#fff;border-radius:8px;height:100%;position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+          <!-- 右上几何装饰 -->
+          <div style="position:absolute;right:-40px;top:-40px;width:220px;height:220px;border-radius:50%;border:2px solid #e8ecf1;opacity:0.6"></div>
+          <div style="position:absolute;right:20px;top:20px;width:120px;height:120px;border-radius:50%;background:#f0f4f8;opacity:0.5"></div>
+          <!-- 品牌区 左上 -->
+          <div style="position:absolute;left:40px;top:32px">
+            <div style="width:32px;height:32px;border-radius:8px;background:#1e293b;display:flex;align-items:center;justify-content:center;margin-bottom:10px">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="12" cy="4" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="10" y1="6.5" x2="7" y2="16"/><line x1="14" y1="6.5" x2="17" y2="16"/><line x1="8" y1="19" x2="16" y2="19"/></svg>
+            </div>
+            <div style="font-size:18px;font-weight:800;color:#1e293b">本体建模系统</div>
+            <div style="font-size:8px;color:#94a3b8;letter-spacing:0.1em;font-weight:600">ONTOLOGY MODELING</div>
+          </div>
+          <!-- 表单区 靠右居中 -->
+          <div style="position:absolute;right:80px;top:50%;transform:translateY(-50%);width:220px">
+            <div style="color:#1e293b;font-size:14px;font-weight:700;margin-bottom:12px">登录</div>
+            <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;height:8px;margin-bottom:6px"></div>
+            <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;height:8px;margin-bottom:14px"></div>
+            <div style="background:#1e293b;border-radius:8px;height:10px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A: 极简几何圆</h3>
+      <p>纯白底，右上角大圆环几何装饰，品牌左上方，表单居右，深灰按钮</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="split-geo" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="height:260px;border-radius:8px;overflow:hidden;background:#f8f9fa;position:relative;padding:8px">
+        <div style="background:#fff;border-radius:8px;height:100%;display:flex;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+          <!-- 左侧灰色面板 -->
+          <div style="flex:0 0 38%;background:#f1f5f9;position:relative;display:flex;align-items:flex-start;padding:32px 28px">
+            <div>
+              <div style="width:32px;height:32px;border-radius:8px;background:#1e293b;display:flex;align-items:center;justify-content:center;margin-bottom:10px">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="12" cy="4" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="10" y1="6.5" x2="7" y2="16"/><line x1="14" y1="6.5" x2="17" y2="16"/><line x1="8" y1="19" x2="16" y2="19"/></svg>
+              </div>
+              <div style="font-size:18px;font-weight:800;color:#1e293b">本体建模系统</div>
+              <div style="font-size:8px;color:#94a3b8;letter-spacing:0.1em;font-weight:600">ONTOLOGY</div>
+            </div>
+            <!-- 几何装饰 -->
+            <div style="position:absolute;bottom:-40px;right:-30px;width:140px;height:140px;border-radius:50%;border:1.5px solid #cbd5e1"></div>
+          </div>
+          <!-- 右侧白色表单区 -->
+          <div style="flex:1;display:flex;align-items:center;justify-content:center">
+            <div style="width:200px">
+              <div style="color:#1e293b;font-size:14px;font-weight:700;margin-bottom:12px">欢迎回来</div>
+              <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;height:8px;margin-bottom:6px"></div>
+              <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;height:8px;margin-bottom:14px"></div>
+              <div style="background:#1e293b;border-radius:8px;height:10px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B: 浅灰左侧板</h3>
+      <p>左侧 38% 浅灰底+品牌+几何圆，右侧纯白表单，色块分区明确</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="diagonal-accent" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="height:260px;border-radius:8px;overflow:hidden;background:#f8f9fa;position:relative;padding:8px">
+        <div style="background:#fff;border-radius:8px;height:100%;position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+          <!-- 底部斜面色块 -->
+          <div style="position:absolute;bottom:0;left:0;right:0;height:45%;background:linear-gradient(175deg, #f8fafc 0%, #f1f5f9 40%, #e8ecf1 100%)"></div>
+          <!-- 几何方块装饰 -->
+          <div style="position:absolute;right:50px;bottom:60px;width:80px;height:80px;border:2px solid #cbd5e1;border-radius:12px;transform:rotate(15deg)"></div>
+          <div style="position:absolute;right:90px;bottom:100px;width:50px;height:50px;background:#1e293b;border-radius:10px;opacity:0.06;transform:rotate(25deg)"></div>
+          <!-- 品牌区 左上 -->
+          <div style="position:absolute;left:40px;top:32px">
+            <div style="width:32px;height:32px;border-radius:8px;background:#1e293b;display:flex;align-items:center;justify-content:center;margin-bottom:10px">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="12" cy="4" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="10" y1="6.5" x2="7" y2="16"/><line x1="14" y1="6.5" x2="17" y2="16"/><line x1="8" y1="19" x2="16" y2="19"/></svg>
+            </div>
+            <div style="font-size:18px;font-weight:800;color:#1e293b">本体建模系统</div>
+            <div style="font-size:8px;color:#94a3b8;letter-spacing:0.1em;font-weight:600">ONTOLOGY MODELING</div>
+          </div>
+          <!-- 表单区居中偏右 -->
+          <div style="position:absolute;right:80px;top:50%;transform:translateY(-55%);width:220px;z-index:1">
+            <div style="background:#fff;border:1px solid #e8ecf1;border-radius:12px;padding:20px;box-shadow:0 4px 16px rgba(0,0,0,0.04)">
+              <div style="color:#1e293b;font-size:13px;font-weight:700;margin-bottom:10px">登录工作台</div>
+              <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;height:8px;margin-bottom:6px"></div>
+              <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;height:8px;margin-bottom:14px"></div>
+              <div style="background:#1e293b;border-radius:8px;height:10px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C: 底部渐变+几何方块</h3>
+      <p>底部浅灰渐变区域 + 旋转几何方块装饰，表单用白色卡片浮在渐变上</p>
+    </div>
+  </div>
+
+</div>

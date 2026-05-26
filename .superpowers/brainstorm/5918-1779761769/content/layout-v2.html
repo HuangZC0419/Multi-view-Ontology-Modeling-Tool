@@ -1,0 +1,77 @@
+<h2>修订版 — 卡片加宽，减少两侧留白</h2>
+<p class="subtitle">卡片宽度从 380px 扩展到 440px，内部改为左右并排布局充分利用空间</p>
+
+<div style="margin-bottom:24px">
+  <div class="mockup">
+    <div class="mockup-header">修订版：宽卡片 + 内部分栏</div>
+    <div class="mockup-body">
+      <div style="height:420px;border-radius:8px;overflow:hidden;background:linear-gradient(135deg, #0f2744 0%, #1a3a6b 25%, #1e40af 50%, #2560d0 75%, #3075f0 100%);display:flex;align-items:center;justify-content:center;position:relative">
+
+        <div style="position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle, rgba(96,165,250,0.12) 0%, rgba(37,99,235,0.05) 40%, transparent 70%);top:50%;left:50%;transform:translate(-65%,-45%)"></div>
+        <div style="position:absolute;width:350px;height:350px;border-radius:50%;background:radial-gradient(circle, rgba(147,197,253,0.08) 0%, rgba(59,130,246,0.03) 40%, transparent 70%);top:50%;left:50%;transform:translate(-25%,-55%)"></div>
+        <div style="position:absolute;width:250px;height:250px;border-radius:50%;background:radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 60%);bottom:-60px;right:-40px"></div>
+
+        <!-- 浮动光点 -->
+        <div style="position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(147,197,253,0.5);top:15%;left:20%;box-shadow:0 0 8px rgba(147,197,253,0.3)"></div>
+        <div style="position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(96,165,250,0.4);top:22%;right:25%;box-shadow:0 0 6px rgba(96,165,250,0.25)"></div>
+        <div style="position:absolute;width:5px;height:5px;border-radius:50%;background:rgba(59,130,246,0.35);bottom:20%;left:30%;box-shadow:0 0 10px rgba(59,130,246,0.2)"></div>
+        <div style="position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(191,219,254,0.5);bottom:28%;right:20%;box-shadow:0 0 6px rgba(191,219,254,0.3)"></div>
+        <div style="position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(96,165,250,0.3);top:60%;left:22%;box-shadow:0 0 8px rgba(96,165,250,0.15)"></div>
+
+        <!-- 主玻璃卡片 — 加宽版 -->
+        <div style="background:rgba(255,255,255,0.1);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.18);border-radius:24px;padding:40px 44px 36px;width:540px;z-index:2;box-shadow:0 24px 80px rgba(0,0,0,0.25),0 0 0 0.5px rgba(255,255,255,0.08) inset;display:flex;gap:40px;align-items:center">
+
+          <!-- 左侧：品牌区 -->
+          <div style="flex:0 0 auto;text-align:center">
+            <div style="margin-bottom:12px;display:inline-block;width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg, rgba(37,99,235,0.3), rgba(59,130,246,0.15));display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.12)">
+              <svg viewBox="0 0 48 48" width="30" height="30" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="24" cy="8" r="5"/><circle cx="10" cy="38" r="5"/><circle cx="38" cy="38" r="5"/>
+                <line x1="20.5" y1="11.4" x2="13.5" y2="33.5"/><line x1="27.5" y1="11.4" x2="34.5" y2="33.5"/><line x1="16" y1="38" x2="32" y2="38"/>
+              </svg>
+            </div>
+            <div style="color:#fff;font-size:22px;font-weight:800;letter-spacing:0.02em;white-space:nowrap">本体建模系统</div>
+            <div style="color:rgba(255,255,255,0.4);font-size:9px;font-weight:700;letter-spacing:0.14em;margin-top:4px">ONTOLOGY MODELING</div>
+          </div>
+
+          <!-- 右侧：登录表单 -->
+          <div style="flex:1 1 auto;min-width:0">
+            <div style="margin-bottom:14px">
+              <div style="color:rgba(255,255,255,0.7);font-size:12px;font-weight:600;margin-bottom:6px">用户名</div>
+              <div style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:10px;height:14px;width:100%"></div>
+            </div>
+            <div style="margin-bottom:8px">
+              <div style="color:rgba(255,255,255,0.7);font-size:12px;font-weight:600;margin-bottom:6px">密码</div>
+              <div style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:10px;height:14px;width:100%"></div>
+            </div>
+            <div style="margin-top:18px;background:rgba(255,255,255,0.9);border-radius:10px;height:14px;width:100%"></div>
+            <div style="color:rgba(255,255,255,0.35);font-size:10px;text-align:center;margin-top:8px">登录以访问您的工作台</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>修订对比</h3>
+  <div class="split">
+    <div class="pros">
+      <h4>第一版 (窄卡片)</h4>
+      <ul>
+        <li>卡片宽度 380px</li>
+        <li>单一竖列布局</li>
+        <li>品牌和表单上下堆叠</li>
+        <li>两侧留白过大</li>
+      </ul>
+    </div>
+    <div class="pros">
+      <h4>修订版 (宽卡片)</h4>
+      <ul>
+        <li>卡片宽度 540px</li>
+        <li>左右并排双栏布局</li>
+        <li>品牌区在左，表单在右</li>
+        <li>充分利用横向空间</li>
+      </ul>
+    </div>
+  </div>
+</div>

@@ -1,17 +1,19 @@
 <script setup>
 import { ref } from "vue";
+import OceanBreath from "../OceanBreath.vue";
+import coverImage from "../../assets/封面图片.png";
 
 const emit = defineEmits(["login-success"]);
 
 const username = ref("");
 const password = ref("");
 const loading = ref(false);
-const errorMsg = ref("");
+const loginError = ref("");
 
 async function handleLogin() {
-  errorMsg.value = "";
+  loginError.value = "";
   if (!username.value.trim() || !password.value.trim()) {
-    errorMsg.value = "请输入用户名和密码";
+    loginError.value = "请输入用户名和密码";
     return;
   }
   loading.value = true;
@@ -33,323 +35,640 @@ async function handleLogin() {
         role: data.role,
       });
     } else {
-      errorMsg.value = data.message || "登录失败";
+      loginError.value = data.message || "登录失败";
     }
   } catch (e) {
-    errorMsg.value = "网络错误，请确认后端服务已启动";
+    loginError.value = "网络错误，请确认后端服务已启动";
   } finally {
     loading.value = false;
   }
 }
-
 </script>
 
 <template>
-  <div class="login-shell">
-    <div class="login-card">
-      <!-- 左侧品牌区 -->
-      <div class="brand-side">
-        <div class="brand-inner">
-          <div class="brand-logo">
-            <svg viewBox="0 0 48 48" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="24" cy="8" r="5"/>
-              <circle cx="10" cy="38" r="5"/>
-              <circle cx="38" cy="38" r="5"/>
-              <line x1="20.5" y1="11.4" x2="13.5" y2="33.5"/>
-              <line x1="27.5" y1="11.4" x2="34.5" y2="33.5"/>
-              <line x1="16" y1="38" x2="32" y2="38"/>
-            </svg>
-          </div>
-          <h1>本体建模系统</h1>
-          <p class="brand-desc">ONTOLOGY MODELING SYSTEM</p>
-        </div>
+  <div class="modern-login-page">
+    <header class="modern-header">
+      <div class="modern-logo">
+        <svg class="logo-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="18" cy="5" r="3"/>
+          <circle cx="6" cy="12" r="3"/>
+          <circle cx="18" cy="19" r="3"/>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+        </svg>
+        <span class="logo-text">SCU</span>
       </div>
+      <nav class="modern-nav">
+        <a href="#" class="active">首页</a>
+        <a href="/help.html">文档中心</a>
+      </nav>
+      <div class="modern-actions">
+        <button class="modern-icon-btn" type="button" aria-label="设置">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V22a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
 
-      <!-- 右侧表单区 -->
-      <div class="form-side">
-        <div class="form-card">
-          <div class="form-header">
-            <h2>欢迎回来</h2>
-            <p>登录以访问您的工作台</p>
+    <main class="modern-main">
+      <OceanBreath :speed="0.7" :intensity="0.6" theme="day" :density="1.0" />
+
+      <div class="modern-content">
+        <div class="modern-left">
+          <div class="user-badge-top">
+            <span class="badge-icon">&#x2B50;</span> 自研本体建模分析工具
+          </div>
+          <h1 class="modern-title">本体建模系统</h1>
+          <p class="modern-subtitle">专注于关系建模分析，实现多视角可视化。</p>
+
+          <div class="modern-features">
+            <div class="feature-item">
+              <span class="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                  <path d="M3.3 7l8.7 5 8.7-5" />
+                  <path d="M12 22V12" />
+                </svg>
+              </span>
+              <div class="feature-text">
+                <div class="feature-title">高效建模</div>
+                <div class="feature-desc">智能工具提升建模效率</div>
+              </div>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2l7 4v6c0 5-3 9-7 10-4-1-7-5-7-10V6l7-4z" />
+                  <path d="M9 12l2 2 4-4" />
+                </svg>
+              </span>
+              <div class="feature-text">
+                <div class="feature-title">精准控制</div>
+                <div class="feature-desc">规则引擎与精确可视化</div>
+              </div>
+            </div>
           </div>
 
-          <form @submit.prevent="handleLogin">
-            <label for="username">用户名</label>
-            <input
-              id="username"
-              v-model="username"
-              name="username"
-              type="text"
-              placeholder="输入用户名"
-              autocomplete="username"
-              @keyup.enter="handleLogin"
-            />
-
-            <label for="password">密码</label>
-            <input
-              id="password"
-              v-model="password"
-              name="password"
-              type="password"
-              placeholder="输入密码"
-              autocomplete="current-password"
-              @keyup.enter="handleLogin"
-            />
-
-            <div v-if="errorMsg" class="form-error">{{ errorMsg }}</div>
-
-            <button type="submit" :disabled="loading">
-              <template v-if="!loading">登 录</template>
-              <template v-else>
-                <span class="spinner"></span> 验证中...
-              </template>
+          <form @submit.prevent="handleLogin" class="modern-login-form">
+            <div class="modern-field" :class="{ disabled: loading }">
+              <span class="field-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </span>
+              <input
+                type="text"
+                v-model="username"
+                placeholder="用户名"
+                required
+                class="modern-input"
+                :disabled="loading"
+                autocomplete="username"
+              />
+            </div>
+            <div class="modern-field" :class="{ disabled: loading }">
+              <span class="field-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </span>
+              <input
+                type="password"
+                v-model="password"
+                placeholder="密码"
+                required
+                class="modern-input"
+                :disabled="loading"
+                autocomplete="current-password"
+              />
+            </div>
+            <button type="submit" class="modern-btn-primary" :disabled="loading">
+              <span class="btn-text">{{ loading ? "登录中..." : "登录系统" }}</span>
+              <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12h12"/>
+                <path d="M13 6l6 6-6 6"/>
+              </svg>
             </button>
+            <p v-if="loginError" class="modern-login-error">{{ loginError }}</p>
           </form>
+
+          <div class="modern-status">
+            <span class="status-left"><span class="status-dot"></span> 系统运行正常 · 四川大学开发 v1.2.4</span>
+          </div>
+        </div>
+
+        <div class="modern-right">
+          <div class="modern-image-container">
+            <div class="peach-gradient"></div>
+            <img :src="coverImage" alt="封面图片" class="modern-profile-img" />
+          </div>
         </div>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
 <style scoped>
-.login-shell {
+.modern-login-page {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100vw;
   height: 100vh;
-  padding: 8px;
-  background: #f8fafc;
-  box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
-}
-
-.login-card {
+  background-color: var(--bg-elevated);
+  z-index: 9999;
   display: flex;
-  width: 100%;
-  height: 100%;
-  background: #ffffff;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-  border: 1px solid #e2e8f0;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  font-family: 'Inter', sans-serif;
 }
 
-/* ======== 左侧品牌区 ======== */
-.brand-side {
-  flex: 0 0 40%;
-  background: #f1f5f9;
-  display: flex;
-  align-items: flex-start;
-  padding: 48px 44px;
-}
-
-.brand-logo {
-  width: 48px;
-  height: 48px;
-  margin-bottom: 16px;
-}
-
-.brand-logo svg {
-  width: 48px;
-  height: 48px;
-}
-
-.brand-inner h1 {
-  margin: 0 0 4px 0;
-  font-size: 22px;
-  font-weight: 700;
-  color: #1e293b;
-  letter-spacing: -0.025em;
-}
-
-.brand-desc {
-  margin: 0;
-  font-size: 11px;
-  font-weight: 500;
-  color: #64748b;
-  letter-spacing: 0.08em;
-}
-
-/* ======== 右侧表单区 ======== */
-.form-side {
-  flex: 1 1 auto;
+/* ===== Header / Nav Bar ===== */
+.modern-header {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px;
+  padding: 1.5rem 2rem;
+  position: relative;
+  z-index: 10;
 }
 
-.form-card {
-  width: 340px;
-  max-width: 100%;
-}
-
-.form-header {
-  margin-bottom: 28px;
-}
-
-.form-header h2 {
-  margin: 0 0 4px 0;
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.form-header p {
-  margin: 0;
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-/* 表单元素 — 对齐 RAG 设计系统 */
-form {
+.modern-logo {
+  position: absolute;
+  left: 2rem;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.8rem;
+  height: 32px;
+  background-color: var(--primary-active);
+  color: var(--text-inverse);
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
 }
 
-label {
+.logo-svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.logo-text {
+  white-space: nowrap;
+}
+
+.modern-nav {
   display: flex;
-  flex-direction: column;
-  font-size: 0.875rem;
+  gap: 2rem;
+  background: var(--surface);
+  padding: 0.5rem 1.5rem;
+  border-radius: 99px;
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+}
+
+.modern-nav a {
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 0.9rem;
   font-weight: 500;
-  color: #64748b;
-  gap: 6px;
-  margin-bottom: 14px;
+  transition: color 0.2s;
 }
 
-input {
-  font-family: inherit;
-  font-size: 0.95rem;
-  padding: 8px 14px;
-  min-height: 44px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background-color: #f8fafc;
-  color: #1e293b;
-  outline: none;
-  transition: all 0.2s ease;
-  box-sizing: border-box;
-  width: 100%;
+.modern-nav a.active,
+.modern-nav a:hover {
+  color: var(--text-main);
 }
 
-input::placeholder {
-  color: #94a3b8;
+.modern-actions {
+  position: absolute;
+  right: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
-  background-color: #ffffff;
-}
-
-.form-error {
-  padding: 10px 14px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #dc2626;
-  text-align: center;
-  margin-bottom: 14px;
-}
-
-button {
-  font-family: inherit;
-  font-weight: 600;
-  font-size: 0.95rem;
-  padding: 8px 20px;
-  min-height: 44px;
-  background-color: #2563eb;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
+.modern-icon-btn {
+  width: 34px;
+  height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
-  margin-top: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-main);
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: transform 0.15s ease, background 0.15s ease;
 }
 
-button:hover:not(:disabled) {
-  background-color: #1d4ed8;
+.modern-icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.modern-icon-btn:hover {
+  transform: translateY(-1px);
+  background: var(--surface-solid);
+}
+
+/* ===== Main Layout ===== */
+.modern-main {
+  position: relative;
+  flex: 1;
+  padding: 0 4rem 2.25rem;
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+  background: var(--content-hero-gradient);
+}
+
+.modern-content {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  grid-template-rows: 1fr auto;
+  align-items: center;
+  gap: 2.5rem;
+  min-height: calc(100vh - 96px);
+}
+
+.modern-left {
+  max-width: 600px;
+  padding-right: 4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ===== Badge ===== */
+.user-badge-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  background: var(--surface-muted);
+  padding: 0.4rem 0.8rem;
+  border-radius: 99px;
+  width: fit-content;
+}
+
+/* ===== Title ===== */
+.modern-title {
+  font-size: clamp(3rem, 5vw, 4.5rem);
+  line-height: 1.1;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 1.5rem 0;
+  letter-spacing: -0.03em;
+}
+
+.modern-italic {
+  font-family: "Georgia", "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+/* ===== Subtitle ===== */
+.modern-subtitle {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin: 0 0 2.5rem 0;
+  max-width: 90%;
+}
+
+.modern-features {
+  display: flex;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.4rem;
+}
+
+.feature-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-muted);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-soft);
+  min-width: 180px;
+}
+
+.feature-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+}
+
+.feature-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.feature-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.1;
+}
+
+.feature-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.12rem;
+  line-height: 1.25;
+}
+
+/* ===== Login Form ===== */
+.modern-login-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+  align-items: stretch;
+  margin-bottom: 0.85rem;
+}
+
+.modern-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 1.06rem;
+  background: transparent;
+  font-family: inherit;
+  color: var(--text-main);
+}
+
+.modern-field {
+  height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 1.05rem;
+  border: 2px solid var(--border-strong);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.modern-field:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.modern-field.disabled {
+  opacity: 0.75;
+}
+
+.field-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.field-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.modern-input::placeholder {
+  color: var(--text-muted);
+}
+
+.modern-input:disabled {
+  cursor: not-allowed;
+}
+
+.modern-btn-primary {
+  height: 58px;
+  padding: 0 1.2rem 0 1.35rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--primary);
+  color: var(--text-inverse);
+  border: none;
+  border-radius: 16px;
+  font-size: 1.06rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+  white-space: nowrap;
+  font-family: inherit;
+  grid-column: 1 / -1;
+}
+
+.modern-btn-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
   transform: translateY(-1px);
 }
 
-button:disabled {
+.modern-btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.spinner {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: #ffffff;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+.btn-arrow {
+  width: 18px;
+  height: 18px;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+.modern-login-error {
+  width: 100%;
+  color: var(--danger);
+  font-size: 0.9rem;
+  margin-top: 0;
+  grid-column: 1 / -1;
 }
 
-/* ======== 响应式 ======== */
-@media (max-width: 768px) {
-  .login-card {
-    flex-direction: column;
+.modern-status {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+}
+
+.status-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #23a26d;
+  box-shadow: 0 0 0 4px rgba(35, 162, 109, 0.16);
+}
+
+
+/* ===== Right-side Image ===== */
+.modern-right {
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modern-image-container {
+  position: relative;
+  width: 100%;
+  height: 80vh;
+  max-height: 800px;
+  border-radius: 24px;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--login-card-gradient);
+}
+
+.peach-gradient {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--login-image-overlay);
+  z-index: 1;
+}
+
+.modern-profile-img {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 62% center;
+  z-index: 2;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1024px) {
+  .modern-main {
+    padding: 2rem;
   }
 
-  .brand-side {
-    flex: 0 0 auto;
-    padding: 28px 24px;
+  .modern-left {
+    max-width: 100%;
+    padding-right: 0;
+    align-items: center;
+    text-align: center;
   }
 
-  .brand-logo {
-    width: 36px;
-    height: 36px;
-    margin-bottom: 10px;
+  .modern-subtitle {
+    max-width: 100%;
   }
 
-  .brand-logo svg {
-    width: 36px;
-    height: 36px;
-  }
-
-  .brand-inner h1 {
-    font-size: 18px;
-  }
-
-  .brand-desc {
-    font-size: 10px;
-  }
-
-  .form-side {
-    flex: 1 1 auto;
-    align-items: flex-start;
-    padding: 24px;
-  }
-
-  .form-card {
+  .modern-login-form {
     width: 100%;
+    max-width: 400px;
+    grid-template-columns: 1fr;
+  }
+
+  .modern-input {
+    width: 100%;
+  }
+
+  .modern-btn-primary {
+    width: 100%;
+  }
+
+  .modern-right {
+    width: 100%;
+    max-height: 400px;
+  }
+
+  .modern-image-container {
+    height: 100%;
+    max-height: 400px;
+  }
+
+  .modern-content {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 2rem;
+    min-height: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .modern-header {
+    padding: 1rem;
+  }
+
+  .modern-logo {
+    position: static;
+    margin-right: auto;
+  }
+
+  .modern-actions {
+    right: 1rem;
+  }
+
+  .modern-nav {
+    gap: 1rem;
+    padding: 0.45rem 1rem;
+  }
+
+  .modern-main {
+    padding: 1.5rem;
+  }
+
+  .modern-title {
+    font-size: 1.8rem;
+  }
+
+  .modern-right {
+    display: none;
   }
 }
 
 @media (max-width: 480px) {
-  .login-shell {
-    padding: 4px;
+  .modern-main {
+    padding: 1rem;
   }
 
-  .login-card {
-    border-radius: 8px;
+  .modern-title {
+    font-size: 1.5rem;
   }
 
-  .brand-side {
-    padding: 20px 18px;
+  .modern-login-form {
+    max-width: 320px;
+    width: 100%;
   }
 
-  .form-side {
-    padding: 18px;
+  .modern-input {
+    min-width: 0;
+    width: 100%;
   }
 }
 </style>
