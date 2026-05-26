@@ -1594,7 +1594,11 @@ onUnmounted(() => {
       <Transition name="perspective-fade" mode="out-in">
         <div class="perspective-content" v-if="currentPerspective !== 'process'" :key="currentPerspective">
           <LeaderView v-if="currentPerspective === 'leader'" :projectId="currentProjectId" />
-          <EngineerView v-if="currentPerspective === 'engineer'" :projectId="currentProjectId" />
+          <EngineerView
+            v-if="currentPerspective === 'engineer'"
+            :projectId="currentProjectId"
+            :projectName="projects.find(p => String(p.id) === String(currentProjectId))?.name || ''"
+          />
         </div>
       </Transition>
 

@@ -1,5 +1,438 @@
 {
-  "nodes": [],
+  "nodes": [
+    {
+      "id": "331dbf33-200e-4d2d-ab0b-17b0a9f55ebc",
+      "name": "Qp",
+      "x": -286.9767144899999,
+      "y": -142.15710177999983,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "749e7d32-90ed-4438-b021-f677f2784dc4",
+      "name": "Am",
+      "x": -106.97671448999989,
+      "y": -142.15710177999983,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "f8637e41-63b0-4b4d-8520-0376599ff780",
+      "name": "Apipe",
+      "x": 73.02328551000011,
+      "y": -142.15710177999983,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "5ce3b375-658d-4a83-a404-b153ea5ab0f4",
+      "name": "Ppump",
+      "x": 253.0232855100001,
+      "y": -142.15710177999983,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "788447c3-2cbc-47c6-9a7b-3521511a813a",
+      "name": "Q",
+      "x": -286.9767144899999,
+      "y": -22.157101779999834,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "23467b3f-f3f4-42f0-b00b-c9a30481e25e",
+      "name": "模块",
+      "x": -106.97671448999989,
+      "y": -22.157101779999834,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "429d3870-97cb-44b7-b938-0b16f8e3054e",
+      "name": "架构",
+      "x": 73.02328551000011,
+      "y": -22.157101779999834,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "a592a00a-7523-4905-9173-1ad37767e2c6",
+      "name": "参数",
+      "x": 253.0232855100001,
+      "y": -22.157101779999834,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "3ebb87c4-36a8-4277-a544-06aad54f871a",
+      "name": "关联",
+      "x": -286.9767144899999,
+      "y": 97.84289822000017,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "828a9c03-6565-4ef7-b108-f3e240af7f42",
+      "name": "约束",
+      "x": -106.97671448999989,
+      "y": 97.84289822000017,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "b866a820-accb-407c-8180-d9de7625c94a",
+      "name": "代表",
+      "x": 73.02328551000011,
+      "y": 97.84289822000017,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "56cc58af-d8a8-4c57-bf37-89ef37d8c877",
+      "name": "物理",
+      "x": 253.0232855100001,
+      "y": 97.84289822000017,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "b2abfcd2-b141-49ca-96e5-ae8d4e458dfe",
+      "name": "定律",
+      "x": -286.9767144899999,
+      "y": 217.84289822000017,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "f60a0878-7c4f-4edb-b565-377af4e61006",
+      "name": "函数",
+      "x": -106.97671448999989,
+      "y": 217.84289822000017,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "d3108070-c5b6-4654-83c6-f77550af3352",
+      "name": "极值",
+      "x": 73.02328551000011,
+      "y": 217.84289822000017,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "ff6384dd-0442-4f39-a9e0-219a0329c4d1",
+      "name": "边界",
+      "x": 253.0232855100001,
+      "y": 217.84289822000017,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "d2b09883-014b-4a54-a40b-008976d66fb4",
+      "name": "条件",
+      "x": -286.9767144899999,
+      "y": 337.84289822000017,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "ebbd8681-98c8-40a9-b717-dfef67d76747",
+      "name": "节点",
+      "x": -106.97671448999989,
+      "y": 337.84289822000017,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "48923874-3d16-4bb7-a551-7fc6dc442da5",
+      "name": "精准",
+      "x": 73.02328551000011,
+      "y": 337.84289822000017,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "9c5290ba-db0c-4dba-93a9-eea8b91a26aa",
+      "name": "净水器",
+      "x": 253.0232855100001,
+      "y": 337.84289822000017,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "0c937d66-d2d8-4b96-bd31-986ca59ad32a",
+      "name": "典型",
+      "x": -286.9767144899999,
+      "y": 457.84289822000017,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "f9cb960b-30c2-4cca-80b2-17467da6d857",
+      "name": "跨域",
+      "x": -106.97671448999989,
+      "y": 457.84289822000017,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "01025269-b189-46df-b4a3-4f9d2c48cc75",
+      "name": "耦合",
+      "x": 73.02328551000011,
+      "y": 457.84289822000017,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "81c27d2b-6833-4010-a54c-cd6aafbb42ae",
+      "name": "特征",
+      "x": 253.0232855100001,
+      "y": 457.84289822000017,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "ff29b21a-8398-4035-87a6-5c2c8ce241f7",
+      "name": "系统",
+      "x": -286.9767144899999,
+      "y": 577.8428982200002,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "a9643b5f-bab4-4d74-a49c-e39af0722901",
+      "name": "核心",
+      "x": -106.97671448999989,
+      "y": 577.8428982200002,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "aa72753d-fe8e-4f65-9bab-00f26d852273",
+      "name": "流体",
+      "x": 73.02328551000011,
+      "y": 577.8428982200002,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "9f0a330a-5c07-449d-912a-07e40991fdbf",
+      "name": "性能",
+      "x": 253.0232855100001,
+      "y": 577.8428982200002,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "39f5eb93-ec72-473c-942f-517ad60ec5f7",
+      "name": "产",
+      "x": -286.9767144899999,
+      "y": 697.8428982200002,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "9be10adb-c104-4f0b-8e7f-f365f25466ed",
+      "name": "水流量",
+      "x": -106.97671448999989,
+      "y": 697.8428982200002,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "9ae1cf51-61e8-4566-a056-aa4340f4fee6",
+      "name": "结构",
+      "x": 73.02328551000011,
+      "y": 697.8428982200002,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "b6c9a947-3a24-4b9e-9145-56ccf7e96a17",
+      "name": "膜",
+      "x": 253.0232855100001,
+      "y": 697.8428982200002,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "b332a39c-2020-453e-8c29-8b41cb61b88c",
+      "name": "面积",
+      "x": -286.9767144899999,
+      "y": 817.8428982200002,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "e573c775-05bc-4de4-915d-aa8e4cd48025",
+      "name": "管路",
+      "x": -106.97671448999989,
+      "y": 817.8428982200002,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "5b569065-61af-4bfe-b98e-37cad562051e",
+      "name": "等式",
+      "x": 73.02328551000011,
+      "y": 817.8428982200002,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "9595b547-cb59-4837-9bc5-8568b86278cb",
+      "name": "单点",
+      "x": 253.0232855100001,
+      "y": 817.8428982200002,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "d088784a-13df-4cd7-8e68-8fc198064ff9",
+      "name": "时",
+      "x": -286.9767144899999,
+      "y": 937.8428982200002,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "892bd8e8-5914-42e1-a632-ad7ba5005329",
+      "name": "规范",
+      "x": -106.97671448999989,
+      "y": 937.8428982200002,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "132358ed-9909-4d81-a7f7-ffd5a2578db5",
+      "name": "越界",
+      "x": 73.02328551000011,
+      "y": 937.8428982200002,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "2ff221f0-a344-45ce-a779-c3a52509b215",
+      "name": "功率",
+      "x": 253.0232855100001,
+      "y": 937.8428982200002,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "15eac8ef-77ea-4152-8df6-a980891b5d23",
+      "name": "进膜",
+      "x": -286.9767144899999,
+      "y": 1057.8428982200003,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "32414316-355e-495e-acfd-f7d4961932ac",
+      "name": "流量",
+      "x": -106.97671448999989,
+      "y": 1057.8428982200003,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "f834d1c0-8586-46d1-ad57-724d0eb2e0b3",
+      "name": "导致系统",
+      "x": 73.02328551000011,
+      "y": 1057.8428982200003,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "f7211e54-7793-42bb-8e16-1591c1e85a0d",
+      "name": "噪声",
+      "x": 253.0232855100001,
+      "y": 1057.8428982200003,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "71a6d7ce-45cc-443f-adde-32d565ca1d01",
+      "name": "突破",
+      "x": -286.9767144899999,
+      "y": 1177.8428982200003,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "8942bf1f-bdae-48bf-8d74-766d5355de58",
+      "name": "声学",
+      "x": -106.97671448999989,
+      "y": 1177.8428982200003,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "faeea790-5327-4de7-b60a-985e99bdeeb4",
+      "name": "标准",
+      "x": 73.02328551000011,
+      "y": 1177.8428982200003,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "61965a58-265c-4e05-95b0-ae10b445fced",
+      "name": "界定",
+      "x": 253.0232855100001,
+      "y": 1177.8428982200003,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    }
+  ],
   "edges": [],
   "inference_rules": [],
   "mutex_rules": [],

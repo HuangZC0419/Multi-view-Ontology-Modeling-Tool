@@ -8,7 +8,8 @@
 import { ref, reactive, watch, computed, onMounted } from 'vue'
 
 const props = defineProps({
-  projectId: { type: String, required: true }
+  projectId: { type: String, required: true },
+  projectName: { type: String, default: '' }
 })
 
 const API_BASE = import.meta.env.VITE_API_BASE || ''
@@ -16,6 +17,7 @@ const API_BASE = import.meta.env.VITE_API_BASE || ''
 const rawData = ref(null)
 const loading = ref(true)
 const error = ref(null)
+const projectMetaName = ref('')
 
 async function loadData() {
   loading.value = true
@@ -31,8 +33,21 @@ async function loadData() {
   }
 }
 
-onMounted(loadData)
-watch(function () { return props.projectId; }, loadData)
+async function loadProjectName() {
+  projectMetaName.value = ''
+  try {
+    const resp = await fetch(API_BASE + '/api/projects')
+    if (!resp.ok) return
+    const list = await resp.json()
+    const hit = Array.isArray(list)
+      ? list.find(function (p) { return String(p.id) === String(props.projectId) })
+      : null
+    if (hit && hit.name) projectMetaName.value = String(hit.name)
+  } catch (e) {}
+}
+
+onMounted(function () { loadProjectName(); loadData() })
+watch(function () { return props.projectId; }, function () { loadProjectName(); loadData() })
 
 /* ==========================================================================
    设计系统常量
@@ -68,7 +83,7 @@ function getSourceStyle(type) {
 const NODE_PAD = 10
 
 const NODE_DIMS = {
-  root: { w: 56, h: 56, r: 28 },
+  root: { h: 30, rx: 7, fontSize: 13 },
   domain: { h: 30, rx: 7, fontSize: 13 },
   concept: { h: 26, rx: 5, fontSize: 12 },
   source: { h: 26, rx: 5, fontSize: 11 },
@@ -123,7 +138,10 @@ function truncateText(text, maxWidth, fontSize) {
 
 function computeNodeWidth(node) {
   switch (node.type) {
-    case 'root': return NODE_DIMS.root.w
+    case 'root': {
+      var w = estimateTextWidth(node.label, NODE_DIMS.root.fontSize)
+      return Math.max(w, 120)
+    }
     case 'domain': return estimateTextWidth(node.label, NODE_DIMS.domain.fontSize)
     case 'concept': return estimateTextWidth(node.label, NODE_DIMS.concept.fontSize)
     case 'source': {
@@ -176,7 +194,9 @@ function collapseRecursive(node) {
 
 const projectName = computed(function () {
   var d = rawData.value
+  if (props.projectName) return props.projectName
   if (d && d.project_name) return d.project_name
+  if (projectMetaName.value) return projectMetaName.value
   return props.projectId || '项目'
 })
 
@@ -297,7 +317,7 @@ const treeRoot = computed(function () {
    树布局算法
    ========================================================================== */
 
-function computeSubtreeHeight(node) {
+function computeSubtreeHeightStable(node) {
   node._w = computeNodeWidth(node)
   switch (node.type) {
     case 'root': node._h = NODE_DIMS.root.h; break
@@ -309,27 +329,25 @@ function computeSubtreeHeight(node) {
   }
 
   var depth = node._depth || 0
-  var collapsed = isNodeCollapsed(node.id)
-  if (collapsed || !node.children || node.children.length === 0) {
+  if (!node.children || node.children.length === 0) {
     node._subtreeH = node._h
     return
   }
 
   var totalH = 0
   for (var i = 0; i < node.children.length; i++) {
-    computeSubtreeHeight(node.children[i])
+    computeSubtreeHeightStable(node.children[i])
     totalH += node.children[i]._subtreeH
   }
   totalH += (node.children.length - 1) * V_GAPS[Math.min(depth, V_GAPS.length - 1)]
   node._subtreeH = Math.max(node._h, totalH)
 }
 
-function assignPositions(node, x, top) {
+function assignPositionsStable(node, x, top) {
   node._x = x
   var depth = node._depth || 0
-  var collapsed = isNodeCollapsed(node.id)
 
-  if (collapsed || !node.children || node.children.length === 0) {
+  if (!node.children || node.children.length === 0) {
     node._y = top + (node._subtreeH - node._h) / 2
     return
   }
@@ -340,7 +358,7 @@ function assignPositions(node, x, top) {
   var childX = x + node._w + H_GAPS[hGapIdx]
 
   for (var i = 0; i < node.children.length; i++) {
-    assignPositions(node.children[i], childX, childTop)
+    assignPositionsStable(node.children[i], childX, childTop)
     childTop += node.children[i]._subtreeH + V_GAPS[gapIdx]
   }
 
@@ -350,29 +368,46 @@ function assignPositions(node, x, top) {
   node._y = childrenMidY - node._h / 2
 }
 
-function collectVisibleNodes(node, result) {
+function collectAllNodes(node, result) {
   result.push(node)
-  var collapsed = isNodeCollapsed(node.id)
-  if (collapsed || !node.children) return
+  if (!node.children) return
   for (var i = 0; i < node.children.length; i++) {
-    collectVisibleNodes(node.children[i], result)
+    collectAllNodes(node.children[i], result)
   }
 }
 
-const layoutResult = computed(function () {
-  var root = treeRoot.value
-  if (!root) return null
+function collectVisibleIds(node, ids) {
+  ids.add(node.id)
+  if (isNodeCollapsed(node.id) || !node.children) return
+  for (var i = 0; i < node.children.length; i++) {
+    collectVisibleIds(node.children[i], ids)
+  }
+}
+
+const lockedLayout = ref(null)
+
+watch(treeRoot, function (root) {
+  if (!root) { lockedLayout.value = null; return }
   var copy = JSON.parse(JSON.stringify(root))
-  computeSubtreeHeight(copy)
-  assignPositions(copy, ROOT_X, TOP_MARGIN)
-  var visibleNodes = []
-  collectVisibleNodes(copy, visibleNodes)
+  computeSubtreeHeightStable(copy)
+  assignPositionsStable(copy, ROOT_X, TOP_MARGIN)
+  var allNodes = []
+  collectAllNodes(copy, allNodes)
   var maxRight = 0, maxBottom = 0
-  visibleNodes.forEach(function (n) {
+  allNodes.forEach(function (n) {
     if (n._x + n._w > maxRight) maxRight = n._x + n._w
     if (n._y + n._h > maxBottom) maxBottom = n._y + n._h
   })
-  return { root: copy, visibleNodes: visibleNodes, viewW: maxRight + RIGHT_MARGIN, viewH: maxBottom + BOTTOM_MARGIN }
+  lockedLayout.value = { root: copy, allNodes: allNodes, viewW: maxRight + RIGHT_MARGIN, viewH: maxBottom + BOTTOM_MARGIN }
+}, { immediate: true })
+
+const layoutResult = computed(function () {
+  var lay = lockedLayout.value
+  if (!lay) return null
+  var visibleIds = new Set()
+  collectVisibleIds(lay.root, visibleIds)
+  var visibleNodes = lay.allNodes.filter(function (n) { return visibleIds.has(n.id) })
+  return { root: lay.root, visibleNodes: visibleNodes, visibleIds: visibleIds, viewW: lay.viewW, viewH: lay.viewH }
 })
 
 const svgViewBox = computed(function () {
@@ -389,10 +424,12 @@ const edgeList = computed(function () {
   var lay = layoutResult.value
   if (!lay) return []
   var edges = []
+  var visibleIds = lay.visibleIds || new Set()
   function walk(node) {
     var collapsed = isNodeCollapsed(node.id)
     if (collapsed || !node.children) return
     node.children.forEach(function (child) {
+      if (!visibleIds.has(node.id) || !visibleIds.has(child.id)) return
       edges.push({
         id: node.id + '->' + child.id,
         parentId: node.id, childId: child.id,
@@ -673,14 +710,14 @@ const stats = computed(function () {
 
                   <!-- 根节点 -->
                   <template v-if="node.type === 'root'">
-                    <circle :cx="node._x + NODE_DIMS.root.r" :cy="node._y + NODE_DIMS.root.r"
-                      :r="NODE_DIMS.root.r" :fill="COLORS.primary"
-                      :filter="hoverHighlightNodeIds.has(node.id) ? 'url(#mm-glow)' : 'url(#mm-drop)'"
-                      :stroke="hoverHighlightNodeIds.has(node.id) ? COLORS.secondary : COLORS.primary" stroke-width="2"/>
-                    <text :x="node._x + NODE_DIMS.root.r" :y="node._y + NODE_DIMS.root.r + 5"
-                      text-anchor="middle" :fill="COLORS.white" font-size="14" font-weight="700"
+                    <rect :x="node._x" :y="node._y" :width="node._w" :height="node._h"
+                      :rx="NODE_DIMS.root.rx" :fill="COLORS.primary" fill-opacity="0.1"
+                      :stroke="hoverHighlightNodeIds.has(node.id) ? COLORS.secondary : COLORS.primary" stroke-width="1.6"
+                      :filter="hoverHighlightNodeIds.has(node.id) ? 'url(#mm-glow)' : 'url(#mm-drop)'"/>
+                    <text :x="node._x + node._w / 2" :y="node._y + node._h / 2 + 4.5"
+                      text-anchor="middle" :fill="COLORS.primary" :font-size="NODE_DIMS.root.fontSize" font-weight="800"
                       font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
-                      style="user-select: none; pointer-events: none;">{{ node.label.length > 8 ? node.label.substring(0, 8) + '…' : node.label }}</text>
+                      style="user-select: none; pointer-events: none;">{{ truncateText(node.label, node._w, NODE_DIMS.root.fontSize) }}</text>
                   </template>
 
                   <!-- 域节点 -->
@@ -758,7 +795,7 @@ const stats = computed(function () {
                   <!-- 折叠按钮 -->
                   <g v-if="node.children && node.children.length > 0" class="mm-collapse"
                     :transform="'translate('
-                      + (node.type === 'root' ? (node._x + NODE_DIMS.root.w + 4) : (node._x + node._w + 4))
+                      + (node._x + node._w + 4)
                       + ',' + (node._y + node._h / 2) + ')'">
                     <circle cx="0" cy="0" r="7" fill="#FFFFFF" :stroke="COLORS.lineDefault" stroke-width="1"/>
                     <text x="0" y="3.5" text-anchor="middle" :fill="COLORS.textMuted"
