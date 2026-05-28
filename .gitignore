@@ -17,7 +17,14 @@ dist/
 backend/data.json
 backend/uploads/
 backend/projects/*.json
+!backend/projects/machining-demo.json
+!backend/projects/machining-demo_perspective.json
+backend/projects/*.db
+backend/projects/index.json
 
 # Env files
 .env
 *.env
+
+# IDE
+.claude/settings.local.json
