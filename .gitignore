@@ -2,13 +2,21 @@
 __pycache__/
 *.pyc
 .venv/
+.pytest_cache/
 
 # Frontend
 node_modules/
 frontend/dist/
 
+# Build artifacts
+build/
+dist/
+*.zip
+
 # Runtime data
 backend/data.json
+backend/uploads/
+backend/projects/*.json
 
 # Env files
 .env
