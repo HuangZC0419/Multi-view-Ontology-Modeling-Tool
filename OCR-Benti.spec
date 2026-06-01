@@ -84,6 +84,11 @@ for _proj_name in ["machining-demo"]:
     if _proj_file.is_file():
         all_datas.append((str(_proj_file), "projects"))
 
+# ── 用户认证数据 ──
+users_xlsx = _PROJ_ROOT / "backend" / "users.xlsx"
+if users_xlsx.is_file():
+    all_datas.append((str(users_xlsx), "."))
+
 # ── 隐藏导入 ──
 hidden_imports = [
     "rapidocr_onnxruntime",
@@ -111,6 +116,7 @@ hidden_imports = [
     "pydantic",
     "starlette",
     "shapely",
+    "openpyxl",
 ]
 
 # ── 排除不需要的模块 ──

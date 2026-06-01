@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from app.models import (
@@ -12,7 +13,10 @@ from app.models import (
 
 router = APIRouter(prefix="/api/perspective")
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+if getattr(sys, "frozen", False):
+    BASE_DIR = Path(sys.executable).parent
+else:
+    BASE_DIR = Path(__file__).resolve().parent.parent.parent
 PROJECTS_DIR = BASE_DIR / "projects"
 
 

@@ -39,6 +39,12 @@ INDEX_FILE = PROJECTS_DIR / "index.json"
 if getattr(sys, "frozen", False):
     FRONTEND_DIST = Path(sys._MEIPASS) / "frontend" / "dist"
     SAMPLE_OCR_FILE = Path(sys._MEIPASS) / "test.png"
+    # 首次启动时将打包内的默认 users.xlsx 复制到 exe 同级目录
+    _bundled_users = Path(sys._MEIPASS) / "users.xlsx"
+    _target_users = BASE_DIR / "users.xlsx"
+    if _bundled_users.exists() and not _target_users.exists():
+        import shutil
+        shutil.copy2(str(_bundled_users), str(_target_users))
 else:
     FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
     SAMPLE_OCR_FILE = Path(__file__).resolve().parent.parent.parent / "test.png"
@@ -288,7 +294,10 @@ def _save_project_data(project_id: str, graph: GraphState) -> None:
 
 def _migrate_old_data() -> str | None:
     """从旧 data.json 迁移数据到项目存储，返回默认项目 ID，无数据则返回 None"""
-    old_data_file = Path(__file__).resolve().parent.parent / "data.json"
+    if getattr(sys, "frozen", False):
+        old_data_file = Path(sys.executable).parent / "data.json"
+    else:
+        old_data_file = Path(__file__).resolve().parent.parent / "data.json"
     if not old_data_file.exists():
         return None
 
@@ -1585,5 +1594,11 @@ if FRONTEND_DIST.exists() and (FRONTEND_DIST / "index.html").exists():
 
 if __name__ == "__main__":
     import uvicorn
+    import logging
     # 支持直接用 python main.py 运行
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    print("\n" + "=" * 56)
+    print("  OCR-Benti 本体建模系统")
+    print(f"  http://localhost:8000")
+    print("=" * 56 + "\n")
+    logging.getLogger("uvicorn").setLevel(logging.WARNING)
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="warning")
