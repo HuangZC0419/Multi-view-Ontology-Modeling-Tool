@@ -173,13 +173,16 @@ async function handleLogin() {
 </template>
 
 <style scoped>
+/* ==========================================================
+   整体页面（白色配色）
+   ========================================================== */
 .modern-login-page {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: var(--bg-elevated);
+  background-color: #ffffff;
   z-index: 9999;
   display: flex;
   flex-direction: column;
@@ -206,8 +209,8 @@ async function handleLogin() {
   gap: 0.5rem;
   padding: 0 0.8rem;
   height: 32px;
-  background-color: var(--primary-active);
-  color: var(--text-inverse);
+  background-color: #0f172a;
+  color: #ffffff;
   border-radius: 6px;
   font-weight: bold;
   font-size: 1rem;
@@ -227,16 +230,16 @@ async function handleLogin() {
 .modern-nav {
   display: flex;
   gap: 2rem;
-  background: var(--surface);
+  background: #ffffff;
   padding: 0.5rem 1.5rem;
   border-radius: 99px;
   backdrop-filter: blur(10px);
-  border: 1px solid var(--border);
+  border: 1px solid #e2e8f0;
 }
 
 .modern-nav a {
   text-decoration: none;
-  color: var(--text-muted);
+  color: #94a3b8;
   font-size: 0.9rem;
   font-weight: 500;
   transition: color 0.2s;
@@ -244,7 +247,7 @@ async function handleLogin() {
 
 .modern-nav a.active,
 .modern-nav a:hover {
-  color: var(--text-main);
+  color: #0f172a;
 }
 
 .modern-actions {
@@ -262,9 +265,9 @@ async function handleLogin() {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text-main);
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #0f172a;
   cursor: pointer;
   backdrop-filter: blur(10px);
   transition: transform 0.15s ease, background 0.15s ease;
@@ -277,7 +280,7 @@ async function handleLogin() {
 
 .modern-icon-btn:hover {
   transform: translateY(-1px);
-  background: var(--surface-solid);
+  background: #f8fafc;
 }
 
 /* ===== Main Layout ===== */
@@ -288,7 +291,7 @@ async function handleLogin() {
   max-width: 1440px;
   margin: 0 auto;
   width: 100%;
-  background: var(--content-hero-gradient);
+  background: linear-gradient(135deg, #fafbfc 0%, #ffffff 50%, #f8fafc 100%);
 }
 
 .modern-content {
@@ -316,9 +319,9 @@ async function handleLogin() {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: #64748b;
   margin-bottom: 1.5rem;
-  background: var(--surface-muted);
+  background: #f1f5f9;
   padding: 0.4rem 0.8rem;
   border-radius: 99px;
   width: fit-content;
@@ -329,7 +332,7 @@ async function handleLogin() {
   font-size: clamp(3rem, 5vw, 4.5rem);
   line-height: 1.1;
   font-weight: 700;
-  color: var(--text-main);
+  color: #0f172a;
   margin: 0 0 1.5rem 0;
   letter-spacing: -0.03em;
 }
@@ -338,14 +341,14 @@ async function handleLogin() {
   font-family: "Georgia", "Times New Roman", serif;
   font-style: italic;
   font-weight: 400;
-  color: var(--text-muted);
+  color: #64748b;
 }
 
 /* ===== Subtitle ===== */
 .modern-subtitle {
   font-size: 1.1rem;
   line-height: 1.6;
-  color: var(--text-muted);
+  color: #64748b;
   margin: 0 0 2.5rem 0;
   max-width: 90%;
 }
@@ -362,11 +365,11 @@ async function handleLogin() {
   align-items: center;
   gap: 0.75rem;
   padding: 0.65rem 0.85rem;
-  border: 1px solid var(--border);
+  border: 1px solid #e2e8f0;
   border-radius: 14px;
-  background: var(--surface-muted);
+  background: #ffffff;
   backdrop-filter: blur(10px);
-  box-shadow: var(--shadow-soft);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
   min-width: 180px;
 }
 
@@ -377,8 +380,8 @@ async function handleLogin() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--primary-light);
-  color: var(--primary);
+  background: #f1f5f9;
+  color: #0f172a;
   border: 1px solid rgba(0, 0, 0, 0.04);
   flex-shrink: 0;
 }
@@ -391,13 +394,13 @@ async function handleLogin() {
 .feature-title {
   font-size: 0.92rem;
   font-weight: 600;
-  color: var(--text-main);
+  color: #0f172a;
   line-height: 1.1;
 }
 
 .feature-desc {
   font-size: 0.78rem;
-  color: var(--text-muted);
+  color: #64748b;
   margin-top: 0.12rem;
   line-height: 1.25;
 }
@@ -418,7 +421,7 @@ async function handleLogin() {
   font-size: 1.06rem;
   background: transparent;
   font-family: inherit;
-  color: var(--text-main);
+  color: #0f172a;
 }
 
 .modern-field {
@@ -427,16 +430,16 @@ async function handleLogin() {
   align-items: center;
   gap: 0.75rem;
   padding: 0 1.05rem;
-  border: 2px solid var(--border-strong);
+  border: 2px solid #cbd5e1;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: var(--shadow-sm);
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .modern-field:focus-within {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--focus-ring);
+  border-color: #94a3b8;
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.12);
 }
 
 .modern-field.disabled {
@@ -446,7 +449,7 @@ async function handleLogin() {
 .field-icon {
   width: 20px;
   height: 20px;
-  color: var(--text-muted);
+  color: #94a3b8;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -459,7 +462,7 @@ async function handleLogin() {
 }
 
 .modern-input::placeholder {
-  color: var(--text-muted);
+  color: #cbd5e1;
 }
 
 .modern-input:disabled {
@@ -472,8 +475,8 @@ async function handleLogin() {
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
-  background: var(--primary);
-  color: var(--text-inverse);
+  background: #0f172a;
+  color: #ffffff;
   border: none;
   border-radius: 16px;
   font-size: 1.06rem;
@@ -486,7 +489,7 @@ async function handleLogin() {
 }
 
 .modern-btn-primary:hover:not(:disabled) {
-  background: var(--primary-hover);
+  background: #1e293b;
   transform: translateY(-1px);
 }
 
@@ -502,7 +505,7 @@ async function handleLogin() {
 
 .modern-login-error {
   width: 100%;
-  color: var(--danger);
+  color: #dc2626;
   font-size: 0.9rem;
   margin-top: 0;
   grid-column: 1 / -1;
@@ -514,7 +517,7 @@ async function handleLogin() {
   justify-content: flex-start;
   gap: 1rem;
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: #94a3b8;
   margin-bottom: 2rem;
 }
 
@@ -528,10 +531,9 @@ async function handleLogin() {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: #23a26d;
-  box-shadow: 0 0 0 4px rgba(35, 162, 109, 0.16);
+  background: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12);
 }
-
 
 /* ===== Right-side Image ===== */
 .modern-right {
@@ -550,13 +552,13 @@ async function handleLogin() {
   border-radius: 24px;
   overflow: hidden;
   isolation: isolate;
-  background: var(--login-card-gradient);
+  background: linear-gradient(132deg, #ffffff 0%, #f8fafc 58%, #f1f5f9 100%);
 }
 
 .peach-gradient {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: var(--login-image-overlay);
+  background: linear-gradient(135deg, rgba(255,255,255,0.6) 0%, rgba(241,245,249,0.3) 46%, rgba(226,232,240,0.2) 100%);
   z-index: 1;
 }
 
