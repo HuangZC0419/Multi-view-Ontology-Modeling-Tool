@@ -1,0 +1,135 @@
+:root {
+  /* ======== 主色调 ======== */
+  --primary: #2f2642;
+  --primary-hover: #41345c;
+  --primary-active: #241d33;
+  --primary-light: #ece8f6;
+  --secondary: #b8add4;
+  --secondary-hover: #a494c8;
+  --accent: #cf7f5d;
+  --accent-hover: #b96d4d;
+  --accent-soft: #f7e6dc;
+  --success: #236a4a;
+  --success-soft: rgba(35, 106, 74, 0.16);
+  --warning: #7a531c;
+  --warning-soft: rgba(142, 103, 51, 0.16);
+  --danger: #a23e3e;
+  --danger-soft: #f9e3de;
+  --bg: #f7f3ef;
+  --bg-elevated: #fdf9f6;
+  --surface: rgba(255, 255, 255, 0.84);
+  --surface-solid: #fffdfb;
+  --surface-muted: #f2ece8;
+  --text-main: #211b2f;
+  --text-muted: #5f576b;
+  --text-inverse: #fffcf7;
+  --border: #d8d0df;
+  --border-strong: #b8adc8;
+  --focus-ring: rgba(65, 52, 92, 0.22);
+  --overlay: rgba(20, 14, 34, 0.5);
+  --overlay-transparent: rgba(0, 0, 0, 0);
+  --state-hover-overlay: rgba(65, 52, 92, 0.08);
+  --state-active-overlay: rgba(65, 52, 92, 0.16);
+  --state-disabled-bg: #cbc3d8;
+  --state-disabled-text: #f7f2ff;
+  --radius: 24px;
+  --radius-sm: 12px;
+  --shadow-sm: 0 2px 6px rgba(34, 22, 58, 0.14);
+  --shadow: 0 8px 18px rgba(34, 22, 58, 0.1);
+  --shadow-lg: 0 16px 44px rgba(29, 20, 44, 0.14);
+  --shadow-soft: 0 4px 12px rgba(34, 22, 58, 0.08);
+
+  /* ======== 登录页渐变 ======== */
+  --content-hero-gradient: radial-gradient(65% 90% at 80% 50%, rgba(207, 127, 93, 0.22) 0%, rgba(207, 127, 93, 0) 70%), radial-gradient(45% 75% at 60% 65%, rgba(184, 173, 212, 0.3) 0%, rgba(184, 173, 212, 0) 72%);
+  --login-card-gradient: linear-gradient(132deg, rgba(255, 253, 251, 0.98) 0%, rgba(247, 230, 220, 0.9) 58%, rgba(214, 203, 236, 0.74) 100%);
+  --login-image-overlay: radial-gradient(120% 95% at 76% 72%, rgba(207, 127, 93, 0.35) 0%, rgba(207, 127, 93, 0) 72%), linear-gradient(135deg, #fffdfa 0%, #f6ebf8 46%, #f2dfd3 100%);
+
+  /* ======== 全局背景光球 ======== */
+  --bg-orb-gradient: radial-gradient(circle at 16% 54%, rgba(184, 173, 212, 0.2), transparent 42%), radial-gradient(circle at 82% 28%, rgba(207, 127, 93, 0.16), transparent 38%), radial-gradient(circle at 58% 78%, rgba(65, 52, 92, 0.12), transparent 46%), radial-gradient(circle at 84% 84%, rgba(184, 173, 212, 0.12), transparent 44%);
+
+  /* ======== Ocean 动画变量 ======== */
+  --ocean-wave-stroke-day: rgba(184, 173, 212, 0.5);
+  --ocean-wave-stroke-night: rgba(216, 205, 239, 0.35);
+  --ocean-light-day-start: rgba(242, 180, 148, 0.2);
+  --ocean-light-day-end: rgba(242, 180, 148, 0);
+  --ocean-light-night-start: rgba(216, 205, 239, 0.18);
+  --ocean-light-night-end: rgba(216, 205, 239, 0);
+  --ocean-bg-day: linear-gradient(180deg, rgba(184, 173, 212, 0) 0%, rgba(184, 173, 212, 0.2) 100%);
+  --ocean-bg-night: linear-gradient(180deg, rgba(216, 205, 239, 0) 0%, rgba(42, 34, 57, 0.5) 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary: #d8cdef;
+    --primary-hover: #e6def8;
+    --primary-active: #b7a7d8;
+    --primary-light: rgba(216, 205, 239, 0.16);
+    --secondary: #9886bc;
+    --secondary-hover: #aa98cf;
+    --accent: #f2b494;
+    --accent-hover: #f6c4a8;
+    --accent-soft: rgba(242, 180, 148, 0.2);
+    --success: #79cea6;
+    --success-soft: rgba(121, 206, 166, 0.24);
+    --warning: #d7b17c;
+    --warning-soft: rgba(215, 177, 124, 0.22);
+    --danger: #f09a9a;
+    --danger-soft: rgba(240, 154, 154, 0.2);
+    --bg: #181421;
+    --bg-elevated: #201a2d;
+    --surface: rgba(42, 34, 57, 0.78);
+    --surface-solid: #2a2239;
+    --surface-muted: #352d47;
+    --text-main: #f5efff;
+    --text-muted: #c6bdd8;
+    --text-inverse: #1f1730;
+    --border: #4b4261;
+    --border-strong: #62577d;
+    --focus-ring: rgba(216, 205, 239, 0.32);
+    --overlay: rgba(8, 6, 15, 0.68);
+    --overlay-transparent: rgba(8, 6, 15, 0);
+    --state-hover-overlay: rgba(216, 205, 239, 0.14);
+    --state-active-overlay: rgba(216, 205, 239, 0.22);
+    --state-disabled-bg: #5a4f73;
+    --state-disabled-text: #c8bddb;
+    --shadow-sm: 0 3px 8px rgba(0, 0, 0, 0.32);
+    --shadow: 0 10px 22px rgba(0, 0, 0, 0.36);
+    --shadow-lg: 0 20px 48px rgba(0, 0, 0, 0.46);
+    --shadow-soft: 0 8px 18px rgba(0, 0, 0, 0.28);
+
+    --content-hero-gradient: radial-gradient(65% 90% at 80% 50%, rgba(242, 180, 148, 0.24) 0%, rgba(242, 180, 148, 0) 70%), radial-gradient(45% 75% at 60% 65%, rgba(216, 205, 239, 0.32) 0%, rgba(216, 205, 239, 0) 72%);
+    --login-card-gradient: linear-gradient(132deg, rgba(53, 45, 71, 0.98) 0%, rgba(64, 52, 86, 0.94) 58%, rgba(83, 70, 112, 0.88) 100%);
+    --login-image-overlay: radial-gradient(120% 95% at 76% 72%, rgba(242, 180, 148, 0.32) 0%, rgba(242, 180, 148, 0) 72%), linear-gradient(135deg, rgba(53, 45, 71, 0.92) 0%, rgba(63, 52, 85, 0.95) 46%, rgba(91, 74, 122, 0.94) 100%);
+    --bg-orb-gradient: radial-gradient(circle at 16% 54%, rgba(216, 205, 239, 0.22), transparent 42%), radial-gradient(circle at 82% 28%, rgba(242, 180, 148, 0.18), transparent 38%), radial-gradient(circle at 58% 78%, rgba(216, 205, 239, 0.14), transparent 46%), radial-gradient(circle at 84% 84%, rgba(242, 180, 148, 0.12), transparent 44%);
+
+    --ocean-wave-stroke-day: rgba(184, 173, 212, 0.52);
+    --ocean-wave-stroke-night: rgba(216, 205, 239, 0.4);
+    --ocean-light-day-start: rgba(242, 180, 148, 0.24);
+    --ocean-light-day-end: rgba(242, 180, 148, 0);
+    --ocean-light-night-start: rgba(216, 205, 239, 0.22);
+    --ocean-light-night-end: rgba(216, 205, 239, 0);
+    --ocean-bg-day: linear-gradient(180deg, rgba(184, 173, 212, 0) 0%, rgba(184, 173, 212, 0.24) 100%);
+    --ocean-bg-night: linear-gradient(180deg, rgba(216, 205, 239, 0) 0%, rgba(42, 34, 57, 0.58) 100%);
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Google Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg);
+  color: var(--text-main);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: var(--bg-orb-gradient);
+  z-index: -1;
+  pointer-events: none;
+}

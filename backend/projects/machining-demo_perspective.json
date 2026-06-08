@@ -1,0 +1,288 @@
+{
+  "project_name": "机械加工工艺本体案例",
+  "domains": [
+    {
+      "id": "domain-equipment",
+      "name": "设备与刀具域",
+      "ontology_node_ids": ["machine-rigidity", "tool-material", "tool-wear", "coolant-flow", "workpiece-hardness"],
+      "databases": ["BENTI_DB", "material_spec.xlsx"]
+    },
+    {
+      "id": "domain-process",
+      "name": "工艺参数域",
+      "ontology_node_ids": ["cutting-speed", "feed-rate", "depth-of-cut", "cutting-temp"],
+      "databases": ["BENTI_DB"]
+    },
+    {
+      "id": "domain-quality",
+      "name": "质量检测域",
+      "ontology_node_ids": ["surface-roughness", "dimensional-accuracy", "part-quality"],
+      "databases": ["BENTI_DB"]
+    },
+    {
+      "id": "domain-personnel",
+      "name": "人员与成本域",
+      "ontology_node_ids": ["operator-skill", "machining-efficiency", "production-cost"],
+      "databases": ["BENTI_DB", "cost_report.csv"]
+    }
+  ],
+  "sources": [
+    {
+      "id": "src-benti-db",
+      "name": "BENTI_DB",
+      "type": "dameng",
+      "conn_info": {"host": "192.168.1.100", "port": 5236, "schema": "BENTI"},
+      "tables": ["CUTTING_PARAM", "MACHINE_INFO", "TOOL_LIBRARY", "QUALITY_CHECK", "OPERATOR_RECORD"],
+      "covered_nodes": 13,
+      "covered_domains": ["domain-equipment", "domain-process", "domain-quality", "domain-personnel"],
+      "total_fields": 68
+    },
+    {
+      "id": "src-material-xlsx",
+      "name": "material_spec.xlsx",
+      "type": "excel",
+      "conn_info": {"file_name": "material_spec.xlsx"},
+      "tables": ["材料规格"],
+      "covered_nodes": 1,
+      "covered_domains": ["domain-equipment"],
+      "total_fields": 7
+    },
+    {
+      "id": "src-cost-csv",
+      "name": "cost_report.csv",
+      "type": "csv",
+      "conn_info": {"file_name": "cost_report.csv"},
+      "tables": ["cost_report.csv"],
+      "covered_nodes": 1,
+      "covered_domains": ["domain-personnel"],
+      "total_fields": 7
+    }
+  ],
+  "mappings": [
+    {
+      "ontology_node_id": "machine-rigidity",
+      "source_type": "dameng",
+      "source_name": "BENTI_DB",
+      "table_name": "MACHINE_INFO",
+      "field_mappings": [
+        {"field_name": "rigidity_grade",   "attribute_key": "刚性等级",   "data_type": "VARCHAR"},
+        {"field_name": "machine_model",    "attribute_key": "机床型号",   "data_type": "VARCHAR"},
+        {"field_name": "max_load_kg",      "attribute_key": "最大承重",   "data_type": "FLOAT"},
+        {"field_name": "spindle_power_kw", "attribute_key": "主轴功率",   "data_type": "FLOAT"},
+        {"field_name": "guideway_type",    "attribute_key": "导轨类型",   "data_type": "VARCHAR"},
+        {"field_name": "max_rpm",          "attribute_key": "最大转速",   "data_type": "INTEGER"},
+        {"field_name": "factory_precision","attribute_key": "出厂精度",   "data_type": "FLOAT"}
+      ]
+    },
+    {
+      "ontology_node_id": "tool-material",
+      "source_type": "dameng",
+      "source_name": "BENTI_DB",
+      "table_name": "TOOL_LIBRARY",
+      "field_mappings": [
+        {"field_name": "material_type",     "attribute_key": "材料类型",     "data_type": "VARCHAR"},
+        {"field_name": "coating",           "attribute_key": "涂层",         "data_type": "VARCHAR"},
+        {"field_name": "hardness_hra",      "attribute_key": "硬度",         "data_type": "FLOAT"},
+        {"field_name": "heat_resist_temp",  "attribute_key": "耐热温度",     "data_type": "FLOAT"},
+        {"field_name": "applicable_material","attribute_key": "适用工件材料", "data_type": "VARCHAR"},
+        {"field_name": "bending_strength",  "attribute_key": "抗弯强度",     "data_type": "FLOAT"},
+        {"field_name": "grain_size_um",     "attribute_key": "晶粒尺寸",     "data_type": "FLOAT"}
+      ]
+    },
+    {
+      "ontology_node_id": "cutting-speed",
+      "source_type": "dameng",
+      "source_name": "BENTI_DB",
+      "table_name": "CUTTING_PARAM",
+      "field_mappings": [
+        {"field_name": "current_speed",     "attribute_key": "当前值",       "data_type": "FLOAT"},
+        {"field_name": "max_speed",         "attribute_key": "最大值",       "data_type": "FLOAT"},
+        {"field_name": "min_speed",         "attribute_key": "最小值",       "data_type": "FLOAT"},
+        {"field_name": "speed_step",        "attribute_key": "步长",         "data_type": "FLOAT"},
+        {"field_name": "spindle_rpm",       "attribute_key": "主轴转速",     "data_type": "INTEGER"},
+        {"field_name": "speed_unit",        "attribute_key": "单位",         "data_type": "VARCHAR"},
+        {"field_name": "recommend_range",   "attribute_key": "推荐范围",     "data_type": "VARCHAR"}
+      ]
+    },
+    {
+      "ontology_node_id": "feed-rate",
+      "source_type": "dameng",
+      "source_name": "BENTI_DB",
+      "table_name": "CUTTING_PARAM",
+      "field_mappings": [
+        {"field_name": "current_feed",      "attribute_key": "当前值",       "data_type": "FLOAT"},
+        {"field_name": "max_feed",          "attribute_key": "最大值",       "data_type": "FLOAT"},
+        {"field_name": "min_feed",          "attribute_key": "最小值",       "data_type": "FLOAT"},
+        {"field_name": "feed_step",         "attribute_key": "步长",         "data_type": "FLOAT"},
+        {"field_name": "feed_unit",         "attribute_key": "单位",         "data_type": "VARCHAR"},
+        {"field_name": "rough_feed_range",  "attribute_key": "粗加工推荐值", "data_type": "VARCHAR"},
+        {"field_name": "finish_feed_range", "attribute_key": "精加工推荐值", "data_type": "VARCHAR"}
+      ]
+    },
+    {
+      "ontology_node_id": "depth-of-cut",
+      "source_type": "dameng",
+      "source_name": "BENTI_DB",
+      "table_name": "CUTTING_PARAM",
+      "field_mappings": [
+        {"field_name": "current_doc",       "attribute_key": "当前值",       "data_type": "FLOAT"},
+        {"field_name": "max_doc",           "attribute_key": "最大值",       "data_type": "FLOAT"},
+        {"field_name": "min_doc",           "attribute_key": "最小值",       "data_type": "FLOAT"},
+        {"field_name": "doc_unit",          "attribute_key": "单位",         "data_type": "VARCHAR"},
+        {"field_name": "cutting_type",      "attribute_key": "切削类型",     "data_type": "VARCHAR"},
+        {"field_name": "pass_count",        "attribute_key": "走刀次数",     "data_type": "INTEGER"},
+        {"field_name": "finish_allowance",  "attribute_key": "精加工余量",   "data_type": "FLOAT"}
+      ]
+    },
+    {
+      "ontology_node_id": "operator-skill",
+      "source_type": "dameng",
+      "source_name": "BENTI_DB",
+      "table_name": "OPERATOR_RECORD",
+      "field_mappings": [
+        {"field_name": "skill_level",       "attribute_key": "技能等级",     "data_type": "VARCHAR"},
+        {"field_name": "cert_type",         "attribute_key": "证书类型",     "data_type": "VARCHAR"},
+        {"field_name": "exp_years",         "attribute_key": "从业年限",     "data_type": "INTEGER"},
+        {"field_name": "training_record",   "attribute_key": "培训记录",     "data_type": "VARCHAR"},
+        {"field_name": "operated_machines", "attribute_key": "操作设备数",   "data_type": "INTEGER"},
+        {"field_name": "accident_rate",     "attribute_key": "事故率",       "data_type": "FLOAT"},
+        {"field_name": "monthly_hours",     "attribute_key": "月均工时",     "data_type": "FLOAT"}
+      ]
+    },
+    {
+      "ontology_node_id": "workpiece-hardness",
+      "source_type": "excel",
+      "source_name": "material_spec.xlsx",
+      "table_name": "材料规格",
+      "field_mappings": [
+        {"field_name": "hardness_hb",       "attribute_key": "硬度值",       "data_type": "FLOAT"},
+        {"field_name": "max_hardness",      "attribute_key": "最大值",       "data_type": "FLOAT"},
+        {"field_name": "min_hardness",      "attribute_key": "最小值",       "data_type": "FLOAT"},
+        {"field_name": "material_grade",    "attribute_key": "材料牌号",     "data_type": "VARCHAR"},
+        {"field_name": "heat_treatment",    "attribute_key": "热处理状态",   "data_type": "VARCHAR"},
+        {"field_name": "tensile_strength",  "attribute_key": "抗拉强度",     "data_type": "FLOAT"},
+        {"field_name": "hardness_unit",     "attribute_key": "单位",         "data_type": "VARCHAR"}
+      ]
+    },
+    {
+      "ontology_node_id": "coolant-flow",
+      "source_type": "dameng",
+      "source_name": "BENTI_DB",
+      "table_name": "CUTTING_PARAM",
+      "field_mappings": [
+        {"field_name": "coolant_flow_rate", "attribute_key": "流量值",       "data_type": "FLOAT"},
+        {"field_name": "max_flow_rate",     "attribute_key": "最大值",       "data_type": "FLOAT"},
+        {"field_name": "min_flow_rate",     "attribute_key": "最小值",       "data_type": "FLOAT"},
+        {"field_name": "coolant_type",      "attribute_key": "冷却液类型",   "data_type": "VARCHAR"},
+        {"field_name": "coolant_pressure",  "attribute_key": "压力",         "data_type": "FLOAT"},
+        {"field_name": "coolant_conc",      "attribute_key": "浓度",         "data_type": "FLOAT"},
+        {"field_name": "flow_unit",         "attribute_key": "单位",         "data_type": "VARCHAR"}
+      ]
+    },
+    {
+      "ontology_node_id": "tool-wear",
+      "source_type": "dameng",
+      "source_name": "BENTI_DB",
+      "table_name": "TOOL_LIBRARY",
+      "field_mappings": [
+        {"field_name": "wear_amount",       "attribute_key": "磨损量",       "data_type": "FLOAT"},
+        {"field_name": "fail_threshold",    "attribute_key": "失效阈值",     "data_type": "FLOAT"},
+        {"field_name": "min_wear",          "attribute_key": "最小值",       "data_type": "FLOAT"},
+        {"field_name": "life_remaining",    "attribute_key": "剩余寿命",     "data_type": "FLOAT"},
+        {"field_name": "wear_status",       "attribute_key": "磨损状态",     "data_type": "VARCHAR"},
+        {"field_name": "processed_count",   "attribute_key": "已加工件数",   "data_type": "INTEGER"},
+        {"field_name": "wear_unit",         "attribute_key": "单位",         "data_type": "VARCHAR"}
+      ]
+    },
+    {
+      "ontology_node_id": "cutting-temp",
+      "source_type": "dameng",
+      "source_name": "BENTI_DB",
+      "table_name": "CUTTING_PARAM",
+      "field_mappings": [
+        {"field_name": "cutting_temp",      "attribute_key": "当前值",       "data_type": "FLOAT"},
+        {"field_name": "max_temp",          "attribute_key": "最大值",       "data_type": "FLOAT"},
+        {"field_name": "min_temp",          "attribute_key": "最小值",       "data_type": "FLOAT"},
+        {"field_name": "measure_method",    "attribute_key": "测温方式",     "data_type": "VARCHAR"},
+        {"field_name": "alarm_threshold",   "attribute_key": "报警阈值",     "data_type": "FLOAT"},
+        {"field_name": "temp_unit",         "attribute_key": "单位",         "data_type": "VARCHAR"},
+        {"field_name": "sample_rate_hz",    "attribute_key": "采样频率",     "data_type": "FLOAT"}
+      ]
+    },
+    {
+      "ontology_node_id": "surface-roughness",
+      "source_type": "dameng",
+      "source_name": "BENTI_DB",
+      "table_name": "QUALITY_CHECK",
+      "field_mappings": [
+        {"field_name": "surface_ra",        "attribute_key": "当前值",       "data_type": "FLOAT"},
+        {"field_name": "ra_upper_limit",    "attribute_key": "上限",         "data_type": "FLOAT"},
+        {"field_name": "ra_lower_limit",    "attribute_key": "下限",         "data_type": "FLOAT"},
+        {"field_name": "check_standard",    "attribute_key": "检测标准",     "data_type": "VARCHAR"},
+        {"field_name": "ra_unit",           "attribute_key": "单位",         "data_type": "VARCHAR"},
+        {"field_name": "sample_length",     "attribute_key": "取样长度",     "data_type": "FLOAT"},
+        {"field_name": "check_frequency",   "attribute_key": "检测频次",     "data_type": "VARCHAR"}
+      ]
+    },
+    {
+      "ontology_node_id": "dimensional-accuracy",
+      "source_type": "dameng",
+      "source_name": "BENTI_DB",
+      "table_name": "QUALITY_CHECK",
+      "field_mappings": [
+        {"field_name": "dim_tolerance",     "attribute_key": "尺寸公差",     "data_type": "FLOAT"},
+        {"field_name": "nominal_dim",       "attribute_key": "标称尺寸",     "data_type": "FLOAT"},
+        {"field_name": "tolerance_grade",   "attribute_key": "公差等级",     "data_type": "VARCHAR"},
+        {"field_name": "check_method",      "attribute_key": "检测方法",     "data_type": "VARCHAR"},
+        {"field_name": "upper_deviation",   "attribute_key": "上偏差",       "data_type": "FLOAT"},
+        {"field_name": "lower_deviation",   "attribute_key": "下偏差",       "data_type": "FLOAT"},
+        {"field_name": "dim_unit",          "attribute_key": "单位",         "data_type": "VARCHAR"}
+      ]
+    },
+    {
+      "ontology_node_id": "machining-efficiency",
+      "source_type": "dameng",
+      "source_name": "BENTI_DB",
+      "table_name": "OPERATOR_RECORD",
+      "field_mappings": [
+        {"field_name": "efficiency_rate",   "attribute_key": "效率评分",     "data_type": "FLOAT"},
+        {"field_name": "min_efficiency",    "attribute_key": "最小评分",     "data_type": "FLOAT"},
+        {"field_name": "output_qty",        "attribute_key": "产出数量",     "data_type": "FLOAT"},
+        {"field_name": "utilization_rate",  "attribute_key": "稼动率",       "data_type": "FLOAT"},
+        {"field_name": "cycle_time_min",    "attribute_key": "单件工时",     "data_type": "FLOAT"},
+        {"field_name": "scrap_rate",        "attribute_key": "废品率",       "data_type": "FLOAT"},
+        {"field_name": "eff_unit",          "attribute_key": "单位",         "data_type": "VARCHAR"}
+      ]
+    },
+    {
+      "ontology_node_id": "part-quality",
+      "source_type": "dameng",
+      "source_name": "BENTI_DB",
+      "table_name": "QUALITY_CHECK",
+      "field_mappings": [
+        {"field_name": "quality_grade",     "attribute_key": "质量等级",     "data_type": "VARCHAR"},
+        {"field_name": "pass_rate",         "attribute_key": "合格率",       "data_type": "FLOAT"},
+        {"field_name": "defect_limit",      "attribute_key": "缺陷数上限",   "data_type": "INTEGER"},
+        {"field_name": "inspect_frequency", "attribute_key": "检测频次",     "data_type": "VARCHAR"},
+        {"field_name": "batch_no",          "attribute_key": "批次号",       "data_type": "VARCHAR"},
+        {"field_name": "critical_cpk",      "attribute_key": "关键尺寸CPK",  "data_type": "FLOAT"},
+        {"field_name": "quality_unit",      "attribute_key": "单位",         "data_type": "VARCHAR"}
+      ]
+    },
+    {
+      "ontology_node_id": "production-cost",
+      "source_type": "csv",
+      "source_name": "cost_report.csv",
+      "table_name": "cost_report.csv",
+      "field_mappings": [
+        {"field_name": "total_cost",        "attribute_key": "总成本",       "data_type": "FLOAT"},
+        {"field_name": "material_cost",     "attribute_key": "材料成本",     "data_type": "FLOAT"},
+        {"field_name": "labor_cost_hour",   "attribute_key": "工时成本",     "data_type": "FLOAT"},
+        {"field_name": "depreciation_hour", "attribute_key": "设备折旧",     "data_type": "FLOAT"},
+        {"field_name": "tool_cost",         "attribute_key": "刀具消耗",     "data_type": "FLOAT"},
+        {"field_name": "energy_cost",       "attribute_key": "能耗成本",     "data_type": "FLOAT"},
+        {"field_name": "cost_unit",         "attribute_key": "单位",         "data_type": "VARCHAR"}
+      ]
+    }
+  ]
+}

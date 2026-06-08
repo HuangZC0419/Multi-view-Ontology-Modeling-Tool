@@ -1,0 +1,1286 @@
+{
+  "nodes": [
+    {
+      "id": "machine-rigidity",
+      "name": "机床刚性",
+      "x": -6.836905562741833,
+      "y": -15.41484374225793,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "刚性等级",
+          "value": "HRC55"
+        },
+        {
+          "key": "机床型号",
+          "value": "TK6511"
+        },
+        {
+          "key": "最大承重",
+          "value": "5000 kg"
+        },
+        {
+          "key": "主轴功率",
+          "value": "15 kW"
+        },
+        {
+          "key": "导轨类型",
+          "value": "滚柱线轨"
+        },
+        {
+          "key": "最大转速",
+          "value": "6000 rpm"
+        },
+        {
+          "key": "出厂精度",
+          "value": "0.005 mm"
+        }
+      ],
+      "origin": "manual"
+    },
+    {
+      "id": "tool-material",
+      "name": "刀具材料",
+      "x": -251.49986523451102,
+      "y": 78.00115010105526,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "材料类型",
+          "value": "硬质合金"
+        },
+        {
+          "key": "涂层",
+          "value": "TiAlN"
+        },
+        {
+          "key": "硬度",
+          "value": "92 HRA"
+        },
+        {
+          "key": "耐热温度",
+          "value": "1000 °C"
+        },
+        {
+          "key": "适用工件材料",
+          "value": "合金钢"
+        },
+        {
+          "key": "抗弯强度",
+          "value": "2500 MPa"
+        },
+        {
+          "key": "晶粒尺寸",
+          "value": "0.8 μm"
+        }
+      ],
+      "origin": "manual"
+    },
+    {
+      "id": "cutting-speed",
+      "name": "切削速度",
+      "x": -174.08425028541035,
+      "y": 309.5070208571175,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "当前值",
+          "value": "180 m/min"
+        },
+        {
+          "key": "最大值",
+          "value": "250 m/min"
+        },
+        {
+          "key": "最小值",
+          "value": "80 m/min"
+        },
+        {
+          "key": "步长",
+          "value": "10 m/min"
+        },
+        {
+          "key": "主轴转速",
+          "value": "1200 rpm"
+        },
+        {
+          "key": "单位",
+          "value": "m/min"
+        },
+        {
+          "key": "推荐范围",
+          "value": "120-200 m/min"
+        }
+      ],
+      "origin": "manual"
+    },
+    {
+      "id": "feed-rate",
+      "name": "进给量",
+      "x": -133.9864851902243,
+      "y": 493.446700333225,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "当前值",
+          "value": "0.25 mm/r"
+        },
+        {
+          "key": "最大值",
+          "value": "0.40 mm/r"
+        },
+        {
+          "key": "最小值",
+          "value": "0.08 mm/r"
+        },
+        {
+          "key": "步长",
+          "value": "0.02 mm/r"
+        },
+        {
+          "key": "单位",
+          "value": "mm/r"
+        },
+        {
+          "key": "粗加工推荐值",
+          "value": "0.30-0.40 mm/r"
+        },
+        {
+          "key": "精加工推荐值",
+          "value": "0.08-0.15 mm/r"
+        }
+      ],
+      "origin": "manual"
+    },
+    {
+      "id": "depth-of-cut",
+      "name": "切削深度",
+      "x": 308.8718317599131,
+      "y": -3.5311213008777145,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "当前值",
+          "value": "2.5 mm"
+        },
+        {
+          "key": "最大值",
+          "value": "5.0 mm"
+        },
+        {
+          "key": "最小值",
+          "value": "0.3 mm"
+        },
+        {
+          "key": "单位",
+          "value": "mm"
+        },
+        {
+          "key": "切削类型",
+          "value": "粗加工"
+        },
+        {
+          "key": "走刀次数",
+          "value": "3 次"
+        },
+        {
+          "key": "精加工余量",
+          "value": "0.5 mm"
+        }
+      ],
+      "origin": "manual"
+    },
+    {
+      "id": "operator-skill",
+      "name": "操作人员技能",
+      "x": -114.39679397185984,
+      "y": -174.15030440041858,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "技能等级",
+          "value": "高级"
+        },
+        {
+          "key": "证书类型",
+          "value": "数控铣工二级"
+        },
+        {
+          "key": "从业年限",
+          "value": "8 年"
+        },
+        {
+          "key": "培训记录",
+          "value": "2025安全生产培训"
+        },
+        {
+          "key": "操作设备数",
+          "value": "3 台"
+        },
+        {
+          "key": "事故率",
+          "value": "0.02 %"
+        },
+        {
+          "key": "月均工时",
+          "value": "176 h"
+        }
+      ],
+      "origin": "manual"
+    },
+    {
+      "id": "workpiece-hardness",
+      "name": "工件材料硬度",
+      "x": 97.93447200023633,
+      "y": 570.4888254759302,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "硬度值",
+          "value": "280 HB"
+        },
+        {
+          "key": "最大值",
+          "value": "320 HB"
+        },
+        {
+          "key": "最小值",
+          "value": "180 HB"
+        },
+        {
+          "key": "材料牌号",
+          "value": "40Cr"
+        },
+        {
+          "key": "热处理状态",
+          "value": "调质处理"
+        },
+        {
+          "key": "抗拉强度",
+          "value": "980 MPa"
+        },
+        {
+          "key": "单位",
+          "value": "HB"
+        }
+      ],
+      "origin": "manual"
+    },
+    {
+      "id": "coolant-flow",
+      "name": "冷却液流量",
+      "x": 301.6744676190194,
+      "y": 603.5444654284111,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "流量值",
+          "value": "12 L/min"
+        },
+        {
+          "key": "最大值",
+          "value": "20 L/min"
+        },
+        {
+          "key": "最小值",
+          "value": "5 L/min"
+        },
+        {
+          "key": "冷却液类型",
+          "value": "乳化液"
+        },
+        {
+          "key": "压力",
+          "value": "0.8 MPa"
+        },
+        {
+          "key": "浓度",
+          "value": "5 %"
+        },
+        {
+          "key": "单位",
+          "value": "L/min"
+        }
+      ],
+      "origin": "manual"
+    },
+    {
+      "id": "tool-wear",
+      "name": "刀具磨损",
+      "x": 699.6819548429186,
+      "y": -287.6384826857489,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "磨损量",
+          "value": "0.15 mm"
+        },
+        {
+          "key": "失效阈值",
+          "value": "0.30 mm"
+        },
+        {
+          "key": "最小值",
+          "value": "0.00 mm"
+        },
+        {
+          "key": "剩余寿命",
+          "value": "45 h"
+        },
+        {
+          "key": "磨损状态",
+          "value": "正常"
+        },
+        {
+          "key": "已加工件数",
+          "value": "320 件"
+        },
+        {
+          "key": "单位",
+          "value": "mm"
+        }
+      ],
+      "origin": "manual"
+    },
+    {
+      "id": "cutting-temp",
+      "name": "切削温度",
+      "x": 179.07200471680017,
+      "y": -249.49008367120314,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "当前值",
+          "value": "650 °C"
+        },
+        {
+          "key": "最大值",
+          "value": "850 °C"
+        },
+        {
+          "key": "最小值",
+          "value": "350 °C"
+        },
+        {
+          "key": "测温方式",
+          "value": "红外热像仪"
+        },
+        {
+          "key": "报警阈值",
+          "value": "750 °C"
+        },
+        {
+          "key": "单位",
+          "value": "°C"
+        },
+        {
+          "key": "采样频率",
+          "value": "10 Hz"
+        }
+      ],
+      "origin": "manual"
+    },
+    {
+      "id": "surface-roughness",
+      "name": "表面粗糙度",
+      "x": 1068.1520580332024,
+      "y": -82.52122438417517,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "当前值",
+          "value": "Ra 1.6 μm"
+        },
+        {
+          "key": "上限",
+          "value": "Ra 3.2 μm"
+        },
+        {
+          "key": "下限",
+          "value": "Ra 0.8 μm"
+        },
+        {
+          "key": "检测标准",
+          "value": "GB/T 1031"
+        },
+        {
+          "key": "单位",
+          "value": "μm"
+        },
+        {
+          "key": "取样长度",
+          "value": "0.8 mm"
+        },
+        {
+          "key": "检测频次",
+          "value": "1 次/批次"
+        }
+      ],
+      "origin": "manual"
+    },
+    {
+      "id": "dimensional-accuracy",
+      "name": "尺寸精度",
+      "x": 1032.605312856763,
+      "y": 473.5912711425279,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "尺寸公差",
+          "value": "±0.02 mm"
+        },
+        {
+          "key": "标称尺寸",
+          "value": "50.00 mm"
+        },
+        {
+          "key": "公差等级",
+          "value": "IT7"
+        },
+        {
+          "key": "检测方法",
+          "value": "三坐标测量"
+        },
+        {
+          "key": "上偏差",
+          "value": "+0.02 mm"
+        },
+        {
+          "key": "下偏差",
+          "value": "-0.02 mm"
+        },
+        {
+          "key": "单位",
+          "value": "mm"
+        }
+      ],
+      "origin": "manual"
+    },
+    {
+      "id": "machining-efficiency",
+      "name": "加工效率",
+      "x": 845.9499020588914,
+      "y": 687.0294717728902,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "效率评分",
+          "value": "85 %"
+        },
+        {
+          "key": "最小评分",
+          "value": "60 %"
+        },
+        {
+          "key": "产出数量",
+          "value": "12 件/h"
+        },
+        {
+          "key": "稼动率",
+          "value": "92 %"
+        },
+        {
+          "key": "单件工时",
+          "value": "5 min"
+        },
+        {
+          "key": "废品率",
+          "value": "0.5 %"
+        },
+        {
+          "key": "单位",
+          "value": "%"
+        }
+      ],
+      "origin": "manual"
+    },
+    {
+      "id": "part-quality",
+      "name": "工件质量",
+      "x": 1347.9128933871548,
+      "y": 171.56962026433985,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "质量等级",
+          "value": "A级"
+        },
+        {
+          "key": "合格率",
+          "value": "99.5 %"
+        },
+        {
+          "key": "缺陷数上限",
+          "value": "2 件/百件"
+        },
+        {
+          "key": "检测频次",
+          "value": "全检"
+        },
+        {
+          "key": "批次号",
+          "value": "BATCH-20260115"
+        },
+        {
+          "key": "关键尺寸CPK",
+          "value": "1.67"
+        },
+        {
+          "key": "单位",
+          "value": "%"
+        }
+      ],
+      "origin": "manual"
+    },
+    {
+      "id": "production-cost",
+      "name": "生产成本",
+      "x": 509.65394213843865,
+      "y": 687.0804311539594,
+      "parent_id": null,
+      "attributes": [
+        {
+          "key": "总成本",
+          "value": "185.50 元/件"
+        },
+        {
+          "key": "材料成本",
+          "value": "52.30 元/件"
+        },
+        {
+          "key": "工时成本",
+          "value": "75.00 元/h"
+        },
+        {
+          "key": "设备折旧",
+          "value": "18.20 元/h"
+        },
+        {
+          "key": "刀具消耗",
+          "value": "12.80 元/件"
+        },
+        {
+          "key": "能耗成本",
+          "value": "8.50 元/件"
+        },
+        {
+          "key": "单位",
+          "value": "元/件"
+        }
+      ],
+      "origin": "manual"
+    },
+    {
+      "id": "183192a5-9c16-42d8-874e-6ec3038d5895",
+      "name": "Qp",
+      "x": -81.06940999999995,
+      "y": -71.65067999999997,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "920d569b-40c5-40a5-9b7a-dda47441ec05",
+      "name": "Am",
+      "x": 98.93059000000005,
+      "y": -71.65067999999997,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "ec79e7a9-3ab6-4123-a882-6d3e11bfdc0b",
+      "name": "Apipe",
+      "x": 278.93059000000005,
+      "y": -71.65067999999997,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "bf99142c-1c16-4716-a9d1-b1268af7cdc9",
+      "name": "Ppump",
+      "x": 458.93059000000005,
+      "y": -71.65067999999997,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "9e7ceecb-f0fa-4fac-af56-e121b7149f05",
+      "name": "Q",
+      "x": -81.06940999999995,
+      "y": 48.349320000000034,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "d531cc5e-61c8-490c-be3b-d749c82448ff",
+      "name": "模块",
+      "x": 98.93059000000005,
+      "y": 48.349320000000034,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "7ac06d16-2acc-499a-891e-490a44ed70ee",
+      "name": "架构",
+      "x": 278.93059000000005,
+      "y": 48.349320000000034,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "e8dd963d-e2cc-42b0-8df8-4087d14320dd",
+      "name": "参数",
+      "x": 458.93059000000005,
+      "y": 48.349320000000034,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "916ccf18-a579-4e7c-a42b-82ea7239c718",
+      "name": "关联",
+      "x": -81.06940999999995,
+      "y": 168.34932000000003,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "f3295f22-7279-4ba6-aad3-a9d83acf92a2",
+      "name": "约束",
+      "x": 98.93059000000005,
+      "y": 168.34932000000003,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "06adca9b-4c33-402f-a39b-75def07855c2",
+      "name": "代表",
+      "x": 278.93059000000005,
+      "y": 168.34932000000003,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "4453c8c9-85e8-40a7-88b6-b993f0659217",
+      "name": "物理",
+      "x": 458.93059000000005,
+      "y": 168.34932000000003,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "57781e5c-5be2-4425-b44d-00b319eb1f05",
+      "name": "定律",
+      "x": -81.06940999999995,
+      "y": 288.34932000000003,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "9d853454-1b21-495e-a22a-1acd7fa213a2",
+      "name": "函数",
+      "x": 98.93059000000005,
+      "y": 288.34932000000003,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "da16341b-3ede-4192-b4fe-a22bd5e41e7f",
+      "name": "极值",
+      "x": 278.93059000000005,
+      "y": 288.34932000000003,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "3335174a-4b46-46eb-8ce1-557b2d7b9023",
+      "name": "边界",
+      "x": 458.93059000000005,
+      "y": 288.34932000000003,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "6e79f4ed-387d-4652-af10-d1899d09b189",
+      "name": "条件",
+      "x": -81.06940999999995,
+      "y": 408.34932000000003,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "804fd450-3aeb-4647-81f6-5413add9be78",
+      "name": "节点",
+      "x": 98.93059000000005,
+      "y": 408.34932000000003,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "b36962cd-78bc-4f63-be9d-4b6b5a51cc93",
+      "name": "精准",
+      "x": 278.93059000000005,
+      "y": 408.34932000000003,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "035502e6-7a5d-4045-9193-708ae1c9246b",
+      "name": "净水器",
+      "x": 458.93059000000005,
+      "y": 408.34932000000003,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "5f197ba7-595b-474c-8adb-cc91d4e9cf10",
+      "name": "典型",
+      "x": -81.06940999999995,
+      "y": 528.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "3b356805-88f9-4171-a3a7-9af3ba79fb34",
+      "name": "跨域",
+      "x": 98.93059000000005,
+      "y": 528.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "e16c9e7e-6f1d-46b2-86e9-58edaeba5a27",
+      "name": "耦合",
+      "x": 278.93059000000005,
+      "y": 528.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "5b09a13f-c763-479a-a4e9-3429533a3a2b",
+      "name": "特征",
+      "x": 458.93059000000005,
+      "y": 528.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "9a74af88-5491-429d-b5af-1347b10aa391",
+      "name": "系统",
+      "x": -81.06940999999995,
+      "y": 648.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "d9865ab0-ae5b-4d23-abff-ac7da360e9cf",
+      "name": "核心",
+      "x": 98.93059000000005,
+      "y": 648.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "548d7fb2-f96b-4993-bce2-cdf64922dc7f",
+      "name": "流体",
+      "x": 278.93059000000005,
+      "y": 648.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "c9fe4bdd-3711-4634-89dc-e0806d828433",
+      "name": "性能",
+      "x": 458.93059000000005,
+      "y": 648.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "74c304a1-06b8-4060-9703-46c202e2f536",
+      "name": "产",
+      "x": -81.06940999999995,
+      "y": 768.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "bdd3db55-ac77-42d8-b173-0a9fc9e4eae9",
+      "name": "水流量",
+      "x": 98.93059000000005,
+      "y": 768.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "40969530-e5a1-4577-b39b-16e7b6858108",
+      "name": "结构",
+      "x": 278.93059000000005,
+      "y": 768.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "0ea20e50-842d-49ef-8bd9-ab3ca9c1f8d7",
+      "name": "膜",
+      "x": 458.93059000000005,
+      "y": 768.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "65025859-fba7-4fa0-be86-23b37a9774ae",
+      "name": "面积",
+      "x": -81.06940999999995,
+      "y": 888.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "fd545fa2-8109-4559-9ce8-2f1a5d3087cc",
+      "name": "管路",
+      "x": 98.93059000000005,
+      "y": 888.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "d05e742b-5c69-49f2-8270-abcc4bb1f68e",
+      "name": "等式",
+      "x": 278.93059000000005,
+      "y": 888.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "5d9ba8d3-6b76-4b57-927a-8a8cadc3fa2f",
+      "name": "单点",
+      "x": 458.93059000000005,
+      "y": 888.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "d902ccda-baaf-448e-9893-2dcaf4d4c4b4",
+      "name": "时",
+      "x": -81.06940999999995,
+      "y": 1008.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "eb4bf1f3-d9fc-48aa-add4-816ae7fc2a8b",
+      "name": "规范",
+      "x": 98.93059000000005,
+      "y": 1008.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "e6e6168c-b2af-43f4-9416-07d998bebac4",
+      "name": "越界",
+      "x": 278.93059000000005,
+      "y": 1008.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "acdc3f96-7c48-4688-9207-f003a8b44a68",
+      "name": "功率",
+      "x": 458.93059000000005,
+      "y": 1008.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "016f0c0c-6179-48f1-9002-0e995dbb904c",
+      "name": "进膜",
+      "x": -81.06940999999995,
+      "y": 1128.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "8555802f-2260-4559-8912-29b015bcf543",
+      "name": "流量",
+      "x": 98.93059000000005,
+      "y": 1128.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "02e901ca-f21f-4778-9899-09253da1c4ea",
+      "name": "导致系统",
+      "x": 278.93059000000005,
+      "y": 1128.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "de451c3e-1455-4f3d-94c3-1f0ce687c49e",
+      "name": "噪声",
+      "x": 458.93059000000005,
+      "y": 1128.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "6ed44457-66a1-4d00-94a7-93c79623d2d8",
+      "name": "突破",
+      "x": -81.06940999999995,
+      "y": 1248.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "f6518feb-707a-4686-94ce-e44c01577404",
+      "name": "声学",
+      "x": 98.93059000000005,
+      "y": 1248.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "8dbd4e2c-7532-4270-8b00-bbaeac9f9b76",
+      "name": "标准",
+      "x": 278.93059000000005,
+      "y": 1248.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    },
+    {
+      "id": "c7aa3280-af71-4c00-bbca-73ab02f6d646",
+      "name": "界定",
+      "x": 458.93059000000005,
+      "y": 1248.34932,
+      "parent_id": null,
+      "attributes": [],
+      "origin": "manual"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "machine-rigidity",
+      "target": "dimensional-accuracy",
+      "relation": "约束",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.5,
+      "origin": "manual"
+    },
+    {
+      "id": "e2",
+      "source": "tool-material",
+      "target": "tool-wear",
+      "relation": "决定",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.9,
+      "origin": "manual"
+    },
+    {
+      "id": "e3",
+      "source": "cutting-speed",
+      "target": "tool-wear",
+      "relation": "加速",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7,
+      "origin": "manual"
+    },
+    {
+      "id": "e4",
+      "source": "cutting-speed",
+      "target": "cutting-temp",
+      "relation": "升高",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7,
+      "origin": "manual"
+    },
+    {
+      "id": "e5",
+      "source": "feed-rate",
+      "target": "surface-roughness",
+      "relation": "影响",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.55,
+      "origin": "manual"
+    },
+    {
+      "id": "e6",
+      "source": "feed-rate",
+      "target": "tool-wear",
+      "relation": "加速",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7,
+      "origin": "manual"
+    },
+    {
+      "id": "e7",
+      "source": "feed-rate",
+      "target": "cutting-temp",
+      "relation": "升高",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.65,
+      "origin": "manual"
+    },
+    {
+      "id": "e8",
+      "source": "depth-of-cut",
+      "target": "tool-wear",
+      "relation": "加重",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.75,
+      "origin": "manual"
+    },
+    {
+      "id": "e9",
+      "source": "depth-of-cut",
+      "target": "cutting-temp",
+      "relation": "升高",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7,
+      "origin": "manual"
+    },
+    {
+      "id": "e10",
+      "source": "operator-skill",
+      "target": "cutting-speed",
+      "relation": "调控",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.65,
+      "origin": "manual"
+    },
+    {
+      "id": "e11",
+      "source": "operator-skill",
+      "target": "feed-rate",
+      "relation": "调控",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.65,
+      "origin": "manual"
+    },
+    {
+      "id": "e12",
+      "source": "operator-skill",
+      "target": "depth-of-cut",
+      "relation": "调控",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.65,
+      "origin": "manual"
+    },
+    {
+      "id": "e13",
+      "source": "workpiece-hardness",
+      "target": "tool-wear",
+      "relation": "加剧",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7,
+      "origin": "manual"
+    },
+    {
+      "id": "e14",
+      "source": "workpiece-hardness",
+      "target": "surface-roughness",
+      "relation": "影响",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.5,
+      "origin": "manual"
+    },
+    {
+      "id": "e15",
+      "source": "tool-wear",
+      "target": "surface-roughness",
+      "relation": "恶化",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.8,
+      "origin": "manual"
+    },
+    {
+      "id": "e16",
+      "source": "tool-wear",
+      "target": "dimensional-accuracy",
+      "relation": "降低",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.75,
+      "origin": "manual"
+    },
+    {
+      "id": "e17",
+      "source": "tool-wear",
+      "target": "machining-efficiency",
+      "relation": "降低",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7,
+      "origin": "manual"
+    },
+    {
+      "id": "e18",
+      "source": "cutting-temp",
+      "target": "tool-wear",
+      "relation": "加剧",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.7,
+      "origin": "manual"
+    },
+    {
+      "id": "e19",
+      "source": "cutting-temp",
+      "target": "surface-roughness",
+      "relation": "影响",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.5,
+      "origin": "manual"
+    },
+    {
+      "id": "e20",
+      "source": "surface-roughness",
+      "target": "part-quality",
+      "relation": "决定",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.85,
+      "origin": "manual"
+    },
+    {
+      "id": "e21",
+      "source": "dimensional-accuracy",
+      "target": "part-quality",
+      "relation": "决定",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.9,
+      "origin": "manual"
+    },
+    {
+      "id": "e22",
+      "source": "machining-efficiency",
+      "target": "production-cost",
+      "relation": "影响",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.65,
+      "origin": "manual"
+    },
+    {
+      "id": "e23",
+      "source": "tool-wear",
+      "target": "production-cost",
+      "relation": "推高",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.65,
+      "origin": "manual"
+    },
+    {
+      "id": "e24",
+      "source": "coolant-flow",
+      "target": "cutting-temp",
+      "relation": "抑制",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.6,
+      "origin": "manual"
+    },
+    {
+      "id": "e25",
+      "source": "coolant-flow",
+      "target": "tool-wear",
+      "relation": "减缓",
+      "kind": "relation",
+      "characteristics": [],
+      "weight": 0.55,
+      "origin": "manual"
+    }
+  ],
+  "inference_rules": [
+    {
+      "id": "ir1",
+      "rel1": "加速",
+      "rel2": "恶化",
+      "inferred_rel": "间接导致"
+    },
+    {
+      "id": "ir2",
+      "rel1": "调控",
+      "rel2": "加速",
+      "inferred_rel": "间接影响"
+    },
+    {
+      "id": "ir3",
+      "rel1": "升高",
+      "rel2": "加剧",
+      "inferred_rel": "间接加剧"
+    }
+  ],
+  "mutex_rules": [
+    {
+      "id": "mr1",
+      "rel1": "抑制",
+      "rel2": "加速"
+    }
+  ],
+  "relation_weights": {}
+}
