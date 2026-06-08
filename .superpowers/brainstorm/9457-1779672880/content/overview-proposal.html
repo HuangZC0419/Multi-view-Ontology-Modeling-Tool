@@ -1,0 +1,63 @@
+<h2>概览页面重新设计方案</h2>
+<p class="subtitle">从"数据源明细表"转变为"宏观仪表盘"——简洁、直观、一眼看懂</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">❌ 当前设计（过度技术化）</div>
+    <div class="mockup-body" style="font-size:12px; color:#64748b;">
+      <p><strong>4个区块：</strong></p>
+      <p>1. 5个统计卡片（含无意义的"数据源分布"）</p>
+      <p>2. 完整数据源表格（名称/类型/连接/表/域）</p>
+      <p>3. 业务域-数据源关系图</p>
+      <p>4. 数据源覆盖度百分比分析</p>
+      <p style="color:#dc2626; margin-top:8px;">问题：信息过载，技术细节太多，领导看不懂也不需要看</p>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">✓ 建议设计（宏观仪表盘）</div>
+    <div class="mockup-body" style="font-size:12px; color:#64748b;">
+      <p><strong>3个区块：</strong></p>
+      <p>1. <strong>核心指标卡</strong> — 本体总数、关系总数、数据源总数</p>
+      <p>2. <strong>数据底座概览</strong> — 按类型展示接入的数据源（达梦/Excel/CSV各几个），每个显示名称和表数量</p>
+      <p>3. <strong>模型基本信息</strong> — 项目名、最后更新时间、创建时间</p>
+      <p style="color:#059669; margin-top:8px;">简洁：一屏看完，无需滚动，领导10秒理解全局</p>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:28px;">
+  <h3>需要确认的问题</h3>
+  <p style="font-size:14px;">当前后端 API <code>/api/perspective/{id}/leader</code> 已经返回了 summary（含 node_count, source_count 等）、data_sources 列表和 domains 列表。重新设计概览页面不需要改后端。</p>
+  <p style="font-size:13px; color:#64748b; margin-top:8px;">具体来说，你希望：</p>
+</div>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="keep-stats" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>精简指标卡</h3>
+      <p>只保留 3-4 个核心数字：本体总数、关系总数、数据源总数、业务域数</p>
+    </div>
+  </div>
+  <div class="option" data-choice="source-cards" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>数据底座卡片化</h3>
+      <p>按达梦/Excel/CSV 分组，每组一张卡片展示数据源名称和包含的表数量，替代当前的大表格</p>
+    </div>
+  </div>
+  <div class="option" data-choice="model-stats" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>模型统计信息</h3>
+      <p>展示项目创建时间、最后更新时间、数据映射覆盖率（有多少本体已完成数据映射）</p>
+    </div>
+  </div>
+  <div class="option" data-choice="data-graph" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>数据底座简易关系图</h3>
+      <p>一个简单的图示，展示每个数据源连接到哪些业务域/本体，直观但不冗余</p>
+    </div>
+  </div>
+</div>

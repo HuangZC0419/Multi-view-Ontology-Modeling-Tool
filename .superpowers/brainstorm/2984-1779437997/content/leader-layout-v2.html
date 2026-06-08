@@ -1,0 +1,156 @@
+<h2>概览视角 — 四种图形态原型</h2>
+<p class="subtitle">同一份数据（4业务域 + 3数据源），四种知识网络画法</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <svg viewBox="0 0 360 220" style="background:#f8fafc;border-radius:8px">
+        <!-- 力导向图：节点分散，关系连线 -->
+        <defs>
+          <filter id="shadow1"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.15"/></filter>
+        </defs>
+        <!-- 连线 -->
+        <line x1="180" y1="40" x2="110" y2="110" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <line x1="180" y1="40" x2="260" y2="95" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <line x1="180" y1="40" x2="80" y2="180" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <line x1="180" y1="40" x2="290" y2="170" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <line x1="110" y1="110" x2="180" y2="200" stroke="#cbd5e1" stroke-width="1"/>
+        <line x1="260" y1="95" x2="180" y2="200" stroke="#cbd5e1" stroke-width="1"/>
+        <!-- 数据源节点（小方块） -->
+        <rect x="65" y="175" width="30" height="16" rx="3" fill="#e8f5e9"/><text x="80" y="186" text-anchor="middle" font-size="7" fill="#2e7d32">Excel</text>
+        <rect x="170" y="198" width="30" height="16" rx="3" fill="#e3f2fd"/><text x="185" y="209" text-anchor="middle" font-size="7" fill="#1565c0">达梦</text>
+        <rect x="278" y="165" width="30" height="16" rx="3" fill="#fff3e0"/><text x="293" y="176" text-anchor="middle" font-size="7" fill="#e65100">CSV</text>
+        <!-- 业务域节点（大圆） -->
+        <circle cx="180" cy="40" r="32" fill="#1E3A5F" filter="url(#shadow1)"/><text x="180" y="44" text-anchor="middle" font-size="10" fill="#fff" font-weight="bold">本体建模</text>
+        <circle cx="110" cy="110" r="20" fill="#2563EB" filter="url(#shadow1)"/><text x="110" y="113" text-anchor="middle" font-size="7" fill="#fff">设备刀具</text>
+        <circle cx="260" cy="95" r="18" fill="#2563EB" filter="url(#shadow1)"/><text x="260" y="98" text-anchor="middle" font-size="7" fill="#fff">工艺参数</text>
+        <circle cx="80" cy="180" r="16" fill="#059669" filter="url(#shadow1)"/><text x="80" y="183" text-anchor="middle" font-size="6" fill="#fff">质量检测</text>
+        <circle cx="290" cy="170" r="16" fill="#059669" filter="url(#shadow1)"/><text x="290" y="173" text-anchor="middle" font-size="6" fill="#fff">人员成本</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>A. 力导向图</h3>
+      <p>节点大小=重要度，连线=支撑关系。自动排布，中心节点自然突显。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <svg viewBox="0 0 360 220" style="background:#f8fafc;border-radius:8px">
+        <!-- 旭日图：同心圆环，扇区 -->
+        <circle cx="180" cy="110" r="24" fill="#1E3A5F"/>
+        <!-- 第一圈：4个业务域扇区 -->
+        <path d="M180,110 L180,40 A70,70 0 0,1 245,72 Z" fill="#2563EB" opacity="0.85"/>
+        <path d="M180,110 L245,72 A70,70 0 0,1 285,135 Z" fill="#2563EB" opacity="0.65"/>
+        <path d="M180,110 L285,135 A70,70 0 0,1 270,192 Z" fill="#059669" opacity="0.85"/>
+        <path d="M180,110 L270,192 A70,70 0 0,1 180,200 Z" fill="#059669" opacity="0.65"/>
+        <text x="210" y="48" font-size="7" fill="#fff">设备刀具</text>
+        <text x="268" y="108" font-size="7" fill="#fff">工艺参数</text>
+        <text x="245" y="180" font-size="6" fill="#fff">质量检测</text>
+        <text x="195" y="200" font-size="6" fill="#fff">人员成本</text>
+        <!-- 第二圈：本体概念（小扇区） -->
+        <path d="M180,110 L195,18 A98,98 0 0,1 214,27 Z" fill="#93c5fd" opacity="0.5"/>
+        <path d="M180,110 L214,27 A98,98 0 0,1 230,38 Z" fill="#93c5fd" opacity="0.4"/>
+        <path d="M180,110 L230,38 A98,98 0 0,1 245,52 Z" fill="#93c5fd" opacity="0.5"/>
+        <path d="M180,110 L245,52 A98,98 0 0,1 255,68 Z" fill="#93c5fd" opacity="0.4"/>
+        <!-- 数据源标签在外圈 -->
+        <text x="200" y="12" font-size="6" fill="#1565c0">达梦DB</text>
+        <text x="270" y="22" font-size="6" fill="#2e7d32">Excel</text>
+        <text x="320" y="130" font-size="6" fill="#e65100">CSV</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>B. 旭日图</h3>
+      <p>中心=项目，内圈=业务域，外圈=本体概念。层级嵌套。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <svg viewBox="0 0 360 220" style="background:#f8fafc;border-radius:8px">
+        <!-- 思维导图：根在左，向右分叉 -->
+        <rect x="15" y="90" width="50" height="40" rx="8" fill="#1E3A5F"/><text x="40" y="114" text-anchor="middle" font-size="9" fill="#fff" font-weight="bold">机械加工</text>
+        <!-- 一级分支 -->
+        <line x1="65" y1="100" x2="120" y2="40" stroke="#2563EB" stroke-width="2"/>
+        <line x1="65" y1="110" x2="120" y2="95" stroke="#2563EB" stroke-width="2"/>
+        <line x1="65" y1="120" x2="120" y2="145" stroke="#059669" stroke-width="2"/>
+        <line x1="65" y1="130" x2="120" y2="195" stroke="#059669" stroke-width="2"/>
+        <!-- 一级节点 -->
+        <rect x="115" y="28" width="55" height="22" rx="5" fill="#2563EB"/><text x="142" y="43" text-anchor="middle" font-size="7" fill="#fff">设备刀具</text>
+        <rect x="115" y="84" width="55" height="22" rx="5" fill="#2563EB"/><text x="142" y="99" text-anchor="middle" font-size="7" fill="#fff">工艺参数</text>
+        <rect x="115" y="134" width="55" height="22" rx="5" fill="#059669"/><text x="142" y="149" text-anchor="middle" font-size="7" fill="#fff">质量检测</text>
+        <rect x="115" y="184" width="55" height="22" rx="5" fill="#059669"/><text x="142" y="199" text-anchor="middle" font-size="7" fill="#fff">人员成本</text>
+        <!-- 二级分支 -->
+        <line x1="170" y1="39" x2="215" y2="20" stroke="#93c5fd" stroke-width="1.2"/>
+        <line x1="170" y1="39" x2="215" y2="42" stroke="#93c5fd" stroke-width="1.2"/>
+        <line x1="170" y1="39" x2="215" y2="60" stroke="#93c5fd" stroke-width="1.2"/>
+        <text x="218" y="17" font-size="6" fill="#475569">机床刚性</text>
+        <text x="218" y="42" font-size="6" fill="#475569">刀具材料</text>
+        <text x="218" y="60" font-size="6" fill="#475569">刀具磨损</text>
+        <line x1="170" y1="95" x2="215" y2="78" stroke="#93c5fd" stroke-width="1.2"/>
+        <line x1="170" y1="95" x2="215" y2="100" stroke="#93c5fd" stroke-width="1.2"/>
+        <text x="218" y="76" font-size="6" fill="#475569">切削速度</text>
+        <text x="218" y="100" font-size="6" fill="#475569">进给量</text>
+        <text x="218" y="124" font-size="6" fill="#475569">切削深度</text>
+        <line x1="170" y1="145" x2="215" y2="130" stroke="#6ee7b7" stroke-width="1.2"/>
+        <text x="218" y="128" font-size="6" fill="#475569">表面粗糙度</text>
+        <text x="218" y="150" font-size="6" fill="#475569">尺寸精度</text>
+        <line x1="170" y1="195" x2="215" y2="180" stroke="#6ee7b7" stroke-width="1.2"/>
+        <text x="218" y="178" font-size="6" fill="#475569">操作人员技能</text>
+        <text x="218" y="200" font-size="6" fill="#475569">生产成本</text>
+        <!-- 数据源标签 -->
+        <text x="270" y="25" font-size="6" fill="#1565c0">🏦 达梦: CUTTING_PARAM, TOOL_LIBRARY</text>
+        <text x="270" y="42" font-size="6" fill="#2e7d32">📄 Excel: material_spec.xlsx</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>C. 思维导图</h3>
+      <p>根在左，层级向右展开。数据源标注在对应节点旁。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="d" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <svg viewBox="0 0 360 220" style="background:#f8fafc;border-radius:8px">
+        <!-- 分组节点图：虚线框包围同域节点 -->
+        <defs>
+          <filter id="shadow2"><feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.12"/></filter>
+        </defs>
+        <!-- 域1：设备与刀具 -->
+        <rect x="12" y="10" width="155" height="90" rx="8" fill="none" stroke="#2563EB" stroke-width="1.5" stroke-dasharray="6,3"/>
+        <text x="20" y="26" font-size="7" fill="#2563EB" font-weight="bold">设备与刀具域</text>
+        <rect x="20" y="35" width="38" height="16" rx="4" fill="#2563EB" filter="url(#shadow2)"/><text x="39" y="46" text-anchor="middle" font-size="5.5" fill="#fff">机床刚性</text>
+        <rect x="65" y="35" width="38" height="16" rx="4" fill="#2563EB" filter="url(#shadow2)"/><text x="84" y="46" text-anchor="middle" font-size="5.5" fill="#fff">刀具材料</text>
+        <rect x="110" y="35" width="38" height="16" rx="4" fill="#2563EB" filter="url(#shadow2)"/><text x="129" y="46" text-anchor="middle" font-size="5.5" fill="#fff">刀具磨损</text>
+        <rect x="40" y="58" width="46" height="16" rx="4" fill="#2563EB" filter="url(#shadow2)"/><text x="63" y="69" text-anchor="middle" font-size="5.5" fill="#fff">冷却液流量</text>
+        <rect x="95" y="58" width="38" height="16" rx="4" fill="#e8f5e9"/><text x="114" y="69" text-anchor="middle" font-size="5.5" fill="#2e7d32">Excel</text>
+        <!-- 域2：工艺参数 -->
+        <rect x="185" y="10" width="160" height="90" rx="8" fill="none" stroke="#059669" stroke-width="1.5" stroke-dasharray="6,3"/>
+        <text x="193" y="26" font-size="7" fill="#059669" font-weight="bold">工艺参数域</text>
+        <rect x="195" y="35" width="38" height="16" rx="4" fill="#059669" filter="url(#shadow2)"/><text x="214" y="46" text-anchor="middle" font-size="5.5" fill="#fff">切削速度</text>
+        <rect x="240" y="35" width="38" height="16" rx="4" fill="#059669" filter="url(#shadow2)"/><text x="259" y="46" text-anchor="middle" font-size="5.5" fill="#fff">进给量</text>
+        <rect x="285" y="35" width="38" height="16" rx="4" fill="#059669" filter="url(#shadow2)"/><text x="304" y="46" text-anchor="middle" font-size="5.5" fill="#fff">切削深度</text>
+        <rect x="230" y="58" width="38" height="16" rx="4" fill="#059669" filter="url(#shadow2)"/><text x="249" y="69" text-anchor="middle" font-size="5.5" fill="#fff">切削温度</text>
+        <!-- 域3：质量检测 -->
+        <rect x="12" y="115" width="155" height="90" rx="8" fill="none" stroke="#0891b2" stroke-width="1.5" stroke-dasharray="6,3"/>
+        <text x="20" y="131" font-size="7" fill="#0891b2" font-weight="bold">质量检测域</text>
+        <rect x="20" y="140" width="38" height="16" rx="4" fill="#0891b2" filter="url(#shadow2)"/><text x="39" y="151" text-anchor="middle" font-size="5.5" fill="#fff">表面粗糙度</text>
+        <rect x="65" y="140" width="38" height="16" rx="4" fill="#0891b2" filter="url(#shadow2)"/><text x="84" y="151" text-anchor="middle" font-size="5.5" fill="#fff">尺寸精度</text>
+        <rect x="110" y="140" width="38" height="16" rx="4" fill="#0891b2" filter="url(#shadow2)"/><text x="129" y="151" text-anchor="middle" font-size="5.5" fill="#fff">工件质量</text>
+        <!-- 域4：人员与成本 -->
+        <rect x="185" y="115" width="160" height="90" rx="8" fill="none" stroke="#e65100" stroke-width="1.5" stroke-dasharray="6,3"/>
+        <text x="193" y="131" font-size="7" fill="#e65100" font-weight="bold">人员与成本域</text>
+        <rect x="195" y="140" width="46" height="16" rx="4" fill="#e65100" filter="url(#shadow2)"/><text x="218" y="151" text-anchor="middle" font-size="5.5" fill="#fff">操作人员技能</text>
+        <rect x="250" y="140" width="38" height="16" rx="4" fill="#e65100" filter="url(#shadow2)"/><text x="269" y="151" text-anchor="middle" font-size="5.5" fill="#fff">加工效率</text>
+        <rect x="295" y="140" width="38" height="16" rx="4" fill="#e65100" filter="url(#shadow2)"/><text x="314" y="151" text-anchor="middle" font-size="5.5" fill="#fff">生产成本</text>
+        <rect x="230" y="165" width="38" height="16" rx="4" fill="#fff3e0"/><text x="249" y="176" text-anchor="middle" font-size="5.5" fill="#e65100">CSV</text>
+        <!-- 数据源节点 -->
+        <rect x="140" y="195" width="50" height="18" rx="5" fill="#e3f2fd"/><text x="165" y="208" text-anchor="middle" font-size="7" fill="#1565c0">达梦 BENTI_DB</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>D. 分组节点图</h3>
+      <p>同域节点被虚线框包围，域间用粗线连接。最接近现有画布风格。</p>
+    </div>
+  </div>
+</div>

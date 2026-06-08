@@ -1,0 +1,174 @@
+<h2>模块一：数据源接入（数据库 + 文件导入 + 本体提取）</h2>
+<p class="subtitle">半自动流程：连接/上传 → 预览结构 → 勾选确认 → 生成本体</p>
+
+<div class="section">
+  <h3>1. 连接器抽象层设计</h3>
+  <div class="mockup">
+    <div class="mockup-header">DataSourceConnector 抽象基类 — 统一接口</div>
+    <div class="mockup-body">
+      <div style="font-family:monospace;font-size:12px;line-height:1.6;padding:10px;background:#1a1a2e;color:#e0e0e0;border-radius:8px">
+<span style="color:#ffd700">class</span> <span style="color:#7ec8e3">DataSourceConnector</span>(ABC):
+
+    <span style="color:#888"># === 连接管理 ===</span>
+    <span style="color:#ffd700">async def</span> <span style="color:#7ec8e3">connect</span>(config: dict) -> bool       <span style="color:#888"># 建立连接</span>
+    <span style="color:#ffd700">async def</span> <span style="color:#7ec8e3">disconnect</span>()                        <span style="color:#888"># 断开连接</span>
+    <span style="color:#ffd700">async def</span> <span style="color:#7ec8e3">test_connection</span>(config: dict) -> bool  <span style="color:#888"># 测试连通性</span>
+
+    <span style="color:#888"># === 元数据读取 ===</span>
+    <span style="color:#ffd700">async def</span> <span style="color:#7ec8e3">get_tables</span>() -> list[TableInfo]       <span style="color:#888"># 获取所有表/视图列表</span>
+    <span style="color:#ffd700">async def</span> <span style="color:#7ec8e3">get_columns</span>(table: str) -> list[ColumnInfo]  <span style="color:#888"># 获取指定表的列信息</span>
+
+    <span style="color:#888"># === 数据预览 ===</span>
+    <span style="color:#ffd700">async def</span> <span style="color:#7ec8e3">preview_data</span>(table: str, limit=10) -> list[dict]  <span style="color:#888"># 预览前N行</span>
+
+<span style="color:#888"># === 数据结构 ===</span>
+<span style="color:#ffd700">class</span> <span style="color:#7ec8e3">TableInfo</span>:          <span style="color:#888"># name, schema, row_count, comment(达梦注释)</span>
+<span style="color:#ffd700">class</span> <span style="color:#7ec8e3">ColumnInfo</span>:         <span style="color:#888"># name, data_type, nullable, is_pk, comment(达梦注释)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>2. 达梦数据库连接器（DamengConnector）</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="card">
+      <div class="card-body">
+        <h3>技术方案</h3>
+        <ul style="font-size:13px;line-height:1.8">
+          <li><strong>驱动</strong>：dmPython（达梦官方Python驱动，conda benti-py38安装）</li>
+          <li><strong>连接参数</strong>：host, port(5236), user, password, schema</li>
+          <li><strong>元数据查询</strong>：通过 ALL_TABLES / ALL_TAB_COLUMNS 系统视图</li>
+          <li><strong>注释读取</strong>：达梦支持表和字段的 COMMENT 注释，用作本体名称的提示</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>模拟测试数据集</h3>
+        <ul style="font-size:13px;line-height:1.8">
+          <li>创建一个达梦模拟数据库（SQLite 本地模拟达梦表结构）</li>
+          <li>测试表：工艺参数表、设备台账、质检记录、物料清单</li>
+          <li>用于开发阶段验证连接、读取、导入全流程</li>
+          <li>真实达梦数据库在部署时替换</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>3. Excel/CSV 文件解析器（FileParser）</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="card">
+      <div class="card-body">
+        <h3>Excel（.xlsx / .xls）</h3>
+        <ul style="font-size:13px;line-height:1.8">
+          <li><strong>库</strong>：openpyxl（.xlsx）+ xlrd（.xls）</li>
+          <li><strong>Sheet → 表</strong>：每个 Sheet 视为一个"概念源"</li>
+          <li><strong>第1行 → 列名</strong>：读取第一行作为字段名</li>
+          <li><strong>类型推断</strong>：读取前20行数据，按值推断类型</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>CSV（.csv）</h3>
+        <ul style="font-size:13px;line-height:1.8">
+          <li><strong>库</strong>：Python内置 csv 模块</li>
+          <li><strong>编码检测</strong>：chardet 自动检测 GBK/UTF-8</li>
+          <li><strong>分隔符检测</strong>：自动识别逗号/分号/制表符</li>
+          <li><strong>文件→表</strong>：每个 CSV 文件视为一个"概念源"</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>4. 本体提取逻辑（ontology_extract.py）</h3>
+  <div class="mockup">
+    <div class="mockup-header">半自动流程：数据结构 → 本体概念</div>
+    <div class="mockup-body">
+      <div style="padding:16px;font-size:14px;line-height:2">
+        <table style="width:100%;border-collapse:collapse">
+          <tr style="background:#2a2a4e">
+            <th style="padding:8px;text-align:left;color:#ffd700">步骤</th>
+            <th style="padding:8px;text-align:left;color:#ffd700">操作</th>
+            <th style="padding:8px;text-align:left;color:#ffd700">说明</th>
+          </tr>
+          <tr style="border-bottom:1px solid #333">
+            <td style="padding:8px">1. 获取结构</td>
+            <td style="padding:8px">连接器返回 TableInfo[] + ColumnInfo[]</td>
+            <td style="padding:8px;color:#888">表名/Sheet名→候选父节点，列名/字段名→候选子节点</td>
+          </tr>
+          <tr style="border-bottom:1px solid #333">
+            <td style="padding:8px">2. 预览确认</td>
+            <td style="padding:8px">前端 SchemaPreview.vue 展示树形结构，用户勾选</td>
+            <td style="padding:8px;color:#888">勾选=导入，不勾选=跳过；可编辑节点名</td>
+          </tr>
+          <tr style="border-bottom:1px solid #333">
+            <td style="padding:8px">3. 概念提取</td>
+            <td style="padding:8px">生成 OntologyNode 列表</td>
+            <td style="padding:8px;color:#888">表名→父节点(name)，列名→子节点(name) + 属性(类型/注释)</td>
+          </tr>
+          <tr>
+            <td style="padding:8px">4. 导入画布</td>
+            <td style="padding:8px">POST /api/datasource/import</td>
+            <td style="padding:8px;color:#888">节点追加到当前项目，布局自动排列（网格/列式）</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>5. API 路由设计（routers/datasource.py）</h3>
+  <div class="mockup">
+    <div class="mockup-header">新增 API 端点</div>
+    <div class="mockup-body">
+      <div style="font-family:monospace;font-size:12px;line-height:1.8;padding:10px;background:#1a1a2e;color:#e0e0e0;border-radius:8px">
+<span style="color:#888"># === 数据库连接 ===</span>
+<span style="color:#7ec8e3">POST</span>  /api/datasource/db/test         <span style="color:#888">← 测试数据库连接</span>
+<span style="color:#7ec8e3">POST</span>  /api/datasource/db/connect       <span style="color:#888">← 建立连接，返回 session_id</span>
+<span style="color:#7ec8e3">GET</span>   /api/datasource/db/tables         <span style="color:#888">← 获取表列表（需 session_id）</span>
+<span style="color:#7ec8e3">GET</span>   /api/datasource/db/tables/{table}/columns  <span style="color:#888">← 获取列信息</span>
+<span style="color:#7ec8e3">GET</span>   /api/datasource/db/tables/{table}/preview   <span style="color:#888">← 预览数据</span>
+<span style="color:#7ec8e3">POST</span>  /api/datasource/db/disconnect     <span style="color:#888">← 断开连接</span>
+
+<span style="color:#888"># === 文件上传 ===</span>
+<span style="color:#7ec8e3">POST</span>  /api/datasource/file/upload       <span style="color:#888">← 上传Excel/CSV，返回解析后的结构</span>
+<span style="color:#7ec8e3">GET</span>   /api/datasource/file/{file_id}/preview  <span style="color:#888">← 预览文件数据</span>
+
+<span style="color:#888"># === 本体导入（两种数据源共用）===</span>
+<span style="color:#7ec8e3">POST</span>  /api/datasource/import             <span style="color:#888">← 提交勾选的表/列，生成本体节点并导入画布</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>6. 达梦模拟数据方案</h3>
+  <div class="mockup">
+    <div class="mockup-header">开发阶段使用 SQLite 模拟达梦表结构</div>
+    <div class="mockup-body">
+      <div style="font-size:13px;line-height:1.8;padding:10px">
+        <p>由于开发环境可能没有达梦数据库，使用 <strong>SQLite + 模拟适配器</strong> 来模拟达梦的元数据结构：</p>
+        <div style="font-family:monospace;font-size:12px;background:#1a1a2e;color:#e0e0e0;padding:12px;border-radius:8px;margin-top:8px">
+<span style="color:#888">-- 模拟表结构（SQLite），完全模拟达梦系统视图的返回格式</span>
+<span style="color:#ffd700">CREATE TABLE</span> all_tables (owner, table_name, comments, ...);
+<span style="color:#ffd700">CREATE TABLE</span> all_tab_columns (owner, table_name, column_name, data_type, comments, ...);
+
+<span style="color:#888">-- 录入测试数据：机械加工相关业务表</span>
+<span style="color:#ffd700">INSERT INTO</span> all_tables <span style="color:#ffd700">VALUES</span>
+  (<span style="color:#7ec8e3">'BENTI'</span>, <span style="color:#7ec8e3">'CUTTING_PARAM'</span>, <span style="color:#7ec8e3">'切削参数表'</span>),
+  (<span style="color:#7ec8e3">'BENTI'</span>, <span style="color:#7ec8e3">'MACHINE_INFO'</span>,   <span style="color:#7ec8e3">'机床信息表'</span>),
+  (<span style="color:#7ec8e3">'BENTI'</span>, <span style="color:#7ec8e3">'TOOL_LIBRARY'</span>,   <span style="color:#7ec8e3">'刀具库表'</span>),
+  (<span style="color:#7ec8e3">'BENTI'</span>, <span style="color:#7ec8e3">'QUALITY_CHECK'</span>,  <span style="color:#7ec8e3">'质检记录表'</span>);
+        </div>
+        <p style="margin-top:12px"><strong>SimDamengConnector</strong> 实现与真实 DamengConnector 完全相同的接口，查询此 SQLite 模拟库，方便开发调试。</p>
+      </div>
+    </div>
+  </div>
+</div>

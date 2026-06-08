@@ -1,0 +1,290 @@
+<h2>模块二：多视角查询系统 + 重新设计的 machining-demo</h2>
+<p class="subtitle">顶部 Tab 切换三个视角，同一套数据不同呈现方式</p>
+
+<div class="section">
+  <h3>1. 三种视角定义</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+    <div class="card">
+      <div class="card-body">
+        <h3>🏢 领导视角</h3>
+        <p class="label">关注：宏观概览与资源支撑</p>
+        <ul style="font-size:13px;line-height:1.8">
+          <li>展示<strong>业务域</strong>级大概念（不显示细节节点）</li>
+          <li>显示<strong>数据支撑清单</strong>：哪些数据库/表支撑了哪些业务</li>
+          <li>显示<strong>关键指标</strong>：节点总数、关系总数、数据源覆盖度</li>
+          <li>卡片式布局，非图布局</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>💻 软件工程师视角</h3>
+        <p class="label">关注：数据来源与字段映射</p>
+        <ul style="font-size:13px;line-height:1.8">
+          <li>展示本体节点和<strong>底层数据映射</strong>（表名→字段名）</li>
+          <li>点击节点可以看到<strong>数据血缘</strong>：此概念从哪个数据库、哪个表、哪个字段读取</li>
+          <li>表格式+图混合布局</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>🔧 工艺人员视角</h3>
+        <p class="label">关注：本体关系与因果推理</p>
+        <ul style="font-size:13px;line-height:1.8">
+          <li>就是<strong>现有的本体画布</strong>：节点+关系+推理规则</li>
+          <li>贝叶斯分析面板（上游追溯/下游传播/全局概览）</li>
+          <li>完整的图编辑功能</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>2. 重新设计的 machining-demo — 三层架构</h3>
+  <div class="mockup">
+    <div class="mockup-header">三层概念架构：业务域 → 本体概念 → 数据映射</div>
+    <div class="mockup-body">
+      <div style="padding:16px;font-size:13px;line-height:2">
+
+        <div style="background:#1a1a2e;padding:12px;border-radius:8px;margin-bottom:12px">
+          <span style="color:#ff9800;font-weight:bold">第1层：业务域（领导视角可见）</span><br>
+          <span style="color:#888">4个顶层域，聚合下属所有本体节点</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
+          <tr style="background:#2a2a4e">
+            <th style="padding:6px;text-align:left;color:#ffd700">业务域</th>
+            <th style="padding:6px;text-align:left;color:#ffd700">包含的本体概念</th>
+            <th style="padding:6px;text-align:left;color:#ffd700">支撑数据库</th>
+          </tr>
+          <tr style="border-bottom:1px solid #333">
+            <td style="padding:6px;color:#ff9800">🔧 设备与刀具域</td>
+            <td style="padding:6px">机床刚性、刀具材料、刀具磨损、冷却液流量</td>
+            <td style="padding:6px"><code>MACHINE_INFO, TOOL_LIBRARY</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid #333">
+            <td style="padding:6px;color:#ff9800">⚙️ 工艺参数域</td>
+            <td style="padding:6px">切削速度、进给量、切削深度、切削温度</td>
+            <td style="padding:6px"><code>CUTTING_PARAM</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid #333">
+            <td style="padding:6px;color:#ff9800">📏 质量检测域</td>
+            <td style="padding:6px">表面粗糙度、尺寸精度、工件质量</td>
+            <td style="padding:6px"><code>QUALITY_CHECK</code></td>
+          </tr>
+          <tr>
+            <td style="padding:6px;color:#ff9800">👥 人员与成本域</td>
+            <td style="padding:6px">操作人员技能、加工效率、生产成本</td>
+            <td style="padding:6px"><code>OPERATOR_RECORD</code></td>
+          </tr>
+        </table>
+
+        <div style="background:#1a1a2e;padding:12px;border-radius:8px;margin-bottom:12px">
+          <span style="color:#4caf50;font-weight:bold">第2层：本体概念（工艺人员视角可见）</span><br>
+          <span style="color:#888">15个本体节点 + 25条关系 + 贝叶斯分析，即现有案例内容</span>
+        </div>
+
+        <div style="background:#1a1a2e;padding:12px;border-radius:8px;margin-bottom:12px">
+          <span style="color:#42a5f5;font-weight:bold">第3层：数据映射（软件工程师视角可见）</span><br>
+          <span style="color:#888">每个本体概念到底层数据库表/字段的映射关系</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <tr style="background:#2a2a4e">
+            <th style="padding:6px;text-align:left;color:#ffd700">本体概念</th>
+            <th style="padding:6px;text-align:left;color:#ffd700">数据源</th>
+            <th style="padding:6px;text-align:left;color:#ffd700">表名</th>
+            <th style="padding:6px;text-align:left;color:#ffd700">字段</th>
+          </tr>
+          <tr style="border-bottom:1px solid #333">
+            <td style="padding:6px">机床刚性</td>
+            <td style="padding:6px">🏦 达梦DB</td>
+            <td style="padding:6px"><code>MACHINE_INFO</code></td>
+            <td style="padding:6px"><code>rigidity_level, machine_model</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid #333">
+            <td style="padding:6px">切削速度</td>
+            <td style="padding:6px">🏦 达梦DB</td>
+            <td style="padding:6px"><code>CUTTING_PARAM</code></td>
+            <td style="padding:6px"><code>cutting_speed, spindle_rpm</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid #333">
+            <td style="padding:6px">刀具材料</td>
+            <td style="padding:6px">🏦 达梦DB</td>
+            <td style="padding:6px"><code>TOOL_LIBRARY</code></td>
+            <td style="padding:6px"><code>material_type, coating, hardness</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid #333">
+            <td style="padding:6px">表面粗糙度</td>
+            <td style="padding:6px">🏦 达梦DB</td>
+            <td style="padding:6px"><code>QUALITY_CHECK</code></td>
+            <td style="padding:6px"><code>surface_ra, measure_date</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid #333">
+            <td style="padding:6px">工件材料硬度</td>
+            <td style="padding:6px">📄 Excel</td>
+            <td style="padding:6px"><code>material_spec.xlsx</code></td>
+            <td style="padding:6px"><code>hardness_hb, material_grade</code></td>
+          </tr>
+          <tr style="border-bottom:1px solid #333">
+            <td style="padding:6px">操作人员技能</td>
+            <td style="padding:6px">🏦 达梦DB</td>
+            <td style="padding:6px"><code>OPERATOR_RECORD</code></td>
+            <td style="padding:6px"><code>skill_level, cert_type, exp_years</code></td>
+          </tr>
+          <tr>
+            <td style="padding:6px">生产成本</td>
+            <td style="padding:6px">📄 CSV</td>
+            <td style="padding:6px"><code>cost_report.csv</code></td>
+            <td style="padding:6px"><code>material_cost, labor_hour, total_cost</code></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>3. 数据模型扩展</h3>
+  <div class="mockup">
+    <div class="mockup-header">扩展现有模型以支持多视角</div>
+    <div class="mockup-body">
+      <div style="font-family:monospace;font-size:12px;line-height:1.8;padding:10px;background:#1a1a2e;color:#e0e0e0;border-radius:8px">
+<span style="color:#888"># === 新增到 models.py ===</span>
+
+<span style="color:#ffd700">class</span> <span style="color:#7ec8e3">PerspectiveType</span>(str, Enum):
+    LEADER    = <span style="color:#7ec8e3">"leader"</span>      <span style="color:#888"># 领导视角</span>
+    ENGINEER  = <span style="color:#7ec8e3">"engineer"</span>    <span style="color:#888"># 软件工程师视角</span>
+    PROCESS   = <span style="color:#7ec8e3">"process"</span>     <span style="color:#888"># 工艺人员视角</span>
+
+<span style="color:#ffd700">class</span> <span style="color:#7ec8e3">BusinessDomain</span>(BaseModel):       <span style="color:#888"># 业务域（领导视角用）</span>
+    id: str
+    name: str                             <span style="color:#888"># 域名称，如"设备与刀具域"</span>
+    ontology_node_ids: list[str]          <span style="color:#888"># 包含的本体节点ID</span>
+    databases: list[str]                  <span style="color:#888"># 支撑的数据库/文件列表</span>
+
+<span style="color:#ffd700">class</span> <span style="color:#7ec8e3">DataMapping</span>(BaseModel):          <span style="color:#888"># 数据映射（工程师视角用）</span>
+    ontology_node_id: str                 <span style="color:#888"># 本体节点</span>
+    source_type: str                      <span style="color:#888"># "dameng" | "excel" | "csv"</span>
+    source_name: str                      <span style="color:#888"># 数据库名/文件名</span>
+    table_name: str                       <span style="color:#888"># 表名/Sheet名</span>
+    field_mappings: list[FieldMapping]    <span style="color:#888"># 字段→属性映射</span>
+
+<span style="color:#ffd700">class</span> <span style="color:#7ec8e3">FieldMapping</span>(BaseModel):
+    field_name: str                       <span style="color:#888"># 数据库字段名</span>
+    attribute_key: str                    <span style="color:#888"># 对应的本体属性名</span>
+    data_type: str                        <span style="color:#888"># 数据类型</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>4. 视角 API 设计（routers/perspective.py）</h3>
+  <div class="mockup">
+    <div class="mockup-header">多视角查询端点</div>
+    <div class="mockup-body">
+      <div style="font-family:monospace;font-size:12px;line-height:1.8;padding:10px;background:#1a1a2e;color:#e0e0e0;border-radius:8px">
+<span style="color:#888"># === 视角数据获取 ===</span>
+<span style="color:#7ec8e3">GET</span>  /api/perspective/{project_id}/leader     <span style="color:#888">← 返回业务域列表+数据库支撑清单+统计指标</span>
+<span style="color:#7ec8e3">GET</span>  /api/perspective/{project_id}/engineer   <span style="color:#888">← 返回本体节点+数据映射表（表名/字段/类型）</span>
+<span style="color:#7ec8e3">GET</span>  /api/perspective/{project_id}/process    <span style="color:#888">← 返回完整图数据（即现有 GET /api/graph 逻辑）</span>
+
+<span style="color:#888"># === 数据映射管理 ===</span>
+<span style="color:#7ec8e3">PUT</span>  /api/perspective/{project_id}/mappings    <span style="color:#888">← 批量更新数据映射关系</span>
+<span style="color:#7ec8e3">GET</span>  /api/perspective/{project_id}/domains     <span style="color:#888">← 获取业务域配置</span>
+<span style="color:#7ec8e3">PUT</span>  /api/perspective/{project_id}/domains     <span style="color:#888">← 更新业务域配置</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>5. 前端 Tab 切换交互</h3>
+  <div class="mockup">
+    <div class="mockup-header">顶部 Tab 栏布局</div>
+    <div class="mockup-body">
+      <div style="background:#1a1a2e;padding:2px;border-radius:8px">
+        <div style="display:flex;background:#1e1e3e;padding:0;border-radius:8px 8px 0 0">
+          <div style="flex:1;text-align:center;padding:10px;background:#ff9800;color:#000;font-weight:bold;border-radius:6px 0 0 0;cursor:pointer">🏢 领导视角</div>
+          <div style="flex:1;text-align:center;padding:10px;color:#888;cursor:pointer">💻 软件工程师视角</div>
+          <div style="flex:1;text-align:center;padding:10px;color:#888;cursor:pointer">🔧 工艺人员视角</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:20px">
+          <div style="background:#2a2a4e;border-radius:8px;padding:16px;text-align:center;border:1px solid #ff9800">
+            <div style="font-size:28px;font-weight:bold;color:#ff9800">4</div>
+            <div style="font-size:12px;color:#888;margin-top:4px">业务域</div>
+          </div>
+          <div style="background:#2a2a4e;border-radius:8px;padding:16px;text-align:center;border:1px solid #4caf50">
+            <div style="font-size:28px;font-weight:bold;color:#4caf50">15</div>
+            <div style="font-size:12px;color:#888;margin-top:4px">本体概念</div>
+          </div>
+          <div style="background:#2a2a4e;border-radius:8px;padding:16px;text-align:center;border:1px solid #42a5f5">
+            <div style="font-size:28px;font-weight:bold;color:#42a5f5">5</div>
+            <div style="font-size:12px;color:#888;margin-top:4px">支撑数据源</div>
+          </div>
+          <div style="background:#2a2a4e;border-radius:8px;padding:16px;text-align:center;border:1px solid #ffd700">
+            <div style="font-size:28px;font-weight:bold;color:#ffd700">25</div>
+            <div style="font-size:12px;color:#888;margin-top:4px">推理关系</div>
+          </div>
+        </div>
+        <div style="padding:20px">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+            <div style="background:#2a2a4e;border-radius:8px;padding:16px;border-left:4px solid #ff9800">
+              <div style="font-weight:bold;color:#ff9800">🔧 设备与刀具域</div>
+              <div style="font-size:12px;color:#888;margin-top:4px">4个概念 · CUTTING_PARAM, TOOL_LIBRARY</div>
+            </div>
+            <div style="background:#2a2a4e;border-radius:8px;padding:16px;border-left:4px solid #4caf50">
+              <div style="font-weight:bold;color:#4caf50">⚙️ 工艺参数域</div>
+              <div style="font-size:12px;color:#888;margin-top:4px">4个概念 · CUTTING_PARAM</div>
+            </div>
+            <div style="background:#2a2a4e;border-radius:8px;padding:16px;border-left:4px solid #42a5f5">
+              <div style="font-weight:bold;color:#42a5f5">📏 质量检测域</div>
+              <div style="font-size:12px;color:#888;margin-top:4px">3个概念 · QUALITY_CHECK</div>
+            </div>
+            <div style="background:#2a2a4e;border-radius:8px;padding:16px;border-left:4px solid #ffd700">
+              <div style="font-weight:bold;color:#ffd700">👥 人员与成本域</div>
+              <div style="font-size:12px;color:#888;margin-top:4px">3个概念 · OPERATOR_RECORD</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>6. 工程师视角 — 数据映射表格</h3>
+  <div class="mockup">
+    <div class="mockup-header">本体概念 → 数据源 → 表 → 字段 四级映射</div>
+    <div class="mockup-body">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <tr style="background:#2a2a4e">
+          <th style="padding:8px;text-align:left;color:#42a5f5">本体概念</th>
+          <th style="padding:8px;text-align:left;color:#888">数据源</th>
+          <th style="padding:8px;text-align:left;color:#888">表名</th>
+          <th style="padding:8px;text-align:left;color:#888">字段</th>
+          <th style="padding:8px;text-align:left;color:#888">类型</th>
+        </tr>
+        <tr style="border-bottom:1px solid #333;background:#1e1e3e"><td colspan="5" style="padding:4px 8px;color:#ff9800;font-weight:bold">🔧 设备与刀具域</td></tr>
+        <tr style="border-bottom:1px solid #333"><td>机床刚性</td><td>🏦 达梦</td><td>MACHINE_INFO</td><td>rigidity_level, machine_model</td><td>VARCHAR, VARCHAR</td></tr>
+        <tr style="border-bottom:1px solid #333"><td>刀具材料</td><td>🏦 达梦</td><td>TOOL_LIBRARY</td><td>material_type, coating, hardness</td><td>VARCHAR, VARCHAR, FLOAT</td></tr>
+        <tr style="border-bottom:1px solid #333"><td>刀具磨损</td><td>🏦 达梦</td><td>TOOL_LIBRARY</td><td>wear_amount, life_remaining</td><td>FLOAT, INT</td></tr>
+        <tr style="border-bottom:1px solid #333"><td>冷却液流量</td><td>🏦 达梦</td><td>CUTTING_PARAM</td><td>coolant_flow_rate</td><td>FLOAT</td></tr>
+        <tr style="border-bottom:1px solid #333;background:#1e1e3e"><td colspan="5" style="padding:4px 8px;color:#ff9800;font-weight:bold">⚙️ 工艺参数域</td></tr>
+        <tr style="border-bottom:1px solid #333"><td>切削速度</td><td>🏦 达梦</td><td>CUTTING_PARAM</td><td>cutting_speed, spindle_rpm</td><td>FLOAT, INT</td></tr>
+        <tr style="border-bottom:1px solid #333"><td>进给量</td><td>🏦 达梦</td><td>CUTTING_PARAM</td><td>feed_rate</td><td>FLOAT</td></tr>
+        <tr style="border-bottom:1px solid #333"><td>切削深度</td><td>🏦 达梦</td><td>CUTTING_PARAM</td><td>depth_of_cut</td><td>FLOAT</td></tr>
+        <tr style="border-bottom:1px solid #333"><td>切削温度</td><td>🏦 达梦</td><td>CUTTING_PARAM</td><td>cutting_temp</td><td>FLOAT</td></tr>
+        <tr style="border-bottom:1px solid #333;background:#1e1e3e"><td colspan="5" style="padding:4px 8px;color:#ff9800;font-weight:bold">📏 质量检测域</td></tr>
+        <tr style="border-bottom:1px solid #333"><td>表面粗糙度</td><td>🏦 达梦</td><td>QUALITY_CHECK</td><td>surface_ra, measure_date</td><td>FLOAT, DATE</td></tr>
+        <tr style="border-bottom:1px solid #333"><td>尺寸精度</td><td>🏦 达梦</td><td>QUALITY_CHECK</td><td>dim_tolerance, nominal_dim</td><td>FLOAT, FLOAT</td></tr>
+        <tr style="border-bottom:1px solid #333"><td>工件质量</td><td>🏦 达梦</td><td>QUALITY_CHECK</td><td>quality_grade, defect_count</td><td>VARCHAR, INT</td></tr>
+        <tr style="border-bottom:1px solid #333;background:#1e1e3e"><td colspan="5" style="padding:4px 8px;color:#ff9800;font-weight:bold">👥 人员与成本域</td></tr>
+        <tr style="border-bottom:1px solid #333"><td>操作人员技能</td><td>🏦 达梦</td><td>OPERATOR_RECORD</td><td>skill_level, cert_type, exp_years</td><td>VARCHAR, VARCHAR, INT</td></tr>
+        <tr style="border-bottom:1px solid #333"><td>加工效率</td><td>🏦 达梦</td><td>OPERATOR_RECORD</td><td>efficiency_rate, output_qty</td><td>FLOAT, INT</td></tr>
+        <tr><td>生产成本</td><td>📄 CSV</td><td>cost_report.csv</td><td>material_cost, labor_hour, total_cost</td><td>FLOAT, FLOAT, FLOAT</td></tr>
+      </table>
+    </div>
+  </div>
+</div>

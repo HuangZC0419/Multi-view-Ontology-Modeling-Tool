@@ -1,0 +1,190 @@
+<h2>领导视角 — 补充数据源展示</h2>
+<p class="subtitle">在宏观概览中明确展示各类数据源（达梦数据库、Excel、CSV）及其支撑的业务域</p>
+
+<div class="section">
+  <h3>领导视角完整布局</h3>
+  <div class="mockup">
+    <div class="mockup-header">上方：统计指标卡片 | 中部：数据源全景 | 下方：业务域卡片</div>
+    <div class="mockup-body">
+
+      <!-- 统计指标 -->
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:12px">
+        <div style="background:#2a2a4e;border-radius:8px;padding:14px;text-align:center;border:1px solid #ff9800">
+          <div style="font-size:24px;font-weight:bold;color:#ff9800">4</div><div style="font-size:11px;color:#888">业务域</div>
+        </div>
+        <div style="background:#2a2a4e;border-radius:8px;padding:14px;text-align:center;border:1px solid #4caf50">
+          <div style="font-size:24px;font-weight:bold;color:#4caf50">15</div><div style="font-size:11px;color:#888">本体概念</div>
+        </div>
+        <div style="background:#2a2a4e;border-radius:8px;padding:14px;text-align:center;border:1px solid #42a5f5">
+          <div style="font-size:24px;font-weight:bold;color:#42a5f5">5</div><div style="font-size:11px;color:#888">数据源</div>
+        </div>
+        <div style="background:#2a2a4e;border-radius:8px;padding:14px;text-align:center;border:1px solid #ffd700">
+          <div style="font-size:24px;font-weight:bold;color:#ffd700">25</div><div style="font-size:11px;color:#888">推理关系</div>
+        </div>
+        <div style="background:#2a2a4e;border-radius:8px;padding:14px;text-align:center;border:1px solid #e040fb">
+          <div style="font-size:24px;font-weight:bold;color:#e040fb">1+1+3</div><div style="font-size:11px;color:#888">达梦/Excel/CSV</div>
+        </div>
+      </div>
+
+      <!-- 数据源全景 -->
+      <div style="padding:12px">
+        <h3 style="color:#42a5f5;margin-bottom:12px">🗄️ 数据源全景</h3>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <tr style="background:#2a2a4e">
+            <th style="padding:8px;text-align:left;color:#ffd700">数据源</th>
+            <th style="padding:8px;text-align:left;color:#ffd700">类型</th>
+            <th style="padding:8px;text-align:left;color:#ffd700">连接信息</th>
+            <th style="padding:8px;text-align:left;color:#ffd700">包含表/文件</th>
+            <th style="padding:8px;text-align:left;color:#ffd700">支撑业务域</th>
+          </tr>
+          <tr style="border-bottom:1px solid #333;background:#1e1e3e">
+            <td style="padding:8px;font-weight:bold">
+              <span style="color:#e040fb">🏦 BENTI_DB</span>
+            </td>
+            <td style="padding:8px"><span style="background:#e040fb44;color:#e040fb;padding:2px 8px;border-radius:4px;font-size:11px">达梦 DM8</span></td>
+            <td style="padding:8px;font-size:11px;color:#888">192.168.1.100:5236<br>SCHEMA: BENTI</td>
+            <td style="padding:8px;font-size:11px">
+              <code>MACHINE_INFO</code> · <code>TOOL_LIBRARY</code> · <code>CUTTING_PARAM</code><br>
+              <code>QUALITY_CHECK</code> · <code>OPERATOR_RECORD</code>
+            </td>
+            <td style="padding:8px">
+              <span style="background:#ff980044;color:#ff9800;padding:2px 6px;border-radius:4px;font-size:10px">设备与刀具</span>
+              <span style="background:#4caf5044;color:#4caf50;padding:2px 6px;border-radius:4px;font-size:10px">工艺参数</span>
+              <span style="background:#42a5f544;color:#42a5f5;padding:2px 6px;border-radius:4px;font-size:10px">质量检测</span>
+              <span style="background:#ffd70044;color:#ffd700;padding:2px 6px;border-radius:4px;font-size:10px">人员与成本</span>
+            </td>
+          </tr>
+          <tr style="border-bottom:1px solid #333">
+            <td style="padding:8px;font-weight:bold">
+              <span style="color:#4caf50">📄 material_spec.xlsx</span>
+            </td>
+            <td style="padding:8px"><span style="background:#4caf5044;color:#4caf50;padding:2px 8px;border-radius:4px;font-size:11px">Excel</span></td>
+            <td style="padding:8px;font-size:11px;color:#888">本地文件上传</td>
+            <td style="padding:8px;font-size:11px"><code>Sheet: 材料规格</code></td>
+            <td style="padding:8px">
+              <span style="background:#ff980044;color:#ff9800;padding:2px 6px;border-radius:4px;font-size:10px">设备与刀具</span>
+            </td>
+          </tr>
+          <tr style="border-bottom:1px solid #333">
+            <td style="padding:8px;font-weight:bold">
+              <span style="color:#ffd700">📊 cost_report.csv</span>
+            </td>
+            <td style="padding:8px"><span style="background:#ffd70044;color:#ffd700;padding:2px 8px;border-radius:4px;font-size:11px">CSV</span></td>
+            <td style="padding:8px;font-size:11px;color:#888">本地文件上传</td>
+            <td style="padding:8px;font-size:11px"><code>cost_report.csv</code></td>
+            <td style="padding:8px">
+              <span style="background:#ffd70044;color:#ffd700;padding:2px 6px;border-radius:4px;font-size:10px">人员与成本</span>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- 数据源→业务域映射图 -->
+      <div style="padding:12px">
+        <h3 style="color:#ff9800;margin-bottom:12px">🔗 数据源支撑业务域关系图</h3>
+        <div style="display:flex;align-items:flex-start;gap:16px;font-size:12px">
+          <!-- 左：数据源 -->
+          <div style="flex:1">
+            <div style="text-align:center;color:#888;margin-bottom:8px">数据源</div>
+            <div style="background:#1e1e3e;border-radius:8px;padding:12px;border:2px solid #e040fb">
+              <div style="font-weight:bold;color:#e040fb;text-align:center;margin-bottom:8px">🏦 BENTI_DB<br><span style="font-size:10px;color:#888">达梦DM8</span></div>
+              <div style="height:2px;background:#e040fb;margin:4px 0"></div>
+              <div style="margin-top:8px">
+                <div style="font-size:10px;color:#888;margin-bottom:4px">→ 设备与刀具域</div>
+                <div style="font-size:10px;color:#888;margin-bottom:4px">→ 工艺参数域</div>
+                <div style="font-size:10px;color:#888;margin-bottom:4px">→ 质量检测域</div>
+                <div style="font-size:10px;color:#888">→ 人员与成本域</div>
+              </div>
+            </div>
+            <div style="background:#1e1e3e;border-radius:8px;padding:12px;margin-top:8px;border:2px solid #4caf50">
+              <div style="font-weight:bold;color:#4caf50;text-align:center">📄 material_spec.xlsx<br><span style="font-size:10px;color:#888">Excel文件</span></div>
+              <div style="font-size:10px;color:#888;margin-top:8px">→ 设备与刀具域</div>
+            </div>
+            <div style="background:#1e1e3e;border-radius:8px;padding:12px;margin-top:8px;border:2px solid #ffd700">
+              <div style="font-weight:bold;color:#ffd700;text-align:center">📊 cost_report.csv<br><span style="font-size:10px;color:#888">CSV文件</span></div>
+              <div style="font-size:10px;color:#888;margin-top:8px">→ 人员与成本域</div>
+            </div>
+          </div>
+          <!-- 右：业务域 -->
+          <div style="flex:1">
+            <div style="text-align:center;color:#888;margin-bottom:8px">业务域</div>
+            <div style="background:#1e1e3e;border-radius:8px;padding:12px;border:2px solid #ff9800">
+              <div style="font-weight:bold;color:#ff9800">🔧 设备与刀具</div>
+              <div style="font-size:10px;color:#888">4个概念</div>
+              <div style="font-size:10px;color:#888;margin-top:4px">数据源: 达梦·BENTI_DB + Excel</div>
+            </div>
+            <div style="background:#1e1e3e;border-radius:8px;padding:12px;margin-top:8px;border:2px solid:#4caf50">
+              <div style="font-weight:bold;color:#4caf50">⚙️ 工艺参数</div>
+              <div style="font-size:10px;color:#888">4个概念</div>
+              <div style="font-size:10px;color:#888;margin-top:4px">数据源: 达梦·BENTI_DB</div>
+            </div>
+            <div style="background:#1e1e3e;border-radius:8px;padding:12px;margin-top:8px;border:2px solid:#42a5f5">
+              <div style="font-weight:bold;color:#42a5f5">📏 质量检测</div>
+              <div style="font-size:10px;color:#888">3个概念</div>
+              <div style="font-size:10px;color:#888;margin-top:4px">数据源: 达梦·BENTI_DB</div>
+            </div>
+            <div style="background:#1e1e3e;border-radius:8px;padding:12px;margin-top:8px;border:2px solid:#ffd700">
+              <div style="font-weight:bold;color:#ffd700">👥 人员与成本</div>
+              <div style="font-size:10px;color:#888">3个概念</div>
+              <div style="font-size:10px;color:#888;margin-top:4px">数据源: 达梦·BENTI_DB + CSV</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 数据源覆盖度 -->
+      <div style="padding:12px">
+        <h3 style="color:#e040fb;margin-bottom:12px">📊 数据源覆盖度分析</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:#1e1e3e;border-radius:8px;padding:16px">
+            <div style="font-weight:bold;color:#e040fb;margin-bottom:8px">🏦 达梦 BENTI_DB（覆盖4个业务域，80%）</div>
+            <div style="font-size:12px;color:#888;line-height:1.8">
+              表数: 5 &nbsp;|&nbsp; 字段数: 22 &nbsp;|&nbsp; 映射本体概念: 12/15<br>
+              覆盖域: 设备与刀具 · 工艺参数 · 质量检测 · 人员与成本
+            </div>
+            <div style="background:#333;border-radius:4px;height:8px;margin-top:8px">
+              <div style="background:#e040fb;height:8px;width:80%;border-radius:4px"></div>
+            </div>
+          </div>
+          <div style="background:#1e1e3e;border-radius:8px;padding:16px">
+            <div style="font-weight:bold;color:#4caf50;margin-bottom:8px">📄 文件导入（覆盖2个业务域，40%）</div>
+            <div style="font-size:12px;color:#888;line-height:1.8">
+              文件数: 2 &nbsp;|&nbsp; 字段数: 8 &nbsp;|&nbsp; 映射本体概念: 3/15<br>
+              覆盖域: 设备与刀具 · 人员与成本
+            </div>
+            <div style="background:#333;border-radius:4px;height:8px;margin-top:8px">
+              <div style="background:#4caf50;height:8px;width:40%;border-radius:4px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>更新后的数据模型 — 新增 DataSourceInfo</h3>
+  <div class="mockup">
+    <div class="mockup-header">models.py 中新增数据源元信息模型</div>
+    <div class="mockup-body">
+      <div style="font-family:monospace;font-size:12px;line-height:1.8;padding:10px;background:#1a1a2e;color:#e0e0e0;border-radius:8px">
+<span style="color:#ffd700">class</span> <span style="color:#7ec8e3">DataSourceInfo</span>(BaseModel):       <span style="color:#888"># 数据源元信息（领导视角用）</span>
+    id: str
+    name: str                             <span style="color:#888"># 数据源名称，如"BENTI_DB"</span>
+    type: str                             <span style="color:#888"># "dameng" | "excel" | "csv"</span>
+    conn_info: dict                       <span style="color:#888"># {host, port, schema} 或 {file_name}</span>
+    tables: list[str]                     <span style="color:#888"># 包含的表/Sheet/文件名</span>
+    covered_nodes: int                    <span style="color:#888"># 映射的本体概念数</span>
+    covered_domains: list[str]            <span style="color:#888"># 支撑的业务域ID列表</span>
+    total_fields: int                     <span style="color:#888"># 总字段数</span>
+
+<span style="color:#ffd700">class</span> <span style="color:#7ec8e3">LeaderViewData</span>(BaseModel):        <span style="color:#888"># 领导视角完整数据</span>
+    summary: dict                         <span style="color:#888"># {domains, nodes, edges, sources}</span>
+    data_sources: list[DataSourceInfo]     <span style="color:#888"># 数据源清单</span>
+    domains: list[BusinessDomain]          <span style="color:#888"># 业务域列表</span>
+    source_domain_map: dict               <span style="color:#888"># 数据源→业务域映射</span>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,76 @@
+<h2>三种风格路线 — "知识网络"的不同理解</h2>
+<p class="subtitle">先对齐概念：当你说"三个视角都做成知识网络风格"，意味着什么？</p>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>路线A：统一图画布 + 不同滤镜</h3>
+      <p>三个视角底层是 <strong>同一张节点-关系图</strong>。切换视角只是改变：</p>
+      <ul>
+        <li><strong>概览</strong> → 只显示业务域节点（4个大节点），隐藏细节节点</li>
+        <li><strong>数据映射</strong> → 显示本体节点 + 数据源节点 + "读取自"连线</li>
+        <li><strong>本体推理</strong> → 完整图（现有画布）</li>
+      </ul>
+      <p style="color:#64748b;font-size:12px">本质：一个画布，三个图层</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>路线B：三类图布局 + 共享数据</h3>
+      <p>同一套数据，但<strong>每种视角用不同的图结构</strong>展示：</p>
+      <ul>
+        <li><strong>概览</strong> → 树状图/旭日图（业务域→子概念层级）</li>
+        <li><strong>数据映射</strong> → 二分图（本体节点 ↔ 数据库表，左右两列连线）</li>
+        <li><strong>本体推理</strong> → 贝叶斯网络图（现有画布）</li>
+      </ul>
+      <p style="color:#64748b;font-size:12px">本质：三种图，同一份数据</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>路线C：知识图谱风格 + 卡片辅助</h3>
+      <p>主体仍然是图（节点-关系），但<strong>不强制全用连线</strong>。可以用：</p>
+      <ul>
+        <li><strong>概览</strong> → 节点分组卡片（域节点 + 内含概念缩略图），关系用粗线表示域间影响</li>
+        <li><strong>数据映射</strong> → 节点展开式（点击本体节点展开其数据源子节点层）</li>
+        <li><strong>本体推理</strong> → 完整图（现有画布）</li>
+      </ul>
+      <p style="color:#64748b;font-size:12px">本质：图的变体，灵活混合</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>快速对比</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <tr style="background:#2a2a4e">
+      <th style="padding:8px;text-align:left"></th>
+      <th style="padding:8px;text-align:center">路线A</th>
+      <th style="padding:8px;text-align:center">路线B</th>
+      <th style="padding:8px;text-align:center">路线C</th>
+    </tr>
+    <tr style="border-bottom:1px solid #333">
+      <td style="padding:8px">实现复杂度</td>
+      <td style="padding:8px;text-align:center;color:#4caf50">低</td>
+      <td style="padding:8px;text-align:center;color:#ff9800">高</td>
+      <td style="padding:8px;text-align:center;color:#ffd700">中</td>
+    </tr>
+    <tr style="border-bottom:1px solid #333">
+      <td style="padding:8px">视角差异度</td>
+      <td style="padding:8px;text-align:center;color:#ff9800">低</td>
+      <td style="padding:8px;text-align:center;color:#4caf50">高</td>
+      <td style="padding:8px;text-align:center;color:#ffd700">中</td>
+    </tr>
+    <tr>
+      <td style="padding:8px">知识网络感</td>
+      <td style="padding:8px;text-align:center;color:#4caf50">强</td>
+      <td style="padding:8px;text-align:center;color:#4caf50">强</td>
+      <td style="padding:8px;text-align:center;color:#4caf50">强</td>
+    </tr>
+  </table>
+</div>

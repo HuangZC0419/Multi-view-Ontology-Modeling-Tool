@@ -1,0 +1,68 @@
+<h2>当前概览页面结构分析</h2>
+<p class="subtitle">LeaderView.vue — 针对机械制造加工案例，哪些区块有意义？</p>
+
+<div class="section">
+  <h3>核心指标卡片（5个）</h3>
+  <div class="options">
+    <div class="option" style="border-left: 4px solid #059669; background: #d1fae5;">
+      <div class="content">
+        <h3>本体概念数 ✓</h3>
+        <p>本体模型中的概念节点总数，有参考价值</p>
+      </div>
+    </div>
+    <div class="option" style="border-left: 4px solid #7c3aed; background: #f5f3ff;">
+      <div class="content">
+        <h3>推理关系数 ✓</h3>
+        <p>模型中的因果/影响关系总数，有参考价值</p>
+      </div>
+    </div>
+    <div class="option" style="border-left: 4px solid #d97706; opacity: 0.5;">
+      <div class="content">
+        <h3>业务域数 ✗</h3>
+        <p>机械加工案例通常只有一个业务域，这个数字无意义</p>
+      </div>
+    </div>
+    <div class="option" style="border-left: 4px solid #d97706; opacity: 0.5;">
+      <div class="content">
+        <h3>数据源数 ✗</h3>
+        <p>数据源类型分布对高层管理者没有分析价值</p>
+      </div>
+    </div>
+    <div class="option" style="border-left: 4px solid #d97706; opacity: 0.5;">
+      <div class="content">
+        <h3>数据源分布 ✗</h3>
+        <p>达梦/Excel/CSV计数对业务决策无意义</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>数据展示区块（3个）</h3>
+  <div class="options">
+    <div class="option" style="border-left: 4px solid #d97706; opacity: 0.5;">
+      <div class="content">
+        <h3>数据源全景表 ✗</h3>
+        <p>列出所有数据源名称/类型/表/业务域，过于技术化</p>
+      </div>
+    </div>
+    <div class="option" style="border-left: 4px solid #d97706; opacity: 0.5;">
+      <div class="content">
+        <h3>数据源与业务域关系 ✗</h3>
+        <p>展示每个域关联哪些数据源，对宏观视角无意义</p>
+      </div>
+    </div>
+    <div class="option" style="border-left: 4px solid #d97706; opacity: 0.5;">
+      <div class="content">
+        <h3>数据源覆盖度分析 ✗</h3>
+        <p>达梦 vs 文件数据源百分比，毫无业务价值</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 32px;">
+  <h3>核心问题</h3>
+  <p style="font-size: 15px; color: #334155;">对于一个<strong>机械制造加工案例</strong>的本体模型概览，你希望看到哪些<strong>宏观层面的分析信息</strong>？</p>
+  <p style="font-size: 13px; color: #64748b;">比如：模型结构总览？关键影响链路？异常检测？风险节点？领域覆盖完整度？</p>
+</div>
