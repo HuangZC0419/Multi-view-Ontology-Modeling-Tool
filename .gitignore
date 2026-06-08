@@ -12,6 +12,7 @@ frontend/dist/
 build/
 dist/
 *.zip
+*.tar
 
 # Runtime data
 backend/data.json
