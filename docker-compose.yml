@@ -1,0 +1,14 @@
+services:
+  ontology-tool:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: multi-view-ontology-tool:latest
+    container_name: multi-view-ontology-tool
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/projects:/app/backend/projects
+      - ./backend/uploads:/app/backend/uploads
+      - ./backend/users.xlsx:/app/backend/users.xlsx
+    restart: unless-stopped
