@@ -9,6 +9,8 @@ backend/__pycache__
 backend/app/__pycache__
 backend/app/**/__pycache__
 backend/uploads
+backend/projects/*.json
+backend/projects/*.db
 dist
 build
 *.pyc

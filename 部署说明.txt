@@ -1,0 +1,98 @@
+============================================
+  多视角本体建模工具 — 离线部署说明
+  适用环境: RHEL 7 / CentOS 7 + docker-compose 1.x
+============================================
+
+【前置条件】
+  - 已安装 Docker Engine (>= 20.10)
+  - 已安装 docker-compose (独立版本，非 docker compose 插件)
+  - 已获取项目 zip 包和镜像 .tar 文件
+
+【系统自带默认项目】
+  部署后系统已预置「机加工案例」项目，包含 15 个本体概念、
+  25 条关系、3 条推理规则，可直接查看领导/工艺/工程师
+  三个视角的完整效果。用户也可新建自己的项目。
+
+============================================
+  第零步：清理旧容器（如果之前部署过）
+============================================
+
+docker stop multi-view-ontology-tool 2>/dev/null
+docker rm multi-view-ontology-tool 2>/dev/null
+
+============================================
+  第一步：解压项目（用新 zip 覆盖旧目录）
+============================================
+
+rm -rf Multi-view-Ontology-Modeling-Tool-master
+unzip Multi-view-Ontology-Modeling-Tool-master.zip
+cd Multi-view-Ontology-Modeling-Tool-master
+
+============================================
+  第二步：导入新镜像
+============================================
+
+docker load -i multi-view-ontology-tool.tar
+
+确认镜像已导入：
+docker images | grep multi-view-ontology-tool
+
+============================================
+  第三步：启动服务
+============================================
+
+docker-compose -f docker-compose.offline.yml up -d
+
+============================================
+  第四步：验证
+============================================
+
+浏览器访问：http://<服务器IP>:3001
+
+登录后即可看到「机加工案例」默认项目，
+左侧三个视角 Tab（领导/工艺/工程师）可正常切换查看。
+
+或命令行测试：
+curl http://localhost:3001/
+
+============================================
+  常用管理命令
+============================================
+
+停止服务：
+  docker-compose -f docker-compose.offline.yml down
+
+重启服务：
+  docker-compose -f docker-compose.offline.yml restart
+
+查看日志：
+  docker-compose -f docker-compose.offline.yml logs
+
+实时跟踪日志：
+  docker-compose -f docker-compose.offline.yml logs -f
+
+============================================
+  故障排查
+============================================
+
+1. 如果启动报错 "unsupported config option"
+   -> 检查 docker-compose 版本是否为 1.x
+   -> 运行: docker-compose --version
+   -> 确认输出类似: docker-compose version 1.17.1
+
+2. 如果浏览器无法访问
+   -> 检查容器是否在运行: docker ps
+   -> 检查防火墙是否开放 8000 端口:
+     sudo firewall-cmd --add-port=8000/tcp --permanent
+     sudo firewall-cmd --reload
+   -> 如果开启了 SELinux，尝试临时关闭:
+     sudo setenforce 0
+
+3. 如果容器启动后立即退出
+   -> 查看日志: docker-compose -f docker-compose.offline.yml logs
+   -> 检查数据目录是否存在:
+     ls backend/projects/
+     ls backend/uploads/
+     ls backend/users.xlsx
+
+============================================

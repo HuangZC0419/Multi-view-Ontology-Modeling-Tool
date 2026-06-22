@@ -17,7 +17,7 @@ import jieba.posseg as pseg
 import numpy as np
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -236,10 +236,15 @@ def _load_project_index() -> list[dict]:
 def _save_project_index(projects: list[dict]) -> None:
     """保存项目索引列表"""
     _ensure_projects_dir()
-    INDEX_FILE.write_text(
-        json.dumps(projects, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    try:
+        INDEX_FILE.write_text(
+            json.dumps(projects, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    except (OSError, IOError) as e:
+        # 磁盘满 / 权限不足时避免崩溃，记录错误由上层处理
+        import sys
+        print(f"[ERROR] 保存项目索引失败: {e}", file=sys.stderr)
 
 
 def _project_file_path(project_id: str) -> Path:
@@ -261,10 +266,14 @@ def _load_project_data(project_id: str) -> GraphState:
 def _save_project_data(project_id: str, graph: GraphState) -> None:
     """将图数据保存到指定项目文件，并更新索引中的 updated_at"""
     _ensure_projects_dir()
-    _project_file_path(project_id).write_text(
-        json.dumps(graph.model_dump(), ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    try:
+        _project_file_path(project_id).write_text(
+            json.dumps(graph.model_dump(), ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    except (OSError, IOError) as e:
+        import sys
+        print(f"[ERROR] 保存项目数据失败 ({project_id}): {e}", file=sys.stderr)
     # 同步更新索引中的更新时间
     projects = _load_project_index()
     now = datetime.utcnow().isoformat()
@@ -1501,6 +1510,16 @@ def bayesian_overview(project_id: str) -> OverviewResponse:
     )
 
 
+@app.get("/api/bayesian/weights/{project_id}")
+def get_weights(project_id: str) -> dict[str, object]:
+    """获取项目的贝叶斯关系权重配置"""
+    projects = _load_project_index()
+    if not any(p["id"] == project_id for p in projects):
+        raise HTTPException(status_code=400, detail="指定项目不存在")
+    graph = _load_project_data(project_id)
+    return {"relation_weights": graph.relation_weights}
+
+
 @app.put("/api/bayesian/weights/{project_id}")
 def update_weights(project_id: str, payload: WeightConfigPayload) -> dict[str, str]:
     """更新项目的贝叶斯关系权重配置。
@@ -1528,6 +1547,25 @@ def update_weights(project_id: str, payload: WeightConfigPayload) -> dict[str, s
 
 
 # ============================================================
+# Favicon（避免浏览器自动请求 /favicon.ico 产生 404）
+# ============================================================
+@app.get("/favicon.ico")
+async def favicon():
+    # 1x1 透明 ICO
+    return Response(
+        content=bytes([
+            0x00,0x00,0x01,0x00,0x01,0x00,0x01,0x01,
+            0x00,0x00,0x01,0x00,0x18,0x00,0x0b,0x00,
+            0x00,0x00,0x16,0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+        ]),
+        media_type="image/x-icon"
+    )
+
+
+# ============================================================
 # 前端静态文件服务（仅在 dist 目录存在时启用）
 # ============================================================
 if FRONTEND_DIST.exists() and (FRONTEND_DIST / "index.html").exists():
@@ -1540,7 +1578,7 @@ if __name__ == "__main__":
     # 支持直接用 python main.py 运行
     print("\n" + "=" * 56)
     print("  OCR-Benti 本体建模系统")
-    print(f"  http://localhost:8000")
+    print(f"  http://localhost:3001")
     print("=" * 56 + "\n")
     logging.getLogger("uvicorn").setLevel(logging.WARNING)
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="warning")
+    uvicorn.run(app, host="0.0.0.0", port=3001, log_level="warning")

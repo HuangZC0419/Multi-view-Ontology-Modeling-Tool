@@ -1,8 +1,7 @@
 <script setup>
 import { reactive, computed, ref } from "vue";
 
-const API_BASE = import.meta.env.VITE_API_BASE ||
-  (typeof window !== "undefined" ? `http://${window.location.hostname}:8000` : "http://127.0.0.1:8000");
+const API_BASE = import.meta.env.VITE_API_BASE || "";
 
 const props = defineProps({
   previewData: {

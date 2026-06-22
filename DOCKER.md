@@ -5,7 +5,7 @@
 ## 启动
 
 ```bash
-docker compose up --build -d
+docker-compose up --build -d
 ```
 
 启动后访问：
@@ -16,7 +16,7 @@ docker compose up --build -d
 ## 停止
 
 ```bash
-docker compose down
+docker-compose down
 ```
 
 ## 数据持久化
@@ -30,5 +30,5 @@ docker compose down
 如果需要重新构建镜像：
 
 ```bash
-docker compose build --no-cache
+docker-compose build --no-cache
 ```

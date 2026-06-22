@@ -1,0 +1,5 @@
+# 确保 Docker 相关文件使用 LF 换行符（兼容 Linux 上的 docker-compose 1.x）
+*.yml text eol=lf
+*.yaml text eol=lf
+Dockerfile text eol=lf
+.dockerignore text eol=lf

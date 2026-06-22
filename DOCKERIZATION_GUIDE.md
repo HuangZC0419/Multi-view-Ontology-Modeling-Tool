@@ -144,6 +144,7 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 **文件**：`docker-compose.yml`
 
 ```yaml
+version: "3.3"
 services:
   ontology-tool:
     build:
@@ -158,6 +159,17 @@ services:
       - ./backend/uploads:/app/backend/uploads
       - ./backend/users.xlsx:/app/backend/users.xlsx
     restart: unless-stopped
+    security_opt:
+      - seccomp:unconfined
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
+    environment:
+      - OPENBLAS_NUM_THREADS=1
+      - GOTO_NUM_THREADS=1
+      - OMP_NUM_THREADS=1
 ```
 
 ### 3.2 离线版（目标机器部署用）
@@ -165,6 +177,7 @@ services:
 **文件**：`docker-compose.offline.yml`
 
 ```yaml
+version: "3.3"
 services:
   ontology-tool:
     image: <项目名>:latest        # 直接用本地镜像，无 build 段
@@ -176,6 +189,17 @@ services:
       - ./backend/uploads:/app/backend/uploads
       - ./backend/users.xlsx:/app/backend/users.xlsx
     restart: unless-stopped
+    security_opt:
+      - seccomp:unconfined
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
+    environment:
+      - OPENBLAS_NUM_THREADS=1
+      - GOTO_NUM_THREADS=1
+      - OMP_NUM_THREADS=1
 ```
 
 > **关键区别**：离线版去掉了 `build:` 配置，直接引用 `image:`，避免在没有网络的机器上尝试重新构建。
@@ -207,7 +231,7 @@ docker-compose.offline.yml
 
 ```powershell
 # 在项目根目录执行
-docker compose up --build -d
+docker-compose up --build -d
 ```
 
 ### 第二步：验证构建结果
@@ -254,17 +278,54 @@ docker save <项目名>:latest -o <项目名>.tar
 
 ### 前提条件
 
-- 安装 Docker Desktop（Windows）或 Docker Engine（Linux）
+- 安装 Docker Engine（Linux）或 Docker Desktop（Windows）
+- 安装 `docker-compose`（独立 Python 工具，非 `docker compose` 插件）
 - **不需要**安装 Python、Node.js、pip 等任何开发环境
+
+### 部署前环境检查
+
+在目标机器上执行以下命令确认环境：
+
+```bash
+# 确认 Docker 版本 ≥ 20.10
+docker --version
+
+# 确认 docker-compose 版本（必须是 docker-compose 有连字符，非 docker compose）
+docker-compose --version
+
+# 确认镜像已导入
+docker images | grep multi-view-ontology-tool
+```
+
+### 部署前文件检查（重要！）
+
+由于 compose 文件可能从 Windows 拷贝到 Linux 服务器，**必须**检查文件格式：
+
+```bash
+# 1. 检查是否有 UTF-8 BOM（Windows 记事本等编辑器会添加）
+# 正常第一行应该显示 "version:"，如果显示乱码则有 BOM
+head -1 docker-compose.offline.yml | xxd | head -1
+# 期望输出：00000000: 7665 7273 696f 6e3a ...（v e r s i o n :）
+# 如果是：00000000: efbb bf76 ... 则说明有 BOM
+
+# 2. 去除 BOM（如果有）
+sed -i '1s/^\xEF\xBB\xBF//' docker-compose.offline.yml
+
+# 3. 转换 CRLF 换行符为 LF（如果文件来自 Windows）
+sed -i 's/\r$//' docker-compose.offline.yml
+
+# 4. 验证 compose 文件语法
+docker-compose -f docker-compose.offline.yml config
+```
 
 ### 部署步骤
 
-```powershell
+```bash
 # 1. 导入镜像（只需一次）
 docker load -i <项目名>.tar
 
 # 2. 启动服务
-docker compose -f docker-compose.offline.yml up -d
+docker-compose -f docker-compose.offline.yml up -d
 
 # 3. 验证
 curl http://localhost:8000/
@@ -272,12 +333,12 @@ curl http://localhost:8000/
 
 ### 常用管理命令
 
-```powershell
+```bash
 # 停止
-docker compose -f docker-compose.offline.yml down
+docker-compose -f docker-compose.offline.yml down
 
 # 重启
-docker compose -f docker-compose.offline.yml restart
+docker-compose -f docker-compose.offline.yml restart
 
 # 查看日志
 docker logs <容器名>
@@ -326,11 +387,56 @@ docker exec -it <容器名> /bin/bash
 
 **解决**：pip install 加 `-i https://pypi.tuna.tsinghua.edu.cn/simple`
 
-### Q7：`docker compose up --build` 在离线机器上报错
+### Q7：`docker-compose up --build` 在离线机器上报错
 
 **原因**：离线环境不能拉取基础镜像
 
 **解决**：用 `docker-compose.offline.yml`（不含 build），配合 `docker load` 导入的本地镜像
+
+### Q8：`unsupported config option for services:xxx`（compose 文件格式报错）
+
+**原因**：服务器上的 `docker-compose` 版本过旧（常见于 RHEL 7 / CentOS 7，docker-compose 1.x），不支持新版 Compose 文件格式
+
+**解决**：
+1. 确认 `docker-compose.offline.yml` 第一行是 `version: "3.3"`（必须有 minor version 号）
+2. 确保文件使用 **LF 换行符**（非 Windows CRLF），可用 `dos2unix docker-compose.offline.yml` 转换
+3. 确保文件 **无 UTF-8 BOM**，可用 `sed -i '1s/^\xEF\xBB\xBF//' docker-compose.offline.yml` 去除
+4. 重新执行 `docker-compose -f docker-compose.offline.yml up -d`
+
+### Q9：`docker compose` 命令不存在（`docker compose version` 报错）
+
+**原因**：docker-compose 1.x 是独立 Python 工具，不支持 `docker compose`（无连字符）子命令
+
+**解决**：所有命令使用 `docker-compose`（有连字符），例如：
+```bash
+docker-compose -f docker-compose.offline.yml up -d
+docker-compose -f docker-compose.offline.yml down
+docker-compose logs
+```
+
+### Q10：容器启动但无法访问（RHEL/CentOS 7）
+
+**原因**：可能是 SELinux 或 firewalld 阻止了端口访问
+
+**解决**：
+```bash
+# 检查 SELinux 状态
+getenforce
+# 如果返回 Enforcing，临时关闭测试（或配置策略）
+sudo setenforce 0
+
+# 检查防火墙
+sudo firewall-cmd --list-ports
+# 开放 8000 端口
+sudo firewall-cmd --add-port=8000/tcp --permanent
+sudo firewall-cmd --reload
+```
+
+> **注意**：如果 SELinux 是罪魁祸首，volume 挂载也会失败。最彻底的方案是在 docker-compose 的 volumes 后加 `:z` 标签：
+> ```yaml
+> volumes:
+>   - ./backend/projects:/app/backend/projects:z
+> ```
 
 ---
 
@@ -365,4 +471,5 @@ docker exec -it <容器名> /bin/bash
 
 | 日期 | 版本 | 变更 |
 |------|------|------|
+| 2026-06-12 | v1.1 | 兼容旧版 docker-compose 1.x：version 改为显式 "3.3"，所有命令改用 docker-compose（有连字符），新增 BOM/CRLF 文件检查步骤，新增 Q8-Q10 故障排查 |
 | 2026-06-08 | v1.0 | 初始版本，基于 Multi-view-Ontology-Modeling-Tool 打包经验 |

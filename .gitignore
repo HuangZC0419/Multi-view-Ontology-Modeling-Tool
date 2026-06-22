@@ -18,10 +18,9 @@ dist/
 backend/data.json
 backend/uploads/
 backend/projects/*.json
-!backend/projects/machining-demo.json
-!backend/projects/machining-demo_perspective.json
+!backend/projects/9538c292-08fb-4540-9988-bd980e02c7d3.json
+!backend/projects/index.json
 backend/projects/*.db
-backend/projects/index.json
 
 # Env files
 .env
