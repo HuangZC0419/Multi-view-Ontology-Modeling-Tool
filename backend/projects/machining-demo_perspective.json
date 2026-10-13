@@ -1,37 +1,37 @@
 {
-  "project_name": "机械加工工艺本体案例",
+  "project_name": "机械加工工艺知识案例",
   "domains": [
     {
       "id": "domain-equipment",
       "name": "设备与刀具域",
       "ontology_node_ids": ["machine-rigidity", "tool-material", "tool-wear", "coolant-flow", "workpiece-hardness"],
-      "databases": ["BENTI_DB", "material_spec.xlsx"]
+      "databases": ["PROCESS_DB", "material_spec.xlsx"]
     },
     {
       "id": "domain-process",
       "name": "工艺参数域",
       "ontology_node_ids": ["cutting-speed", "feed-rate", "depth-of-cut", "cutting-temp"],
-      "databases": ["BENTI_DB"]
+      "databases": ["PROCESS_DB"]
     },
     {
       "id": "domain-quality",
       "name": "质量检测域",
       "ontology_node_ids": ["surface-roughness", "dimensional-accuracy", "part-quality"],
-      "databases": ["BENTI_DB"]
+      "databases": ["PROCESS_DB"]
     },
     {
       "id": "domain-personnel",
       "name": "人员与成本域",
       "ontology_node_ids": ["operator-skill", "machining-efficiency", "production-cost"],
-      "databases": ["BENTI_DB", "cost_report.csv"]
+      "databases": ["PROCESS_DB", "cost_report.csv"]
     }
   ],
   "sources": [
     {
-      "id": "src-benti-db",
-      "name": "BENTI_DB",
+      "id": "src-process-db",
+      "name": "PROCESS_DB",
       "type": "dameng",
-      "conn_info": {"host": "192.168.1.100", "port": 5236, "schema": "BENTI"},
+      "conn_info": {"host": "192.168.1.100", "port": 5236, "schema": "PROCESS"},
       "tables": ["CUTTING_PARAM", "MACHINE_INFO", "TOOL_LIBRARY", "QUALITY_CHECK", "OPERATOR_RECORD"],
       "covered_nodes": 13,
       "covered_domains": ["domain-equipment", "domain-process", "domain-quality", "domain-personnel"],
@@ -62,7 +62,7 @@
     {
       "ontology_node_id": "machine-rigidity",
       "source_type": "dameng",
-      "source_name": "BENTI_DB",
+      "source_name": "PROCESS_DB",
       "table_name": "MACHINE_INFO",
       "field_mappings": [
         {"field_name": "rigidity_grade",   "attribute_key": "刚性等级",   "data_type": "VARCHAR"},
@@ -77,7 +77,7 @@
     {
       "ontology_node_id": "tool-material",
       "source_type": "dameng",
-      "source_name": "BENTI_DB",
+      "source_name": "PROCESS_DB",
       "table_name": "TOOL_LIBRARY",
       "field_mappings": [
         {"field_name": "material_type",     "attribute_key": "材料类型",     "data_type": "VARCHAR"},
@@ -92,7 +92,7 @@
     {
       "ontology_node_id": "cutting-speed",
       "source_type": "dameng",
-      "source_name": "BENTI_DB",
+      "source_name": "PROCESS_DB",
       "table_name": "CUTTING_PARAM",
       "field_mappings": [
         {"field_name": "current_speed",     "attribute_key": "当前值",       "data_type": "FLOAT"},
@@ -107,7 +107,7 @@
     {
       "ontology_node_id": "feed-rate",
       "source_type": "dameng",
-      "source_name": "BENTI_DB",
+      "source_name": "PROCESS_DB",
       "table_name": "CUTTING_PARAM",
       "field_mappings": [
         {"field_name": "current_feed",      "attribute_key": "当前值",       "data_type": "FLOAT"},
@@ -122,7 +122,7 @@
     {
       "ontology_node_id": "depth-of-cut",
       "source_type": "dameng",
-      "source_name": "BENTI_DB",
+      "source_name": "PROCESS_DB",
       "table_name": "CUTTING_PARAM",
       "field_mappings": [
         {"field_name": "current_doc",       "attribute_key": "当前值",       "data_type": "FLOAT"},
@@ -137,7 +137,7 @@
     {
       "ontology_node_id": "operator-skill",
       "source_type": "dameng",
-      "source_name": "BENTI_DB",
+      "source_name": "PROCESS_DB",
       "table_name": "OPERATOR_RECORD",
       "field_mappings": [
         {"field_name": "skill_level",       "attribute_key": "技能等级",     "data_type": "VARCHAR"},
@@ -167,7 +167,7 @@
     {
       "ontology_node_id": "coolant-flow",
       "source_type": "dameng",
-      "source_name": "BENTI_DB",
+      "source_name": "PROCESS_DB",
       "table_name": "CUTTING_PARAM",
       "field_mappings": [
         {"field_name": "coolant_flow_rate", "attribute_key": "流量值",       "data_type": "FLOAT"},
@@ -182,7 +182,7 @@
     {
       "ontology_node_id": "tool-wear",
       "source_type": "dameng",
-      "source_name": "BENTI_DB",
+      "source_name": "PROCESS_DB",
       "table_name": "TOOL_LIBRARY",
       "field_mappings": [
         {"field_name": "wear_amount",       "attribute_key": "磨损量",       "data_type": "FLOAT"},
@@ -197,7 +197,7 @@
     {
       "ontology_node_id": "cutting-temp",
       "source_type": "dameng",
-      "source_name": "BENTI_DB",
+      "source_name": "PROCESS_DB",
       "table_name": "CUTTING_PARAM",
       "field_mappings": [
         {"field_name": "cutting_temp",      "attribute_key": "当前值",       "data_type": "FLOAT"},
@@ -212,7 +212,7 @@
     {
       "ontology_node_id": "surface-roughness",
       "source_type": "dameng",
-      "source_name": "BENTI_DB",
+      "source_name": "PROCESS_DB",
       "table_name": "QUALITY_CHECK",
       "field_mappings": [
         {"field_name": "surface_ra",        "attribute_key": "当前值",       "data_type": "FLOAT"},
@@ -227,7 +227,7 @@
     {
       "ontology_node_id": "dimensional-accuracy",
       "source_type": "dameng",
-      "source_name": "BENTI_DB",
+      "source_name": "PROCESS_DB",
       "table_name": "QUALITY_CHECK",
       "field_mappings": [
         {"field_name": "dim_tolerance",     "attribute_key": "尺寸公差",     "data_type": "FLOAT"},
@@ -242,7 +242,7 @@
     {
       "ontology_node_id": "machining-efficiency",
       "source_type": "dameng",
-      "source_name": "BENTI_DB",
+      "source_name": "PROCESS_DB",
       "table_name": "OPERATOR_RECORD",
       "field_mappings": [
         {"field_name": "efficiency_rate",   "attribute_key": "效率评分",     "data_type": "FLOAT"},
@@ -257,7 +257,7 @@
     {
       "ontology_node_id": "part-quality",
       "source_type": "dameng",
-      "source_name": "BENTI_DB",
+      "source_name": "PROCESS_DB",
       "table_name": "QUALITY_CHECK",
       "field_mappings": [
         {"field_name": "quality_grade",     "attribute_key": "质量等级",     "data_type": "VARCHAR"},

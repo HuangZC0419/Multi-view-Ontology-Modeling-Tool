@@ -208,7 +208,7 @@ class WeightConfigPayload(BaseModel):
     relation_weights: dict[str, float]
 
 
-app = FastAPI(title="Ontology Canvas API", version="0.1.0")
+app = FastAPI(title="装配工艺知识库软件 API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -1551,7 +1551,7 @@ def bayesian_overview(project_id: str) -> OverviewResponse:
             f"最强因果链为'{best.path}'（概率{best.probability}）"
         )
 
-    summary = "。".join(summary_parts) + "。" if summary_parts else "该本体网络的全局贝叶斯分析已完成。"
+    summary = "。".join(summary_parts) + "。" if summary_parts else "该知识图谱的全局贝叶斯分析已完成。"
 
     return OverviewResponse(
         influence_ranking=influence_ranking,
@@ -1599,7 +1599,7 @@ if __name__ == "__main__":
     import logging
     # 支持直接用 python main.py 运行
     print("\n" + "=" * 56)
-    print("  OCR-Benti 本体建模系统")
+    print("  装配工艺知识库软件")
     print(f"  http://localhost:8000")
     print("=" * 56 + "\n")
     logging.getLogger("uvicorn").setLevel(logging.WARNING)

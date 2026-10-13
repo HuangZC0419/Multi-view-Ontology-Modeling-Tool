@@ -1,4 +1,4 @@
-"""数据源接入 API -- 数据库连接 + 文件上传 + 本体导入"""
+"""数据源接入 API -- 数据库连接 + 文件上传 + 知识导入"""
 
 from __future__ import annotations
 
@@ -183,19 +183,19 @@ async def preview_file_data(file_id: str, table: str = "", limit: int = 10):
 
 
 # ============================================================
-# 本体导入（数据库 + 文件共用）
+# 知识导入（数据库 + 文件共用）
 # ============================================================
 
 @router.post("/import")
 async def import_ontology(selection: ImportSelection):
-    """提交用户勾选，生成本体节点"""
+    """提交用户勾选，生成知识概念"""
     source_id = selection.source_id
     nodes = []
     edges = []
     inf_rules = []
     mut_rules = []
 
-    # 检查是否为特殊的本体关系表模板
+    # 检查是否为特殊的知识关系表模板
     is_template = "实体关系" in selection.tables or "实体属性" in selection.tables
 
     if source_id in _sessions:

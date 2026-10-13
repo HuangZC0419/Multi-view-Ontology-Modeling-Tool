@@ -1,4 +1,4 @@
-"""从数据源结构中提取本体概念"""
+"""从数据源结构中提取知识概念"""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ def extract_ontology_from_data(
     source_name: str = ""
 ) -> tuple[list[dict], list[dict], list[dict], list[dict]]:
     """
-    从数据行中直接提取本体节点和关系。
+    从数据行中直接提取知识概念和关系。
     relations_data: [{'头实体': 'A', '关系': 'B', '关系权重': 0.5, '尾实体': 'C'}, ...]
     attributes_data: [{'实体名称': 'A', '属性名': 'attr1'}, ...]
     inference_data: [{'关系1': 'A', '关系2': 'B', '推导关系': 'C'}, ...]
@@ -115,7 +115,7 @@ def extract_ontology_nodes(
     columns_per_row: int = 3,
     source_name: str = ""
 ) -> list[dict]:
-    """根据用户勾选，生成本体节点列表。
+    """根据用户勾选，生成知识概念列表。
 
     表名 -> 父节点（name=表名, attributes=[]）
     列名 -> 子节点（name=字段名, parent_id=父节点ID, attributes=[{类型: VARCHAR, ...}]）
