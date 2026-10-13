@@ -137,7 +137,8 @@ function onBack() {
   letter-spacing: 0.05em;
   color: #475569;
   margin: 0 0 16px 4px;
-  font-weight: 700;
+  /* 下属区标题：字重需低于一级菜单(700)，维持"下属更轻"的层级 */
+  font-weight: 600;
 }
 
 /* ---------- 入口按钮 ---------- */
