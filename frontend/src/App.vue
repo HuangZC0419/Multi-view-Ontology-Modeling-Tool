@@ -1284,16 +1284,19 @@ function clearHighlight() {
 // ========================
 // 知识检索：结果定位与高亮
 // ========================
+// 挂起的定位目标：需等视角切换动画结束、画布恢复全尺寸后再测量时才非空
+const pendingLocate = ref(null);
+
 function highlightNodes(nodeIds, edgeIds = []) {
   highlightedNodeIds.value = new Set(nodeIds);
   highlightedEdgeIds.value = new Set(edgeIds);
   highlightEnabled.value = true;
 }
 
-// 平移画布使指定概念居中（保持当前缩放不变）
+// 平移画布使指定概念居中（保持当前缩放不变）；画布中不存在该概念时返回 false
 function focusNodeOnCanvas(nodeId) {
   const node = nodes.value.find((n) => n.id === nodeId);
-  if (!node || !canvasRef.value) return;
+  if (!node || !canvasRef.value) return false;
 
   const rect = canvasRef.value.getBoundingClientRect();
   const NODE_W = 200; // 概念卡片宽度（与 edgeViews 中的 200x70 保持一致）
@@ -1304,27 +1307,56 @@ function focusNodeOnCanvas(nodeId) {
     y: rect.height / 2 - (node.y + NODE_H / 2) * zoom.value,
   };
   dragTick.value++; // 触发连线重算
+  return true;
+}
+
+// 执行定位：未命中时给出提示而非静默失败
+function applyLocate(target) {
+  if (!focusNodeOnCanvas(target.focusNodeId)) {
+    statusMessage.value = "该结果未出现在当前知识建模画布中";
+    return;
+  }
+  highlightNodes(target.nodeIds, target.edgeIds);
+  statusMessage.value = "已定位到检索结果";
+}
+
+// 执行挂起的定位（在视角切换动画结束后由 @after-leave 触发）
+function flushPendingLocate() {
+  const target = pendingLocate.value;
+  if (!target) return;
+  pendingLocate.value = null;
+  applyLocate(target);
+}
+
+// 切到知识建模视角并定位。
+// 若当前已在知识建模视角，画布立即可测，nextTick 后即可定位；
+// 否则须延后到视角切换动画结束——退场中的 .perspective-content 与 .canvas-wrapper
+// 同为 flex:1 兄弟节点，动画期间会各占一半高度，此时测量会导致垂直居中偏移。
+function requestLocate(target) {
+  const alreadyProcess = currentPerspective.value === "process";
+  pendingLocate.value = target;
+  currentPerspective.value = "process";
+  if (alreadyProcess) {
+    nextTick(flushPendingLocate);
+  }
 }
 
 // 点击检索结果中的概念：切到知识建模视角并居中高亮
 function onLocateConcept(nodeId) {
-  currentPerspective.value = "process";
-  nextTick(() => {
-    focusNodeOnCanvas(nodeId);
-    highlightNodes([nodeId]);
-    statusMessage.value = "已定位到检索结果";
-  });
+  requestLocate({ focusNodeId: nodeId, nodeIds: [nodeId], edgeIds: [] });
 }
 
 // 点击检索结果中的关系：切到知识建模视角，居中源概念并高亮两端
 function onLocateRelation(edgeId) {
   const edge = edges.value.find((e) => e.id === edgeId);
-  if (!edge) return;
-  currentPerspective.value = "process";
-  nextTick(() => {
-    focusNodeOnCanvas(edge.source);
-    highlightNodes([edge.source, edge.target], [edgeId]);
-    statusMessage.value = "已定位到检索结果";
+  if (!edge) {
+    statusMessage.value = "未找到该关系";
+    return;
+  }
+  requestLocate({
+    focusNodeId: edge.source,
+    nodeIds: [edge.source, edge.target],
+    edgeIds: [edgeId],
   });
 }
 
@@ -1662,7 +1694,7 @@ onUnmounted(() => {
       <PerspectiveTabs :projectId="currentProjectId" @change="onPerspectiveChange" />
 
       <!-- 视角内容区（领导/工程师视角，替换画布区域），带 fade 过渡 -->
-      <Transition name="perspective-fade" mode="out-in">
+      <Transition name="perspective-fade" mode="out-in" @after-leave="flushPendingLocate">
         <div class="perspective-content" v-if="currentPerspective !== 'process'" :key="currentPerspective">
           <LeaderView v-if="currentPerspective === 'leader'" :projectId="currentProjectId" />
           <EngineerView
