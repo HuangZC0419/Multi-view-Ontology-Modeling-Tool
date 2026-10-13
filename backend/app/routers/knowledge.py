@@ -1,8 +1,8 @@
-"""知识检索 API -- 跨概念名称、概念属性、关系名称与数据来源的全局检索"""
+"""知识检索 API -- 单个项目内跨概念名称、概念属性、关系名称与数据来源的跨维度检索"""
 
 from __future__ import annotations
 
-from typing import Any, Optional, Tuple
+from typing import Any
 
 from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
@@ -18,8 +18,8 @@ class ConceptMatch(BaseModel):
 
     id: str
     name: str
-    match_field: str  # name | attribute | source
-    match_snippet: str
+    match_field: str  # 取值域：name | attribute | source
+    match_snippet: str  # 命中字段的完整原值，非上下文片段
     parent_path: str = ""
     origin: str = "manual"
     attributes: list[dict[str, str]] = Field(default_factory=list)
@@ -40,7 +40,7 @@ class RelationMatch(BaseModel):
 
 class KnowledgeSearchResponse(BaseModel):
     query: str
-    total: int
+    total: int  # 本次实际返回的条数（受 limit 截断），而非命中总数
     concepts: list[ConceptMatch] = Field(default_factory=list)
     relations: list[RelationMatch] = Field(default_factory=list)
 
@@ -78,7 +78,7 @@ def _build_parent_path(node: Any, node_map: dict[str, Any]) -> str:
     return " / ".join(reversed(parts)) + " / "
 
 
-def _match_node(node: Any, kw: str, scopes: set[str]) -> Optional[Tuple[str, str]]:
+def _match_node(node: Any, kw: str, scopes: set[str]) -> tuple[str, str] | None:
     """返回 (match_field, match_snippet)；未命中返回 None"""
     if _in("concept", scopes) and kw in (node.name or "").lower():
         return ("name", node.name)
@@ -96,7 +96,7 @@ def _match_node(node: Any, kw: str, scopes: set[str]) -> Optional[Tuple[str, str
     return None
 
 
-def _match_edge(edge: Any, kw: str, scopes: set[str]) -> Optional[Tuple[str, str]]:
+def _match_edge(edge: Any, kw: str, scopes: set[str]) -> tuple[str, str] | None:
     """返回 (match_field, match_snippet)；未命中返回 None"""
     if _in("relation", scopes) and kw in (edge.relation or "").lower():
         return ("relation", edge.relation)
@@ -114,7 +114,7 @@ def search_knowledge(
     scope: str = Query("all", description="检索范围，逗号分隔：concept,attribute,relation,source"),
     limit: int = Query(50, ge=1, le=200, description="概念与关系各自的返回上限"),
 ) -> KnowledgeSearchResponse:
-    """在指定项目的知识图谱中检索概念、属性、关系与数据来源。
+    """在指定项目的知识图谱中，跨概念名称、属性、关系与数据来源进行检索。
 
     匹配规则：大小写不敏感的包含匹配。项目不存在时返回空结果集。
     """
@@ -123,6 +123,9 @@ def search_knowledge(
 
     graph = _load_project_data(project_id)
     kw = q.strip().lower()
+    if not kw:
+        # 全空白查询：strip 后为空串，而 "" in s 恒为真，会误命中全部数据
+        return KnowledgeSearchResponse(query=q, total=0)
     scopes = _parse_scopes(scope)
 
     node_map = {n.id: n for n in graph.nodes}
