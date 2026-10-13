@@ -1286,6 +1286,8 @@ function clearHighlight() {
 // ========================
 // 挂起的定位目标：需等视角切换动画结束、画布恢复全尺寸后再测量时才非空
 const pendingLocate = ref(null);
+// 视角内容区离场动画是否进行中：动画期间画布被压缩为半高，此时测量会导致居中偏移
+const perspectiveTransitioning = ref(false);
 
 function highlightNodes(nodeIds, edgeIds = []) {
   highlightedNodeIds.value = new Set(nodeIds);
@@ -1322,23 +1324,28 @@ function applyLocate(target) {
 
 // 执行挂起的定位（在视角切换动画结束后由 @after-leave 触发）
 function flushPendingLocate() {
+  perspectiveTransitioning.value = false; // 过渡结束，画布已恢复全尺寸
   const target = pendingLocate.value;
-  if (!target) return;
   pendingLocate.value = null;
+  if (!target) return;
+  if (currentPerspective.value !== "process") return; // 用户已切走，丢弃挂起的定位
   applyLocate(target);
 }
 
 // 切到知识建模视角并定位。
-// 若当前已在知识建模视角，画布立即可测，nextTick 后即可定位；
-// 否则须延后到视角切换动画结束——退场中的 .perspective-content 与 .canvas-wrapper
-// 同为 flex:1 兄弟节点，动画期间会各占一半高度，此时测量会导致垂直居中偏移。
+// 判据必须是「确实稳定停留在 process 且无进行中的过渡」——因为下面会同步把
+// currentPerspective 置为 process，单看它无法区分「本来就在」与「刚切过来」；
+// 若在过渡窗口内连续点击，第二击会被误判为可立即测量（此时离场元素仍在 DOM，
+// 画布高度仍为半值），重新引入垂直居中偏移，故用 perspectiveTransitioning 兜住。
 function requestLocate(target) {
-  const alreadyProcess = currentPerspective.value === "process";
-  pendingLocate.value = target;
-  currentPerspective.value = "process";
-  if (alreadyProcess) {
+  pendingLocate.value = target; // 后点击者覆盖先前挂起请求（以最后一次点击为准）
+  if (currentPerspective.value === "process" && !perspectiveTransitioning.value) {
+    // 稳定停留于 process：无需切换，等 DOM patch 后即可正确测量
     nextTick(flushPendingLocate);
+    return;
   }
+  // 视角切换中：交由 @after-leave 在离场元素移除、画布恢复全尺寸后再测量
+  currentPerspective.value = "process";
 }
 
 // 点击检索结果中的概念：切到知识建模视角并居中高亮
@@ -1694,7 +1701,12 @@ onUnmounted(() => {
       <PerspectiveTabs :projectId="currentProjectId" @change="onPerspectiveChange" />
 
       <!-- 视角内容区（领导/工程师视角，替换画布区域），带 fade 过渡 -->
-      <Transition name="perspective-fade" mode="out-in" @after-leave="flushPendingLocate">
+      <Transition
+        name="perspective-fade"
+        mode="out-in"
+        @before-leave="perspectiveTransitioning = true"
+        @after-leave="flushPendingLocate"
+      >
         <div class="perspective-content" v-if="currentPerspective !== 'process'" :key="currentPerspective">
           <LeaderView v-if="currentPerspective === 'leader'" :projectId="currentProjectId" />
           <EngineerView
