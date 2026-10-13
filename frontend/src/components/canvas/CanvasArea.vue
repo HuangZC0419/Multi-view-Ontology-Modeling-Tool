@@ -294,7 +294,7 @@ function zoomReset() {
   >
     <!-- 画布空状态提示 -->
     <div class="canvas-hint" v-if="nodes.length === 0">
-      画布为空，右键点击空白处「新增独立本体」
+      画布为空，右键点击空白处「新增独立概念」
     </div>
 
     <!-- 右键菜单 -->
@@ -306,13 +306,13 @@ function zoomReset() {
     >
       <template v-if="contextMenu.type === 'node'">
         <div class="menu-item" @click="$emit('add-child-ontology', contextMenu.nodeId)">
-          <span class="menu-icon">&#10133;</span> 新增子本体
+          <span class="menu-icon">&#10133;</span> 新增子概念
         </div>
         <div class="menu-item" @click="$emit('start-connection', contextMenu.nodeId)">
           <span class="menu-icon">&#128279;</span> 从此节点连线
         </div>
         <div class="menu-item" @click="$emit('start-reparent', contextMenu.nodeId)">
-          <span class="menu-icon">&#127794;</span> 将此节点转为子本体
+          <span class="menu-icon">&#127794;</span> 将此节点转为子概念
         </div>
         <div class="menu-divider" v-if="hasChildren(contextMenu.nodeId)"></div>
         <div class="menu-item" v-if="hasChildren(contextMenu.nodeId)" @click="onToggleCollapse(contextMenu.nodeId)">
@@ -322,7 +322,7 @@ function zoomReset() {
       </template>
       <template v-else>
         <div class="menu-item" @click="$emit('add-root-ontology-menu')">
-          <span class="menu-icon">&#10133;</span> 在此新增独立本体
+          <span class="menu-icon">&#10133;</span> 在此新增独立概念
         </div>
       </template>
     </div>

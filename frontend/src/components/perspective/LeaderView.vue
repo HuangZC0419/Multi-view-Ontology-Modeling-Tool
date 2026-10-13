@@ -51,7 +51,7 @@ const summaryCards = computed(() => {
   return [
     {
       key: "nodes",
-      label: "本体概念数",
+      label: "知识概念数",
       value: s.node_count ?? 0,
       icon: "nodes",
       color: "#059669",
@@ -438,7 +438,7 @@ function getVerticalCurve(x1, y1, x2, y2) {
                   <template v-if="src.isManual">
                     <div class="lsgc-stat">
                       <span class="lsgc-stat-val">{{ src.covered_nodes ?? 0 }}</span>
-                      <span class="lsgc-stat-label">个本体</span>
+                      <span class="lsgc-stat-label">个概念</span>
                     </div>
                     <div class="lsgc-stat-divider"></div>
                     <div class="lsgc-stat">
@@ -454,7 +454,7 @@ function getVerticalCurve(x1, y1, x2, y2) {
                     <div class="lsgc-stat-divider"></div>
                     <div class="lsgc-stat">
                       <span class="lsgc-stat-val">{{ src.covered_nodes ?? 0 }}</span>
-                      <span class="lsgc-stat-label">个本体</span>
+                      <span class="lsgc-stat-label">个概念</span>
                     </div>
                   </template>
                 </div>
@@ -481,7 +481,7 @@ function getVerticalCurve(x1, y1, x2, y2) {
       <section class="lv-section">
         <div class="lv-section-header">
           <span class="section-bar"></span>
-          <span class="section-title">数据底座与本体支撑关系</span>
+          <span class="section-title">数据底座与知识概念支撑关系</span>
           <div class="lv-legend-items">
             <span class="lv-legend-item">
               <span class="lv-legend-dot" style="background:#7c3aed"></span>达梦
@@ -608,7 +608,7 @@ function getVerticalCurve(x1, y1, x2, y2) {
                 fill="#94a3b8"
                 font-size="11"
                 font-style="italic"
-              >暂无关联本体</text>
+              >暂无关联概念</text>
             </g>
           </svg>
         </div>
@@ -618,7 +618,7 @@ function getVerticalCurve(x1, y1, x2, y2) {
             <line x1="3" y1="9" x2="21" y2="9"/>
             <line x1="9" y1="21" x2="9" y2="9"/>
           </svg>
-          <span>暂无数据底座与本体关联信息</span>
+          <span>暂无数据底座与知识概念关联信息</span>
         </div>
       </section>
     </div>

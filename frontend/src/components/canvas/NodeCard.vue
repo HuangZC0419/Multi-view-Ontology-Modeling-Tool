@@ -1,6 +1,6 @@
 <script setup>
 /**
- * NodeCard.vue - 单个本体节点卡片组件
+ * NodeCard.vue - 单个知识概念节点卡片组件
  * 显示节点名称、ID、属性列表，支持选中/拖拽/高亮等视觉状态
  */
 

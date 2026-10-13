@@ -2,7 +2,7 @@
 /**
  * EngineerView.vue — 数据映射思维导图
  *
- * 展示 业务域 → 本体概念 → 数据源(表) → 属性映射 的树形结构。
+ * 展示 业务域 → 知识概念 → 数据源(表) → 属性映射 的树形结构。
  * 纯 SVG 自绘，手动树布局算法。
  */
 import { ref, reactive, watch, computed, onMounted } from 'vue'
@@ -501,7 +501,7 @@ function onEdgeEnter(edgeId) { hoverEdgeId.value = edgeId }
 function onEdgeLeave() { hoverEdgeId.value = null }
 
 /* ==========================================================================
-   缩放 / 平移 — 与本体推理画布完全一致
+   缩放 / 平移 — 与知识建模画布完全一致
    ========================================================================== */
 
 const viewTransform = reactive({ x: 0, y: 0, scale: 1 })
@@ -611,7 +611,7 @@ const stats = computed(function () {
     <!-- 加载状态 -->
     <div v-if="loading" class="state-overlay">
       <div class="loading-spinner"></div>
-      <span>正在加载数据映射...</span>
+      <span>正在加载知识组织...</span>
     </div>
 
     <!-- 错误状态 -->
@@ -629,14 +629,14 @@ const stats = computed(function () {
         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
         <line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>
       </svg>
-      <span>暂无数据映射信息</span>
+      <span>暂无知识组织信息</span>
     </div>
 
     <!-- 正常内容 -->
     <div v-else class="mindmap-content">
       <!-- 工具栏 -->
       <div class="toolbar">
-        <div class="toolbar-title">数据映射 · {{ projectName }}</div>
+        <div class="toolbar-title">知识组织 · {{ projectName }}</div>
         <div class="toolbar-spacer"></div>
         <button class="action-btn" @click="expandAllNodes" title="展开全部">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -733,7 +733,7 @@ const stats = computed(function () {
                       style="user-select: none; pointer-events: none;">{{ node.label }}</text>
                   </template>
 
-                  <!-- 概念节点（本体名称） -->
+                  <!-- 概念节点（知识概念名称） -->
                   <template v-else-if="node.type === 'concept'">
                     <rect :x="node._x" :y="node._y" :width="node._w" :height="node._h"
                       :rx="NODE_DIMS.concept.rx" fill="#FFFFFF"
@@ -972,7 +972,7 @@ const stats = computed(function () {
 .svg-viewport:active { cursor: grabbing; }
 .mindmap-svg { width: 100%; height: 100%; display: block; }
 
-/* 缩放控件 — 与本体推理画布相同：右下角竖排 */
+/* 缩放控件 — 与知识建模画布相同：右下角竖排 */
 .zoom-controls {
   position: absolute;
   bottom: 20px;

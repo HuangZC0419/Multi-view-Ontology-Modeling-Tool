@@ -1,6 +1,6 @@
 <script setup>
 /**
- * EdgeLine.vue - 本体关系连线组件
+ * EdgeLine.vue - 知识关系连线组件
  * 渲染 SVG 贝塞尔曲线 / 正交折线路径，包含箭头标记和关系标签
  */
 
