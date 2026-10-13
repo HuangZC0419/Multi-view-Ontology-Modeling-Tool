@@ -326,7 +326,7 @@ const selectedEdge = computed(() =>
 // 删除逻辑
 async function deleteSelectedNode() {
   if (!selectedNode.value) return;
-  const confirmed = await customConfirm("删除本体", `确定要删除本体 "${selectedNode.value.name}" 及其所有关联关系吗？`);
+  const confirmed = await customConfirm("删除知识概念", `确定要删除知识概念 "${selectedNode.value.name}" 及其所有关联关系吗？`);
   if (!confirmed) return;
   
   const id = selectedNode.value.id;
@@ -334,7 +334,7 @@ async function deleteSelectedNode() {
   edges.value = edges.value.filter(e => e.source !== id && e.target !== id);
   selectedNodeId.value = null;
   await syncGraph();
-  statusMessage.value = "已删除本体";
+  statusMessage.value = "已删除知识概念";
 }
 
 async function deleteSelectedEdge() {
@@ -711,7 +711,7 @@ async function createEdge(payload) {
 }
 
 async function clearGraph() {
-  const confirmed = await customConfirm("清空画布", "确定要清空当前画布上的所有本体和关系吗？此操作不可撤销。");
+  const confirmed = await customConfirm("清空画布", "确定要清空当前画布上的所有知识概念和关系吗？此操作不可撤销。");
   if (!confirmed) return;
   try {
     nodes.value = [];
@@ -726,7 +726,7 @@ async function clearGraph() {
 }
 
 async function addOntology(x = null, y = null) {
-  const name = await customPrompt("请输入本体名称", "", "如：Person");
+  const name = await customPrompt("请输入知识概念名称", "", "如：刀具材料");
   if (!name) return;
 
   try {
@@ -748,7 +748,7 @@ async function addOntology(x = null, y = null) {
       y: py
     });
     selectedNodeId.value = node.id;
-    statusMessage.value = "已新增本体";
+    statusMessage.value = "已新增知识概念";
   } catch (error) {
     statusMessage.value = `新增失败：${error.message}`;
   }
@@ -764,7 +764,7 @@ async function addRootOntologyMenu() {
 async function addChildOntology(parentId = null) {
   const targetParentId = parentId || selectedNodeId.value;
   if (!targetParentId) {
-    statusMessage.value = "请先选中一个父本体";
+    statusMessage.value = "请先选中一个父概念";
     return;
   }
   hideContextMenu();
@@ -772,7 +772,7 @@ async function addChildOntology(parentId = null) {
   const parentNode = nodes.value.find(n => n.id === targetParentId);
   if (!parentNode) return;
 
-  const name = await customPrompt("请输入子本体名称", "", "如：Student");
+  const name = await customPrompt("请输入子概念名称", "", "如：硬质合金");
   if (!name) return;
 
   // 树状布局计算 (水平铺开)
@@ -791,7 +791,7 @@ async function addChildOntology(parentId = null) {
     if (collapsedNodeIds.value.has(targetParentId)) {
       toggleCollapse(targetParentId);
     }
-    statusMessage.value = "已新增子本体";
+    statusMessage.value = "已新增子概念";
   } catch (error) {
     statusMessage.value = `新增失败：${error.message}`;
   }
@@ -799,12 +799,12 @@ async function addChildOntology(parentId = null) {
 
 function enableConnectMode() {
   if (!selectedNodeId.value) {
-    statusMessage.value = "请先选中一个起始本体";
+    statusMessage.value = "请先选中一个起始概念";
     return;
   }
   connectMode.value = true;
   connectSourceId.value = selectedNodeId.value;
-  statusMessage.value = "连线模式：请点击目标本体";
+  statusMessage.value = "连线模式：请点击目标概念";
 }
 
 function cancelConnectMode() {
@@ -816,7 +816,7 @@ function beginCanvasPickRelation() {
   connectMode.value = true;
   connectSourceId.value = null;
   currentPerspective.value = "process";
-  statusMessage.value = "连线：请先点击源本体";
+  statusMessage.value = "连线：请先点击源概念";
 }
 
 function openRelationCreateChoice() {
@@ -883,7 +883,7 @@ async function confirmRelationDialog() {
       kind: "relation",
       weight: Number.isFinite(weight) ? Math.max(0, Math.min(1, weight)) : 0.65
     });
-    statusMessage.value = "已创建本体关系";
+    statusMessage.value = "已创建知识关系";
     closeRelationDialog();
     currentPerspective.value = "process";
   } catch (error) {
@@ -899,7 +899,7 @@ async function onClickNode(nodeId) {
 
   if (!connectSourceId.value) {
     connectSourceId.value = nodeId;
-    statusMessage.value = "已选择源本体，请点击目标本体";
+    statusMessage.value = "已选择源概念，请点击目标概念";
     return;
   }
 
@@ -919,7 +919,7 @@ async function onClickNode(nodeId) {
       kind: "relation"
     });
     await loadGraph(); // 重新加载以获取可能通过规则自动推导出的新边
-    statusMessage.value = "已创建本体关系。请继续选择下一个起始本体，或取消连线模式。";
+    statusMessage.value = "已创建知识关系。请继续选择下一个起始概念，或取消连线模式。";
   } catch (error) {
     statusMessage.value = `创建关系失败：${error.message}`;
   } finally {
@@ -1490,7 +1490,7 @@ onUnmounted(() => {
         <div class="logo">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
         </div>
-        <h2>本体建模系统</h2>
+        <h2>装配工艺知识库软件</h2>
       </div>
 
       <div class="project-top">
@@ -1599,7 +1599,7 @@ onUnmounted(() => {
                 关系逻辑规则设置
               </button>
             </div>
-            <div v-else class="tip-text">仅管理者可编辑本体</div>
+            <div v-else class="tip-text">仅管理者可编辑知识概念</div>
 
             <div class="workbench-subtitle">配置</div>
             <button class="btn btn-weight-config" @click="weightDialogVisible = true">
@@ -1672,7 +1672,7 @@ onUnmounted(() => {
           <div class="stats-row">
             <span class="stats-item">
               <span class="stats-value">{{ perspectiveStats.nodes }}</span>
-              <span class="stats-label">本体</span>
+              <span class="stats-label">知识概念</span>
             </span>
             <span class="stats-sep">·</span>
             <span class="stats-item">
@@ -1730,14 +1730,14 @@ onUnmounted(() => {
       @contextmenu.prevent="showContextMenu($event, 'canvas')"
     >
       <div class="canvas-hint" v-if="nodes.length === 0">
-        画布为空，右键点击空白处「新增独立本体」
+        画布为空，右键点击空白处「新增独立概念」
       </div>
 
       <!-- 右键菜单 -->
       <div class="context-menu" v-if="contextMenu.visible" :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }" @click.stop>
         <template v-if="contextMenu.type === 'node'">
           <div class="menu-item" v-if="isManager" @click="addChildOntology(contextMenu.nodeId)">
-            <svg class="menu-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 新增子本体
+            <svg class="menu-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 新增子概念
           </div>
           <div class="menu-item" v-if="isManager" @click="startConnectionFromMenu(contextMenu.nodeId)">
             <svg class="menu-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> 从此节点连线
@@ -1749,7 +1749,7 @@ onUnmounted(() => {
         </template>
         <template v-else>
           <div class="menu-item" v-if="isManager" @click="addRootOntologyMenu">
-            <svg class="menu-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 在此新增独立本体
+            <svg class="menu-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 在此新增独立概念
           </div>
         </template>
       </div>
@@ -1923,12 +1923,12 @@ onUnmounted(() => {
             <div class="relation-choice-examples">
               <button type="button" class="relation-example-card" @click="chooseRelationCreateMode('canvas')">
                 <div class="rex-demo rex-demo--canvas">
-                  <div class="rex-node rex-node--a">源本体</div>
+                  <div class="rex-node rex-node--a">源概念</div>
                   <div class="rex-link-container"><div class="rex-link"></div></div>
-                  <div class="rex-node rex-node--b">目标本体</div>
+                  <div class="rex-node rex-node--b">目标概念</div>
                   <div class="rex-hand"></div>
                 </div>
-                <span class="relation-example-text">画布点选：在画布上依次点击两个本体连线</span>
+                <span class="relation-example-text">画布点选：在画布上依次点击两个概念连线</span>
               </button>
               <button type="button" class="relation-example-card" @click="chooseRelationCreateMode('dialog')">
                 <div class="rex-demo rex-demo--dialog">
@@ -2370,7 +2370,7 @@ onUnmounted(() => {
     <!-- 右侧详情面板 (Protégé 风格) -->
     <aside class="detail-panel" v-if="selectedNode || selectedEdge" @click.stop>
       <div class="panel-header">
-        <h3>{{ selectedNode ? '本体详情' : '关系详情' }}</h3>
+        <h3>{{ selectedNode ? '知识概念详情' : '关系详情' }}</h3>
         <button class="close-btn" @click="selectedNodeId = null; selectedEdgeId = null">×</button>
       </div>
 
@@ -2426,12 +2426,12 @@ onUnmounted(() => {
 
       <div class="panel-footer" v-if="isManager">
         <button class="btn btn-danger" @click="selectedNode ? deleteSelectedNode() : deleteSelectedEdge()">
-          <span class="icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></span> 删除此{{ selectedNode ? '本体' : '关系' }}
+          <span class="icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></span> 删除此{{ selectedNode ? '知识概念' : '关系' }}
         </button>
       </div>
     </aside>
 
-    <!-- 自定义 Prompt 弹窗（全局：避免只在本体推理视角可用） -->
+    <!-- 自定义 Prompt 弹窗（全局：避免只在知识建模视角可用） -->
     <div class="prompt-overlay" v-if="promptState.visible" @click.self="cancelPrompt">
       <div class="prompt-dialog">
         <h3>{{ promptState.title }}</h3>
@@ -2450,7 +2450,7 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- 自定义 Confirm 弹窗（全局：避免只在本体推理视角可用） -->
+    <!-- 自定义 Confirm 弹窗（全局：避免只在知识建模视角可用） -->
     <div class="prompt-overlay" v-if="confirmState.visible" @click.self="handleConfirm(false)">
       <div class="prompt-dialog">
         <h3>{{ confirmState.title }}</h3>
