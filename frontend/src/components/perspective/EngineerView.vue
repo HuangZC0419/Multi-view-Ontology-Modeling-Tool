@@ -1,6 +1,6 @@
 <script setup>
 /**
- * EngineerView.vue — 数据映射思维导图
+ * EngineerView.vue — 知识组织思维导图
  *
  * 展示 业务域 → 知识概念 → 数据源(表) → 属性映射 的树形结构。
  * 纯 SVG 自绘，手动树布局算法。
