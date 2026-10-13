@@ -2920,36 +2920,38 @@ onUnmounted(() => {
   border-bottom: 1px solid #f1f5f9;
 }
 
+/* 一级菜单：纵向列表，左对齐、大字号、加粗，选中态用左侧竖条标识 */
 .workbench-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
   border-bottom: 1px solid #f1f5f9;
 }
 
 .workbench-tab {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 38px;
-  padding: 0 8px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background: #f8fafc;
+  justify-content: flex-start;
+  gap: 10px;
+  height: 40px;
+  padding: 0 12px;
+  border: none;
+  border-left: 3px solid transparent;
+  border-radius: 8px;
+  background: transparent;
   color: #334155;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   font-family: inherit;
   white-space: nowrap;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .workbench-tab svg {
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
   flex-shrink: 0;
 }
 
@@ -2957,28 +2959,35 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
+/* 一级菜单悬停：仅用背景区分，不改变层级（无左竖条） */
 .workbench-tab:hover {
   background: #f1f5f9;
-  border-color: #cbd5e1;
+  color: #1e3a5f;
 }
 
+/* 一级菜单选中：左竖条 + 主题色浅底 + 主题色加粗文字（与下属菜单的选中样式区分） */
 .workbench-tab.active {
   background: #eff6ff;
-  border-color: #bfdbfe;
+  border-left-color: #1e3a5f;
   color: #1e40af;
+  font-weight: 700;
 }
 
+/* 下属菜单区：左侧缩进 + 细竖线，强化“一级功能—下属菜单”的归属关系 */
 .workbench-panel {
-  padding: 0 12px;
+  margin: 0 12px 0 20px;
+  padding: 10px 0 10px 12px;
+  border-left: 1px solid #e2e8f0;
 }
 
 .workbench-section {
   padding: 10px 0 4px 0;
 }
 
+/* 下属菜单文字：字号小于一级菜单（14px），字重降到 600，保持轻一档 */
 .workbench-title {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   color: #475569;
   letter-spacing: 0.02em;
   margin-bottom: 10px;
@@ -2988,7 +2997,7 @@ onUnmounted(() => {
   margin-top: 16px;
   margin-bottom: 10px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   color: #475569;
   letter-spacing: 0.02em;
 }
@@ -5934,7 +5943,7 @@ onUnmounted(() => {
   margin-top: 0;
   margin-bottom: 6px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   color: #0f172a;
 }
 
