@@ -22,15 +22,15 @@ const tabs = computed(() => {
   return [
     {
       key: "leader",
-      label: "概览",
+      label: "概览模式",
     },
     {
       key: "engineer",
-      label: "数据映射",
+      label: "数据映射模式",
     },
     {
       key: "process",
-      label: "本体推理",
+      label: "本体推理模式",
     },
   ];
 });
@@ -45,86 +45,75 @@ function switchTab(key) {
 
 <template>
   <nav class="perspective-navbar">
-    <!-- 分组标题：三种视角同属"知识组织"，纯标题不可点击 -->
-    <div class="nav-group-header">
-      <span class="nav-group-title">知识组织</span>
-    </div>
+    <!-- 总栏目：标题 + 三种模式同属"知识组织"，整体水平居中 -->
+    <div class="nav-group">
+      <h3 class="nav-group-title">知识组织</h3>
 
-    <div class="nav-tabs">
-      <button
-        v-for="tab in tabs"
-        :key="tab.key"
-        :class="['nav-tab', { active: activeTab === tab.key }]"
-        @click="switchTab(tab.key)"
-        :title="tab.label"
-      >
-        <!-- 概览图标：四格 -->
-        <svg
-          v-if="tab.key === 'leader'"
-          class="tab-svg"
-          viewBox="0 0 24 24"
-          width="16"
-          height="16"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+      <div class="nav-tabs">
+        <button
+          v-for="tab in tabs"
+          :key="tab.key"
+          :class="['nav-tab', { active: activeTab === tab.key }]"
+          @click="switchTab(tab.key)"
+          :title="tab.label"
         >
-          <rect x="3" y="3" width="7" height="7" rx="1" />
-          <rect x="14" y="3" width="7" height="7" rx="1" />
-          <rect x="3" y="14" width="7" height="7" rx="1" />
-          <rect x="14" y="14" width="7" height="7" rx="1" />
-        </svg>
-        <!-- 数据映射图标：数据库 -->
-        <svg
-          v-if="tab.key === 'engineer'"
-          class="tab-svg"
-          viewBox="0 0 24 24"
-          width="16"
-          height="16"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <ellipse cx="12" cy="5" rx="9" ry="3" />
-          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
-          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
-        </svg>
-        <!-- 本体推理图标：网络 -->
-        <svg
-          v-if="tab.key === 'process'"
-          class="tab-svg"
-          viewBox="0 0 24 24"
-          width="16"
-          height="16"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <circle cx="18" cy="5" r="3" />
-          <circle cx="6" cy="12" r="3" />
-          <circle cx="18" cy="19" r="3" />
-          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-        </svg>
-        <span class="tab-label-text">{{ tab.label }}</span>
-      </button>
-    </div>
-
-    <!-- 下划线指示条 -->
-    <div class="nav-indicator-track">
-      <div
-        class="nav-indicator-bar"
-        :style="{
-          left: `calc(${tabs.findIndex((t) => t.key === activeTab) * (100 / tabs.length)}% + 0px)`,
-          width: `calc(${100 / tabs.length}%)`,
-        }"
-      ></div>
+          <!-- 概览图标：四格 -->
+          <svg
+            v-if="tab.key === 'leader'"
+            class="tab-svg"
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+          </svg>
+          <!-- 数据映射图标：数据库 -->
+          <svg
+            v-if="tab.key === 'engineer'"
+            class="tab-svg"
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <ellipse cx="12" cy="5" rx="9" ry="3" />
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+          </svg>
+          <!-- 本体推理图标：网络 -->
+          <svg
+            v-if="tab.key === 'process'"
+            class="tab-svg"
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+          </svg>
+          <span class="tab-label-text">{{ tab.label }}</span>
+        </button>
+      </div>
     </div>
   </nav>
 </template>
@@ -135,125 +124,105 @@ function switchTab(key) {
 .perspective-navbar {
   width: 100%;
   display: flex;
-  flex-direction: column;
+  justify-content: center; /* 总栏目内容整体相对主内容区水平居中 */
   background: #ffffff;
   border-bottom: 1px solid #e2e8f0;
   flex-shrink: 0;
   user-select: none;
 }
 
-/* ======================== 分组标题 ======================== */
-
-.nav-group-header {
+/* 总栏目容器：标题 + 三种模式作为一个整体居中，并限制横向铺开形成视觉焦点 */
+.nav-group {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  /* 上下内边距加高，让父级标题行有呼吸感、不与下方标签行贴挤 */
-  padding: 14px 20px 11px;
-  background: #ffffff;
-  /* 分隔线比导航栏底线(#e2e8f0)更淡，弱化自身、只做上下分层 */
-  border-bottom: 1px solid #eef2f7;
+  gap: 14px; /* 标题行与模式选项行之间的层级留白 */
+  width: 100%;
+  max-width: 640px;
+  padding: 20px 24px 18px;
 }
+
+/* ======================== 总栏目标题 ======================== */
 
 .nav-group-title {
-  /* 15px > 标签 13.5px：父级必须高于子级，修正原有层级倒挂 */
-  font-size: 15px;
+  margin: 0;
+  font-size: 20px; /* 20px vs 模式名 14px，约 1.43 倍，一眼可辨的总栏目层级 */
   font-weight: 700;
-  /* 稳重的品牌深色，作为静态父级的"结构墨色" */
-  color: #1e3a5f;
-  /* 字号变大后收紧字距，避免 4 个汉字之间显得松散 */
-  letter-spacing: 0.02em;
+  color: #1e3a5f; /* 主题色：总栏目标题是区域视觉锚点 */
+  letter-spacing: 0.04em;
   line-height: 1;
-  position: relative;
-  padding-left: 10px;
 }
 
-/* 标题左侧的竖条装饰 */
-.nav-group-title::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  /* 与放大后的文字高度同步，保持竖条与文字视觉等高 */
-  height: 15px;
-  border-radius: 2px;
-  background: #1e3a5f;
-}
-
-/* ======================== Tab 行 ======================== */
+/* ======================== 模式选项卡 ======================== */
 
 .nav-tabs {
   display: flex;
-  align-items: stretch;
-  height: 48px;
-  padding: 0;
-  gap: 0;
+  gap: 12px; /* 三项之间等距 */
+  width: 100%;
 }
 
 .nav-tab {
-  flex: 1;
+  flex: 1; /* 并排、等宽 */
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 0 20px;
-  border: none;
-  background: transparent;
-  color: #64748b;
-  cursor: pointer;
+  height: 52px;
+  padding: 0 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #475569;
   font-family: inherit;
-  font-size: 13.5px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  outline: none;
-  position: relative;
-}
-
-.nav-tab:hover {
-  color: #334155;
-  background: rgba(241, 245, 249, 0.6);
-}
-
-.nav-tab.active {
-  color: #1e3a5f;
+  font-size: 14px; /* 模式名下限，不再缩小 */
   font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
+/* 悬停：同色系的浅色反馈，给出可点击暗示但不与选中态争夺注意力 */
+.nav-tab:hover {
+  border-color: rgba(30, 58, 95, 0.25);
+  background: #f8fafc;
+  color: #1e3a5f;
+}
+
+/* 选中：仅用主题色实底这一种手段表达，不叠加下划线等第二种指示 */
+.nav-tab.active {
+  background: #1e3a5f;
+  border-color: #1e3a5f;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(30, 58, 95, 0.18);
+}
+
+/* 键盘聚焦可见性：主题色描边，鼠标点击不触发（仅 :focus-visible） */
+.nav-tab:focus-visible {
+  outline: 2px solid #1e3a5f;
+  outline-offset: 2px;
+}
+
+/* 图标跟随文字颜色，不做单独的透明度变化 */
 .tab-svg {
+  width: 17px;
+  height: 17px;
   flex-shrink: 0;
-  opacity: 0.7;
-  transition: opacity 0.2s ease;
-}
-
-.nav-tab.active .tab-svg {
-  opacity: 1;
-}
-
-.nav-tab:hover .tab-svg {
-  opacity: 0.9;
 }
 
 .tab-label-text {
   white-space: nowrap;
 }
 
-/* ======================== 下划线指示轨 ======================== */
+/* ======================== 窄屏：纵向堆叠，避免文字被挤压错位 ======================== */
 
-.nav-indicator-track {
-  position: relative;
-  height: 3px;
-  background: transparent;
-}
+@media (max-width: 640px) {
+  .nav-tabs {
+    flex-direction: column;
+  }
 
-.nav-indicator-bar {
-  position: absolute;
-  bottom: 0;
-  height: 3px;
-  background: #1e3a5f;
-  border-radius: 0;
-  transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-              width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  .nav-tab {
+    width: 100%;
+  }
 }
 </style>
