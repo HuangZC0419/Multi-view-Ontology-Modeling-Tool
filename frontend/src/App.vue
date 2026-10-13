@@ -1370,12 +1370,11 @@ function onLocateRelation(edgeId) {
 // ========================
 // 多视角切换逻辑
 // ========================
-// 工作台标签切换：数据导入/知识建模 同步切换对应视角，检索与分析不切换
+// 工作台标签切换：导入/检索/分析只切换左侧面板，不改变右侧视角；
+// 知识建模额外切到本体推理视角（建模操作需要看画布）
 function switchWorkbench(tab) {
   activeWorkbenchTab.value = tab;
-  if (tab === "import") {
-    currentPerspective.value = "engineer"; // 数据映射视角
-  } else if (tab === "modeling") {
+  if (tab === "modeling") {
     currentPerspective.value = "process"; // 本体推理视角
   }
 }
@@ -1524,10 +1523,22 @@ onUnmounted(() => {
       </div>
 
       <div class="workbench-tabs">
-        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'import' }" @click="switchWorkbench('import')">数据导入</button>
-        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'modeling' }" @click="switchWorkbench('modeling')">知识建模</button>
-        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'retrieval' }" @click="switchWorkbench('retrieval')">知识检索</button>
-        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'analysis' }" @click="switchWorkbench('analysis')">知识分析</button>
+        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'import' }" @click="switchWorkbench('import')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>数据导入</span>
+        </button>
+        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'modeling' }" @click="switchWorkbench('modeling')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          <span>知识建模</span>
+        </button>
+        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'retrieval' }" @click="switchWorkbench('retrieval')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span>知识检索</span>
+        </button>
+        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'analysis' }" @click="switchWorkbench('analysis')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="16"/><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/></svg>
+          <span>知识分析</span>
+        </button>
       </div>
 
       <div class="sidebar-content">
@@ -2910,23 +2921,40 @@ onUnmounted(() => {
 }
 
 .workbench-tabs {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
   padding: 10px 12px;
   border-bottom: 1px solid #f1f5f9;
 }
 
 .workbench-tab {
-  flex: 1;
-  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 8px;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   background: #f8fafc;
   color: #334155;
   font-size: 13px;
   font-weight: 700;
+  font-family: inherit;
+  white-space: nowrap;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.workbench-tab svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.workbench-tab > span {
+  white-space: nowrap;
 }
 
 .workbench-tab:hover {
