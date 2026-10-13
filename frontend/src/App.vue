@@ -1370,13 +1370,13 @@ function onLocateRelation(edgeId) {
 // ========================
 // 多视角切换逻辑
 // ========================
-// 工作台标签切换：知识组织/知识建模 同步切换对应视角，检索与分析不切换
+// 工作台标签切换：数据导入/知识建模 同步切换对应视角，检索与分析不切换
 function switchWorkbench(tab) {
   activeWorkbenchTab.value = tab;
   if (tab === "import") {
-    currentPerspective.value = "engineer"; // 知识组织视角
+    currentPerspective.value = "engineer"; // 数据映射视角
   } else if (tab === "modeling") {
-    currentPerspective.value = "process"; // 知识建模视角
+    currentPerspective.value = "process"; // 本体推理视角
   }
 }
 
@@ -1524,7 +1524,7 @@ onUnmounted(() => {
       </div>
 
       <div class="workbench-tabs">
-        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'import' }" @click="switchWorkbench('import')">知识组织</button>
+        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'import' }" @click="switchWorkbench('import')">数据导入</button>
         <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'modeling' }" @click="switchWorkbench('modeling')">知识建模</button>
         <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'retrieval' }" @click="switchWorkbench('retrieval')">知识检索</button>
         <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'analysis' }" @click="switchWorkbench('analysis')">知识分析</button>
