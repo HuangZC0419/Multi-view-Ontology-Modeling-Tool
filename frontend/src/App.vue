@@ -6,6 +6,7 @@ import EngineerView from "./components/perspective/EngineerView.vue";
 import ProcessView from "./components/perspective/ProcessView.vue";
 import DataSourcePanel from "./components/datasource/DataSourcePanel.vue";
 import LoginView from "./components/auth/LoginView.vue";
+import KnowledgeSearchPanel from "./components/knowledge/KnowledgeSearchPanel.vue";
 
 // Use relative path for same-origin or explicit API_BASE. Fallback to current hostname with 8000 port.
 const defaultApiBase = typeof window !== 'undefined' ? `http://${window.location.hostname}:8000` : "http://127.0.0.1:8000";
@@ -1281,8 +1282,65 @@ function clearHighlight() {
 }
 
 // ========================
+// 知识检索：结果定位与高亮
+// ========================
+function highlightNodes(nodeIds, edgeIds = []) {
+  highlightedNodeIds.value = new Set(nodeIds);
+  highlightedEdgeIds.value = new Set(edgeIds);
+  highlightEnabled.value = true;
+}
+
+// 平移画布使指定概念居中（保持当前缩放不变）
+function focusNodeOnCanvas(nodeId) {
+  const node = nodes.value.find((n) => n.id === nodeId);
+  if (!node || !canvasRef.value) return;
+
+  const rect = canvasRef.value.getBoundingClientRect();
+  const NODE_W = 200; // 概念卡片宽度（与 edgeViews 中的 200x70 保持一致）
+  const NODE_H = 70;
+
+  viewOffset.value = {
+    x: rect.width / 2 - (node.x + NODE_W / 2) * zoom.value,
+    y: rect.height / 2 - (node.y + NODE_H / 2) * zoom.value,
+  };
+  dragTick.value++; // 触发连线重算
+}
+
+// 点击检索结果中的概念：切到知识建模视角并居中高亮
+function onLocateConcept(nodeId) {
+  currentPerspective.value = "process";
+  nextTick(() => {
+    focusNodeOnCanvas(nodeId);
+    highlightNodes([nodeId]);
+    statusMessage.value = "已定位到检索结果";
+  });
+}
+
+// 点击检索结果中的关系：切到知识建模视角，居中源概念并高亮两端
+function onLocateRelation(edgeId) {
+  const edge = edges.value.find((e) => e.id === edgeId);
+  if (!edge) return;
+  currentPerspective.value = "process";
+  nextTick(() => {
+    focusNodeOnCanvas(edge.source);
+    highlightNodes([edge.source, edge.target], [edgeId]);
+    statusMessage.value = "已定位到检索结果";
+  });
+}
+
+// ========================
 // 多视角切换逻辑
 // ========================
+// 工作台标签切换：知识组织/知识建模 同步切换对应视角，检索与分析不切换
+function switchWorkbench(tab) {
+  activeWorkbenchTab.value = tab;
+  if (tab === "import") {
+    currentPerspective.value = "engineer"; // 知识组织视角
+  } else if (tab === "modeling") {
+    currentPerspective.value = "process"; // 知识建模视角
+  }
+}
+
 function onPerspectiveChange(key) {
   currentPerspective.value = key;
 }
@@ -1427,9 +1485,10 @@ onUnmounted(() => {
       </div>
 
       <div class="workbench-tabs">
-        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'import' }" @click="activeWorkbenchTab = 'import'">数据导入</button>
-        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'modeling' }" @click="activeWorkbenchTab = 'modeling'">建模</button>
-        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'analysis' }" @click="activeWorkbenchTab = 'analysis'">分析</button>
+        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'import' }" @click="switchWorkbench('import')">知识组织</button>
+        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'modeling' }" @click="switchWorkbench('modeling')">知识建模</button>
+        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'retrieval' }" @click="switchWorkbench('retrieval')">知识检索</button>
+        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'analysis' }" @click="switchWorkbench('analysis')">知识分析</button>
       </div>
 
       <div class="sidebar-content">
@@ -1475,7 +1534,7 @@ onUnmounted(() => {
 
         <div v-if="activeWorkbenchTab === 'modeling'" class="workbench-panel">
           <div class="workbench-section">
-            <div class="workbench-title">建模</div>
+            <div class="workbench-title">知识建模</div>
             <div v-if="isManager" class="workbench-actions">
               <button class="btn btn-primary" @click="addOntology(null, null)">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1513,9 +1572,21 @@ onUnmounted(() => {
           </div>
         </div>
 
+        <div v-if="activeWorkbenchTab === 'retrieval'" class="workbench-panel">
+          <div class="workbench-section">
+            <div class="workbench-title">知识检索</div>
+            <KnowledgeSearchPanel
+              :api-base="API_BASE"
+              :project-id="currentProjectId"
+              @locate-concept="onLocateConcept"
+              @locate-relation="onLocateRelation"
+            />
+          </div>
+        </div>
+
         <div v-if="activeWorkbenchTab === 'analysis'" class="workbench-panel">
           <div class="workbench-section">
-            <div class="workbench-title">分析</div>
+            <div class="workbench-title">知识分析</div>
             <button class="btn btn-bayesian" @click="bayesianDialogVisible = true">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"/>
