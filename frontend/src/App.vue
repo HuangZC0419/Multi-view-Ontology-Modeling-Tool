@@ -3451,7 +3451,8 @@ onUnmounted(() => {
   top: var(--flyout-top, 0px);                /* 由 :style 注入，对齐被点击的一级菜单项 */
   z-index: 40;                                /* 高于主内容区，低于全局弹窗（100+） */
   width: 300px;                               /* 宽度与侧栏一致，内部控件沿用原布局 */
-  max-height: min(70vh, calc(100vh - var(--flyout-top, 0px) - 16px)); /* 不超出视口底部 */
+  height: 400px;                              /* 统一高度：四个浮层视觉一致 */
+  max-height: calc(100vh - 96px);             /* 小视口兜底，避免超出屏幕 */
   display: flex;
   flex-direction: column;
   background: #ffffff;
@@ -3472,6 +3473,8 @@ onUnmounted(() => {
 }
 
 .flyout-body {
+  flex: 1;                                    /* 在固定高度内撑满 */
+  min-height: 0;                              /* flex 子项允许收缩，否则内部无法滚动 */
   padding: 12px 16px 14px;
   overflow-y: auto;                           /* 内容超出时面板内部滚动，不撑高面板 */
 }
