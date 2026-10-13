@@ -22,15 +22,15 @@ const tabs = computed(() => {
   return [
     {
       key: "leader",
-      label: "概览",
+      label: "知识概览",
     },
     {
       key: "engineer",
-      label: "数据映射",
+      label: "知识组织",
     },
     {
       key: "process",
-      label: "本体推理",
+      label: "知识建模",
     },
   ];
 });
@@ -88,7 +88,7 @@ function switchTab(key) {
           <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
           <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
         </svg>
-        <!-- 本体推理图标：网络 -->
+        <!-- 知识建模图标：网络 -->
         <svg
           v-if="tab.key === 'process'"
           class="tab-svg"
