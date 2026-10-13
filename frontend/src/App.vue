@@ -1394,12 +1394,14 @@ const WORKBENCH_LABELS = {
 };
 const activeTabLabel = computed(() => WORKBENCH_LABELS[activeWorkbenchTab.value] || "");
 
-// 计算浮层纵向位置：与所点击的一级菜单项顶部对齐
-function computeFlyoutTop(event) {
-  const sidebar = event?.currentTarget?.closest?.(".sidebar");
-  const btn = event?.currentTarget;
-  if (!sidebar || !btn) return 0;
-  return btn.getBoundingClientRect().top - sidebar.getBoundingClientRect().top;
+// 计算浮层纵向位置：固定对齐"一级菜单列表"的首项顶部。
+// 注意：不能按被点击的菜单项算 —— 那样点第 1 个和第 4 个菜单时浮层会上下跳动，
+// 顶部对不齐。这里始终取首项，保证每次展开浮层的顶部位置完全一致。
+function computeFlyoutTop() {
+  const sidebar = document.querySelector(".sidebar");
+  const firstTab = document.querySelector(".workbench-tabs .workbench-tab");
+  if (!sidebar || !firstTab) return 0;
+  return firstTab.getBoundingClientRect().top - sidebar.getBoundingClientRect().top;
 }
 
 // 点击一级菜单：切换并展开浮层；再次点击同一菜单则收起
@@ -1408,7 +1410,7 @@ function toggleWorkbench(tab, event) {
     flyoutOpen.value = false;
     return;
   }
-  flyoutTop.value = computeFlyoutTop(event);
+  flyoutTop.value = computeFlyoutTop();
   switchWorkbench(tab); // 复用既有函数，保留"建模切本体推理视角"行为
   flyoutOpen.value = true;
 }
