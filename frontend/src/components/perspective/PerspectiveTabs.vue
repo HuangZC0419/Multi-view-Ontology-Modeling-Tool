@@ -147,20 +147,24 @@ function switchTab(key) {
 .nav-group-header {
   display: flex;
   align-items: center;
-  padding: 10px 20px 8px;
+  /* 上下内边距加高，让父级标题行有呼吸感、不与下方标签行贴挤 */
+  padding: 14px 20px 11px;
   background: #ffffff;
-  /* 比分隔线更淡，与标签行形成层次 */
-  border-bottom: 1px solid #f1f5f9;
+  /* 分隔线比导航栏底线(#e2e8f0)更淡，弱化自身、只做上下分层 */
+  border-bottom: 1px solid #eef2f7;
 }
 
 .nav-group-title {
-  font-size: 12px;
-  font-weight: 600;
+  /* 15px > 标签 13.5px：父级必须高于子级，修正原有层级倒挂 */
+  font-size: 15px;
+  font-weight: 700;
+  /* 稳重的品牌深色，作为静态父级的"结构墨色" */
   color: #1e3a5f;
-  letter-spacing: 0.06em;
+  /* 字号变大后收紧字距，避免 4 个汉字之间显得松散 */
+  letter-spacing: 0.02em;
   line-height: 1;
   position: relative;
-  padding-left: 9px;
+  padding-left: 10px;
 }
 
 /* 标题左侧的竖条装饰 */
@@ -171,7 +175,8 @@ function switchTab(key) {
   top: 50%;
   transform: translateY(-50%);
   width: 3px;
-  height: 12px;
+  /* 与放大后的文字高度同步，保持竖条与文字视觉等高 */
+  height: 15px;
   border-radius: 2px;
   background: #1e3a5f;
 }
