@@ -220,9 +220,11 @@ app.add_middleware(
 
 
 from app.routers.datasource import router as datasource_router
+from app.routers.knowledge import router as knowledge_router
 from app.routers.perspective import router as perspective_router
 
 app.include_router(datasource_router)
+app.include_router(knowledge_router)
 app.include_router(perspective_router)
 
 
