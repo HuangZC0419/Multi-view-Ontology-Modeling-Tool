@@ -1379,6 +1379,55 @@ function switchWorkbench(tab) {
   }
 }
 
+// ========================
+// 细分功能浮层（一级菜单右侧紧邻弹出）
+// ========================
+const flyoutOpen = ref(false); // 浮层是否展开
+const flyoutTop = ref(0); // 浮层纵向位置（对齐被点击的一级菜单项）
+
+// 一级菜单名称（用于浮层顶部标题）
+const WORKBENCH_LABELS = {
+  import: "数据导入",
+  modeling: "知识建模",
+  retrieval: "知识检索",
+  analysis: "知识分析",
+};
+const activeTabLabel = computed(() => WORKBENCH_LABELS[activeWorkbenchTab.value] || "");
+
+// 计算浮层纵向位置：与所点击的一级菜单项顶部对齐
+function computeFlyoutTop(event) {
+  const sidebar = event?.currentTarget?.closest?.(".sidebar");
+  const btn = event?.currentTarget;
+  if (!sidebar || !btn) return 0;
+  return btn.getBoundingClientRect().top - sidebar.getBoundingClientRect().top;
+}
+
+// 点击一级菜单：切换并展开浮层；再次点击同一菜单则收起
+function toggleWorkbench(tab, event) {
+  if (flyoutOpen.value && activeWorkbenchTab.value === tab) {
+    flyoutOpen.value = false;
+    return;
+  }
+  flyoutTop.value = computeFlyoutTop(event);
+  switchWorkbench(tab); // 复用既有函数，保留"建模切本体推理视角"行为
+  flyoutOpen.value = true;
+}
+
+// 点击浮层内的"细分功能"后收起浮层：
+// 仅按钮类元素触发关闭；输入框、勾选框等交互不关闭（避免检索输入时误关）
+// 例外：检索面板的"开始检索"按钮（.ksp-btn）需保留浮层，否则检索结果会随之消失
+function onFlyoutBodyClick(event) {
+  const btn = event.target.closest("button");
+  if (!btn) return;
+  if (btn.classList.contains("ksp-btn")) return;
+  flyoutOpen.value = false;
+}
+
+// 点击浮层外的任意位置关闭浮层
+function closeFlyout() {
+  if (flyoutOpen.value) flyoutOpen.value = false;
+}
+
 function onPerspectiveChange(key) {
   currentPerspective.value = key;
 }
@@ -1460,6 +1509,8 @@ onMounted(() => {
   window.addEventListener("pointermove", onPointerMove);
   window.addEventListener("pointerup", onPointerUp);
   window.addEventListener("keydown", handleGlobalKeyDown);
+  // 点击浮层外任意位置关闭细分功能浮层（侧栏内点击因 @click.stop 不会触发）
+  document.addEventListener("click", closeFlyout);
 });
 
 onUnmounted(() => {
@@ -1470,6 +1521,7 @@ onUnmounted(() => {
   window.removeEventListener("pointermove", onPointerMove);
   window.removeEventListener("pointerup", onPointerUp);
   window.removeEventListener("keydown", handleGlobalKeyDown);
+  document.removeEventListener("click", closeFlyout);
 });
 </script>
 
@@ -1523,130 +1575,139 @@ onUnmounted(() => {
       </div>
 
       <div class="workbench-tabs">
-        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'import' }" @click="switchWorkbench('import')">
+        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'import' }" @click="toggleWorkbench('import', $event)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           <span>数据导入</span>
         </button>
-        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'modeling' }" @click="switchWorkbench('modeling')">
+        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'modeling' }" @click="toggleWorkbench('modeling', $event)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
           <span>知识建模</span>
         </button>
-        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'retrieval' }" @click="switchWorkbench('retrieval')">
+        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'retrieval' }" @click="toggleWorkbench('retrieval', $event)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <span>知识检索</span>
         </button>
-        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'analysis' }" @click="switchWorkbench('analysis')">
+        <button class="workbench-tab" :class="{ active: activeWorkbenchTab === 'analysis' }" @click="toggleWorkbench('analysis', $event)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="16"/><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/></svg>
           <span>知识分析</span>
         </button>
       </div>
 
-      <div class="sidebar-content">
+      <!-- 侧栏占位：保持用户信息条与底部状态栏贴在侧栏底部 -->
+      <div class="sidebar-spacer"></div>
 
-        <div v-if="activeWorkbenchTab === 'import'" class="workbench-panel">
-          <div class="workbench-section">
-            <div class="workbench-title">数据导入</div>
-            <DataSourcePanel v-if="isManager" @import-nodes="onImportNodes" />
-            <div v-else class="tip-text">仅管理者可导入数据</div>
+      <!-- 细分功能浮层：紧邻侧栏右边缘弹出，不占文档流、不挤压主内容区 -->
+      <div
+        v-if="flyoutOpen"
+        class="workbench-flyout"
+        :style="{ '--flyout-top': flyoutTop + 'px' }"
+        @click.stop
+      >
+        <div class="flyout-header">{{ activeTabLabel }}</div>
+        <div class="flyout-body" @click="onFlyoutBodyClick">
 
-            <!-- OCR 图片识别导入 -->
-            <div v-if="isManager" class="ocr-import-group">
-              <div class="workbench-subtitle">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                OCR 图片识别
+          <div v-if="activeWorkbenchTab === 'import'" class="workbench-panel">
+            <div class="workbench-section">
+              <DataSourcePanel v-if="isManager" @import-nodes="onImportNodes" />
+              <div v-else class="tip-text">仅管理者可导入数据</div>
+
+              <!-- OCR 图片识别导入 -->
+              <div v-if="isManager" class="ocr-import-group">
+                <div class="workbench-subtitle">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  OCR 图片识别
+                </div>
+                <p class="ocr-hint">从图片 / TXT / CSV 文件中提取实体并导入画布</p>
+
+                <input
+                  class="file-input"
+                  type="file"
+                  accept=".png,.jpg,.jpeg,.bmp,.webp,.txt,.csv"
+                  @change="onOcrFileChange"
+                />
+                <div class="ocr-file-name" v-if="ocrFile">{{ ocrFile.name }}</div>
+
+                <div class="ocr-btn-row">
+                  <button class="btn btn-secondary ocr-action-btn" :disabled="ocrLoading" @click="useSampleOcrFile">
+                    加载示例图片
+                  </button>
+                  <button class="btn btn-primary ocr-action-btn" :disabled="!ocrFile || ocrLoading" @click="runOcrExtract('local')">
+                    {{ ocrLoading ? "识别中..." : "开始识别" }}
+                  </button>
+                </div>
+
+                <button class="btn btn-outline ocr-result-btn" v-if="ocrResult" @click="ocrDialogVisible = true">
+                  查看识别结果 ({{ ocrCandidates.length }} 项)
+                </button>
+
               </div>
-              <p class="ocr-hint">从图片 / TXT / CSV 文件中提取实体并导入画布</p>
+            </div>
+          </div>
 
-              <input
-                class="file-input"
-                type="file"
-                accept=".png,.jpg,.jpeg,.bmp,.webp,.txt,.csv"
-                @change="onOcrFileChange"
+          <div v-if="activeWorkbenchTab === 'modeling'" class="workbench-panel">
+            <div class="workbench-section">
+              <div v-if="isManager" class="workbench-actions">
+                <button class="btn btn-primary" @click="addOntology(null, null)">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  新增节点
+                </button>
+                <div class="relation-row">
+                  <button class="btn btn-outline" @click="openRelationCreateChoice()">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    新增关系
+                  </button>
+                </div>
+
+                <button class="btn btn-secondary" @click="syncGraph">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                  保存当前画布
+                </button>
+                <button class="btn btn-danger" @click="clearGraph">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                  一键清空画布
+                </button>
+                <button class="btn btn-secondary" @click="rulesDialogVisible = true">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                  关系逻辑规则设置
+                </button>
+              </div>
+              <div v-else class="tip-text">仅管理者可编辑知识概念</div>
+
+              <div class="workbench-subtitle">配置</div>
+              <button class="btn btn-weight-config" @click="weightDialogVisible = true">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+                </svg>
+                关系权重配置
+              </button>
+            </div>
+          </div>
+
+          <div v-if="activeWorkbenchTab === 'retrieval'" class="workbench-panel">
+            <div class="workbench-section">
+              <KnowledgeSearchPanel
+                :api-base="API_BASE"
+                :project-id="currentProjectId"
+                @locate-concept="onLocateConcept"
+                @locate-relation="onLocateRelation"
               />
-              <div class="ocr-file-name" v-if="ocrFile">{{ ocrFile.name }}</div>
-
-              <div class="ocr-btn-row">
-                <button class="btn btn-secondary ocr-action-btn" :disabled="ocrLoading" @click="useSampleOcrFile">
-                  加载示例图片
-                </button>
-                <button class="btn btn-primary ocr-action-btn" :disabled="!ocrFile || ocrLoading" @click="runOcrExtract('local')">
-                  {{ ocrLoading ? "识别中..." : "开始识别" }}
-                </button>
-              </div>
-
-              <button class="btn btn-outline ocr-result-btn" v-if="ocrResult" @click="ocrDialogVisible = true">
-                查看识别结果 ({{ ocrCandidates.length }} 项)
-              </button>
-
             </div>
           </div>
-        </div>
 
-        <div v-if="activeWorkbenchTab === 'modeling'" class="workbench-panel">
-          <div class="workbench-section">
-            <div class="workbench-title">知识建模</div>
-            <div v-if="isManager" class="workbench-actions">
-              <button class="btn btn-primary" @click="addOntology(null, null)">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                新增节点
-              </button>
-              <div class="relation-row">
-                <button class="btn btn-outline" @click="openRelationCreateChoice()">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                  新增关系
-                </button>
-              </div>
-
-              <button class="btn btn-secondary" @click="syncGraph">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-                保存当前画布
-              </button>
-              <button class="btn btn-danger" @click="clearGraph">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                一键清空画布
-              </button>
-              <button class="btn btn-secondary" @click="rulesDialogVisible = true">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                关系逻辑规则设置
+          <div v-if="activeWorkbenchTab === 'analysis'" class="workbench-panel">
+            <div class="workbench-section">
+              <button class="btn btn-bayesian" @click="bayesianDialogVisible = true">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 6v6l4 2"/>
+                </svg>
+                贝叶斯网络分析
               </button>
             </div>
-            <div v-else class="tip-text">仅管理者可编辑知识概念</div>
-
-            <div class="workbench-subtitle">配置</div>
-            <button class="btn btn-weight-config" @click="weightDialogVisible = true">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
-              </svg>
-              关系权重配置
-            </button>
           </div>
-        </div>
 
-        <div v-if="activeWorkbenchTab === 'retrieval'" class="workbench-panel">
-          <div class="workbench-section">
-            <div class="workbench-title">知识检索</div>
-            <KnowledgeSearchPanel
-              :api-base="API_BASE"
-              :project-id="currentProjectId"
-              @locate-concept="onLocateConcept"
-              @locate-relation="onLocateRelation"
-            />
-          </div>
-        </div>
-
-        <div v-if="activeWorkbenchTab === 'analysis'" class="workbench-panel">
-          <div class="workbench-section">
-            <div class="workbench-title">知识分析</div>
-            <button class="btn btn-bayesian" @click="bayesianDialogVisible = true">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 6v6l4 2"/>
-              </svg>
-              贝叶斯网络分析
-            </button>
-          </div>
-        </div>
-      </div>
+        </div><!-- /.flyout-body -->
+      </div><!-- /.workbench-flyout -->
 
       <!-- 用户信息区域 -->
       <div class="user-info-bar" v-if="isLoggedIn">
@@ -2872,6 +2933,7 @@ onUnmounted(() => {
 
 /* Sidebar */
 .sidebar {
+  position: relative; /* 作为细分功能浮层的定位基准 */
   width: 300px;
   background: #ffffff;
   border-right: 1px solid #e2e8f0;
@@ -2973,11 +3035,9 @@ onUnmounted(() => {
   font-weight: 700;
 }
 
-/* 下属菜单区：左侧缩进 + 细竖线，强化“一级功能—下属菜单”的归属关系 */
+/* 细分功能面板：内容已移入右侧浮层，此处不再需要缩进与竖线（间距由 .flyout-body 提供） */
 .workbench-panel {
-  margin: 0 12px 0 20px;
-  padding: 10px 0 10px 12px;
-  border-left: 1px solid #e2e8f0;
+  min-width: 0;
 }
 
 .workbench-section {
@@ -3377,10 +3437,43 @@ onUnmounted(() => {
 
 .ps-new-btn:hover { background: #dbeafe; border-color: #93c5fd; }
 
-.sidebar-content {
+/* 侧栏占位：把用户信息条与底部状态栏推到侧栏底部 */
+.sidebar-spacer {
   flex: 1;
-  padding: 12px 0;
-  overflow-y: auto;
+}
+
+/* ======================== 细分功能浮层 ======================== */
+/* 紧邻侧栏右边缘弹出，脱离文档流浮在主内容区之上，不挤压主内容区 */
+.workbench-flyout {
+  position: absolute;
+  left: 100%;                                 /* 起点 = 侧栏右边缘 */
+  margin-left: 8px;                           /* 与侧栏留出细缝，视觉上"浮"起 */
+  top: var(--flyout-top, 0px);                /* 由 :style 注入，对齐被点击的一级菜单项 */
+  z-index: 40;                                /* 高于主内容区，低于全局弹窗（100+） */
+  width: 300px;                               /* 宽度与侧栏一致，内部控件沿用原布局 */
+  max-height: min(70vh, calc(100vh - var(--flyout-top, 0px) - 16px)); /* 不超出视口底部 */
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+  overflow: hidden;
+}
+
+.flyout-header {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e3a5f;
+  background: #f8fafc;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.flyout-body {
+  padding: 12px 16px 14px;
+  overflow-y: auto;                           /* 内容超出时面板内部滚动，不撑高面板 */
 }
 
 /* Buttons */
