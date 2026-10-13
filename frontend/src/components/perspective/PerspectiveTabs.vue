@@ -22,15 +22,15 @@ const tabs = computed(() => {
   return [
     {
       key: "leader",
-      label: "知识概览",
+      label: "概览",
     },
     {
       key: "engineer",
-      label: "知识组织",
+      label: "数据映射",
     },
     {
       key: "process",
-      label: "知识建模",
+      label: "本体推理",
     },
   ];
 });
@@ -45,6 +45,11 @@ function switchTab(key) {
 
 <template>
   <nav class="perspective-navbar">
+    <!-- 分组标题：三种视角同属"知识组织"，纯标题不可点击 -->
+    <div class="nav-group-header">
+      <span class="nav-group-title">知识组织</span>
+    </div>
+
     <div class="nav-tabs">
       <button
         v-for="tab in tabs"
@@ -53,7 +58,7 @@ function switchTab(key) {
         @click="switchTab(tab.key)"
         :title="tab.label"
       >
-        <!-- 知识概览图标：四格 -->
+        <!-- 概览图标：四格 -->
         <svg
           v-if="tab.key === 'leader'"
           class="tab-svg"
@@ -71,7 +76,7 @@ function switchTab(key) {
           <rect x="3" y="14" width="7" height="7" rx="1" />
           <rect x="14" y="14" width="7" height="7" rx="1" />
         </svg>
-        <!-- 知识组织图标：数据库 -->
+        <!-- 数据映射图标：数据库 -->
         <svg
           v-if="tab.key === 'engineer'"
           class="tab-svg"
@@ -88,7 +93,7 @@ function switchTab(key) {
           <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
           <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
         </svg>
-        <!-- 知识建模图标：网络 -->
+        <!-- 本体推理图标：网络 -->
         <svg
           v-if="tab.key === 'process'"
           class="tab-svg"
@@ -135,6 +140,40 @@ function switchTab(key) {
   border-bottom: 1px solid #e2e8f0;
   flex-shrink: 0;
   user-select: none;
+}
+
+/* ======================== 分组标题 ======================== */
+
+.nav-group-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px 8px;
+  background: #ffffff;
+  /* 比分隔线更淡，与标签行形成层次 */
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.nav-group-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e3a5f;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  position: relative;
+  padding-left: 9px;
+}
+
+/* 标题左侧的竖条装饰 */
+.nav-group-title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 12px;
+  border-radius: 2px;
+  background: #1e3a5f;
 }
 
 /* ======================== Tab 行 ======================== */
