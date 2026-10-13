@@ -557,7 +557,7 @@ kbd {
     <li><a href="#section-1">1. 快速入门</a></li>
     <li><a href="#section-2">2. 用户认证与权限</a></li>
     <li><a href="#section-3">3. 项目管理</a></li>
-    <li><a href="#section-4">4. 知识组织</a></li>
+    <li><a href="#section-4">4. 数据导入</a></li>
     <li><a href="#section-5">5. 知识建模</a></li>
     <li><a href="#section-6">6. 知识检索</a></li>
     <li><a href="#section-7">7. 关系操作</a></li>
@@ -596,7 +596,7 @@ kbd {
     <li>从数据库和 Excel 表格自动导入实体构建知识图谱</li>
     <li>定义关系推理规则，自动推导隐含关系</li>
     <li>基于 Noisy-OR 模型的因果概率分析</li>
-    <li>多视角浏览：管理者概览仪表盘、知识组织脑图、知识建模画布</li>
+    <li>多视角浏览：管理者概览仪表盘、数据映射脑图、本体推理画布</li>
   </ul>
 
   <h3>1.2 登录系统</h3>
@@ -614,11 +614,11 @@ kbd {
     <div class="ui-row">
       <div class="ui-region highlight" style="flex: 0 0 28%;">
         <span class="label">左侧边栏</span>
-        项目选择器 · 工作台标签页<br>（知识组织 / 建模 / 分析）<br>用户信息 · 状态栏
+        项目选择器 · 工作台标签页<br>（数据导入 / 建模 / 分析）<br>用户信息 · 状态栏
       </div>
       <div class="ui-region highlight" style="flex: 0 0 52%;">
         <span class="label">主内容区</span>
-        多视角标签栏 · 画布/仪表盘/脑图<br>（概览 / 知识组织 / 知识建模）
+        多视角标签栏 · 画布/仪表盘/脑图<br>（知识组织：概览 / 数据映射 / 本体推理）
       </div>
     </div>
     <div class="ui-row">
@@ -637,12 +637,12 @@ kbd {
       <tr>
         <td><strong>左侧边栏</strong></td>
         <td>最左侧 300px</td>
-        <td>顶部项目选择器 → 工作台标签（知识组织/建模/分析）→ 底部用户信息与状态栏。管理者三个标签均可用；普通用户仅可查看。</td>
+        <td>顶部项目选择器 → 工作台标签（数据导入/建模/分析）→ 底部用户信息与状态栏。管理者三个标签均可用；普通用户仅可查看。</td>
       </tr>
       <tr>
         <td><strong>主内容区</strong></td>
         <td>中间区域</td>
-        <td>顶部多视角标签栏（概览/知识组织/知识建模）→ 对应视图内容。知识建模视角显示可编辑的图形画布。</td>
+        <td>顶部导航栏以<strong>「知识组织」为分组</strong>，其下并列「概览」「数据映射」「本体推理」三种视角 → 对应视图内容。本体推理视角显示可编辑的图形画布。</td>
       </tr>
       <tr>
         <td><strong>详情面板</strong></td>
@@ -689,10 +689,10 @@ kbd {
   <p>逻辑规则是对关系的<strong>约束条件</strong>和<strong>推导规则</strong>的定义，分为互斥约束和顺承推理两类。规则在创建关系时自动检查执行。</p>
 
   <h4>工作台（Workbench）</h4>
-  <p>左侧边栏的工作台标签页将操作分为三个场景：<strong>知识组织</strong>（从外部数据源获取实体）、<strong>建模</strong>（创建/编辑知识概念与关系）、<strong>分析</strong>（贝叶斯因果分析）。</p>
+  <p>左侧边栏的工作台标签页将操作分为三个场景：<strong>数据导入</strong>（从外部数据源获取实体）、<strong>建模</strong>（创建/编辑知识概念与关系）、<strong>分析</strong>（贝叶斯因果分析）。</p>
 
   <h4>多视角（Perspective）</h4>
-  <p>主内容区顶部有三个视角标签：<strong>概览</strong>（管理者仪表盘）、<strong>知识组织</strong>（数据血缘脑图）、<strong>知识建模</strong>（交互式建模画布）。每个视角提供不同的信息呈现方式。</p>
+  <p>主内容区顶部有三个视角标签：<strong>概览</strong>（管理者仪表盘）、<strong>数据映射</strong>（数据血缘脑图）、<strong>本体推理</strong>（交互式建模画布）。每个视角提供不同的信息呈现方式。</p>
 
   <h4>项目（Project）</h4>
   <p>项目是图数据的<strong>隔离容器</strong>。不同项目拥有完全独立的知识图谱数据，互不影响。您可以同时管理多个项目，随时切换。</p>
@@ -716,9 +716,9 @@ kbd {
       <tr><td>设置互斥/推理规则</td><td>建模标签 → "关系逻辑规则设置"</td><td>8.2 / 8.3</td></tr>
       <tr><td>配置关系权重</td><td>建模标签 → "关系权重配置"</td><td>9.1</td></tr>
       <tr><td>贝叶斯因果分析</td><td>分析标签 → "贝叶斯网络分析"</td><td>9.2</td></tr>
-      <tr><td>数据库导入</td><td>知识组织标签 → "连接数据库"</td><td>4.2</td></tr>
-      <tr><td>文件上传导入</td><td>知识组织标签 → "上传文件"</td><td>4.3</td></tr>
-      <tr><td>OCR 图片识别导入</td><td>知识组织标签 → 选择文件 → "本地识别"</td><td>4.6</td></tr>
+      <tr><td>数据库导入</td><td>数据导入标签 → "连接数据库"</td><td>4.2</td></tr>
+      <tr><td>文件上传导入</td><td>数据导入标签 → "上传文件"</td><td>4.3</td></tr>
+      <tr><td>OCR 图片识别导入</td><td>数据导入标签 → 选择文件 → "本地识别"</td><td>4.6</td></tr>
       <tr><td>平移画布</td><td>鼠标左键拖拽空白处</td><td>11.1</td></tr>
       <tr><td>缩放画布</td><td>鼠标滚轮 / 右下角缩放按钮</td><td>11.1</td></tr>
       <tr><td>新建/切换项目</td><td>侧边栏顶部项目选择器</td><td>3.2 / 3.3</td></tr>
@@ -761,7 +761,7 @@ kbd {
       <tr><td>浏览多视角</td><td>✅</td><td>✅</td></tr>
       <tr><td>创建/编辑知识概念</td><td>✅</td><td>❌ 只读</td></tr>
       <tr><td>创建/编辑关系</td><td>✅</td><td>❌ 只读</td></tr>
-      <tr><td>知识组织</td><td>✅</td><td>❌ 只读</td></tr>
+      <tr><td>数据导入</td><td>✅</td><td>❌ 只读</td></tr>
       <tr><td>设置逻辑规则</td><td>✅</td><td>❌ 只读</td></tr>
       <tr><td>配置权重</td><td>✅</td><td>❌ 只读</td></tr>
       <tr><td>贝叶斯分析</td><td>✅</td><td>✅</td></tr>
@@ -843,7 +843,7 @@ kbd {
     <tbody>
       <tr><td><code>projects/index.json</code></td><td>项目索引文件，记录所有项目的 ID、名称、创建时间和修改时间</td></tr>
       <tr><td><code>projects/{项目ID}.json</code></td><td>每个项目的完整图数据（nodes, edges, inference_rules, mutex_rules）</td></tr>
-      <tr><td><code>projects/{项目ID}_perspective.json</code></td><td>项目的多视角配置数据（业务域、知识组织、数据源信息）</td></tr>
+      <tr><td><code>projects/{项目ID}_perspective.json</code></td><td>项目的多视角配置数据（业务域、数据映射、数据源信息）</td></tr>
     </tbody>
   </table>
 
@@ -853,14 +853,14 @@ kbd {
 </section>
 
 <!-- ===============================================================
-     第4章：知识组织
+     第4章：数据导入
      =============================================================== -->
 <section id="section-4">
-  <h2>4. 知识组织</h2>
+  <h2>4. 数据导入</h2>
 
   <h3>4.1 功能概述</h3>
   <p>
-    知识组织功能位于左侧边栏的<strong>"知识组织"工作台标签</strong>页，支持从<strong>数据库</strong>和<strong>文件</strong>两种数据源
+    数据导入功能位于左侧边栏的<strong>"数据导入"工作台标签</strong>页，支持从<strong>数据库</strong>和<strong>文件</strong>两种数据源
     自动提取表结构和列信息，批量生成知识概念。仅管理者可用。
   </p>
 
@@ -877,7 +877,7 @@ kbd {
 
   <h4>操作步骤</h4>
   <ol class="step-list">
-    <li>在"知识组织"标签页中，点击 <code>连接数据库</code> 按钮。</li>
+    <li>在"数据导入"标签页中，点击 <code>连接数据库</code> 按钮。</li>
     <li>选择连接模式（模拟或真实）。真实模式需填写连接参数并先测试连接。</li>
     <li>连接成功后，系统自动加载数据库中的表列表。</li>
     <li>点击目标表名，展开查看表中的列信息。</li>
@@ -885,14 +885,14 @@ kbd {
   </ol>
 
   <div class="tip">
-    模拟达梦模式无需任何前置条件，适合快速体验知识组织功能。数据库文件位于 <code>backend/projects/sim_dameng.db</code>。
+    模拟达梦模式无需任何前置条件，适合快速体验数据导入功能。数据库文件位于 <code>backend/projects/sim_dameng.db</code>。
   </div>
 
   <h3>4.3 文件上传导入</h3>
   <p>支持上传 <strong>Excel（.xlsx / .xls）</strong>和 <strong>CSV（.csv）</strong>文件，自动解析 Sheet/表格结构。</p>
 
   <ol class="step-list">
-    <li>在"知识组织"标签页中，点击 <code>上传文件</code> 按钮。</li>
+    <li>在"数据导入"标签页中，点击 <code>上传文件</code> 按钮。</li>
     <li>将文件拖拽到上传区域，或点击选择文件。</li>
     <li>上传成功后，系统自动解析文件结构（Excel 的 Sheet 名称、CSV 的列名）。</li>
     <li>可选：点击预览查看文件中的前几行数据。</li>
@@ -941,14 +941,14 @@ kbd {
 
   <h3>4.6 OCR 图片识别导入</h3>
   <p>
-    除了结构化的知识组织方式，系统还支持<strong>OCR 光学字符识别</strong>功能，从<strong>图片</strong>（PNG、JPG、BMP、WebP）或
+    除了结构化的数据导入方式，系统还支持<strong>OCR 光学字符识别</strong>功能，从<strong>图片</strong>（PNG、JPG、BMP、WebP）或
     <strong>文本文件</strong>（TXT、CSV）中自动提取实体，并批量导入画布作为知识概念。
     这在从纸质文档扫描件、设备铭牌照片、表格截图等非结构化资料快速构建知识图谱时尤为有用。
   </p>
 
   <h4>识别流程</h4>
   <ol class="step-list">
-    <li><strong>选择文件：</strong>在"知识组织"标签页的"OCR 图片识别"区域，点击文件选择按钮选取一张图片或文本文件。也可以点击 <code>使用示例文件 test.png</code> 快速体验。</li>
+    <li><strong>选择文件：</strong>在"数据导入"标签页的"OCR 图片识别"区域，点击文件选择按钮选取一张图片或文本文件。也可以点击 <code>使用示例文件 test.png</code> 快速体验。</li>
     <li><strong>开始识别：</strong>点击 <code>本地识别</code> 按钮，系统将调用 RapidOCR 引擎对文件内容进行文字识别和实体提取。识别过程中按钮显示"识别中..."。</li>
     <li><strong>查看结果：</strong>识别完成后点击 <code>查看识别结果</code>，弹出结果窗口——左侧显示原始文件预览（图片或文本），右侧列出提取到的实体候选列表。</li>
     <li><strong>选择并导入：</strong>在候选列表中勾选需要的实体（支持全选/全不选/逐项勾选），点击 <code>一键导入勾选项</code>。实体将以<strong>4 列网格布局</strong>排列在画布上。</li>
@@ -1019,7 +1019,7 @@ kbd {
     <tbody>
       <tr><td>工具栏按钮</td><td>点击 <code>新增节点</code>，输入名称后确认。节点出现在画布中心偏上位置。</td></tr>
       <tr><td>右键菜单</td><td>在画布空白处右键，选择 <code>在此新增独立概念</code>。节点精确出现在点击位置。</td></tr>
-      <tr><td>知识组织</td><td>通过知识组织功能批量导入（详见第4章）。</td></tr>
+      <tr><td>数据导入</td><td>通过数据导入功能批量导入（详见第4章）。</td></tr>
     </tbody>
   </table>
 
@@ -1125,7 +1125,7 @@ kbd {
 
   <h3>6.4 定位到知识图谱</h3>
   <p>
-    点击任意一条检索结果，系统会自动切换到 <code>知识建模</code> 视角，
+    点击任意一条检索结果，系统会自动切换到 <code>本体推理</code> 视角，
     将画布平移到该知识概念并高亮显示；若命中的是关系，则高亮该关系及其两端的知识概念。
     这样可以从检索结果直接进入知识图谱的上下文，继续查看或编辑。
   </p>
@@ -1403,8 +1403,8 @@ kbd {
 
   <h3>9.1 概述</h3>
   <p>
-    主内容区顶部有<strong>三个视角标签</strong>：<strong>概览</strong>（网格图标）、<strong>知识组织</strong>（数据库图标）、
-    <strong>知识建模</strong>（网络图标）。每个视角提供不同的信息查看方式，适合不同角色的用户。
+    主内容区顶部导航栏以<strong>「知识组织」为分组</strong>，其下并列<strong>三个视角标签</strong>：<strong>概览</strong>（网格图标）、<strong>数据映射</strong>（数据库图标）、
+    <strong>本体推理</strong>（网络图标）。三者是同一份"知识组织"数据的不同呈现方式，各有侧重，适合不同角色的用户。
   </p>
 
   <h3>9.2 概览视角（管理者仪表盘）</h3>
@@ -1417,11 +1417,11 @@ kbd {
   </ul>
 
   <div class="tip">
-    概览视角是<strong>只读</strong>的，不能在此编辑知识概念或关系。如需编辑，请切换到"知识建模"视角。
+    概览视角是<strong>只读</strong>的，不能在此编辑知识概念或关系。如需编辑，请切换到"本体推理"视角。
   </div>
 
-  <h3>9.3 知识组织视角（数据血缘脑图）</h3>
-  <p>知识组织视角以<strong>树形脑图</strong>的方式展示从业务域到数据字段的完整映射链：</p>
+  <h3>9.3 数据映射视角（数据血缘脑图）</h3>
+  <p>数据映射视角以<strong>树形脑图</strong>的方式展示从业务域到数据字段的完整映射链：</p>
 
   <ul style="margin: 0 0 16px 20px; color: var(--color-text-secondary);">
     <li><strong>五级层次：</strong>根节点 → 业务域 → 知识概念 → 数据源 → 字段映射。</li>
@@ -1437,8 +1437,8 @@ kbd {
     以及每个概念对应的数据源和具体字段。
   </div>
 
-  <h3>9.4 知识建模视角（建模画布）</h3>
-  <p>知识建模视角是<strong>传统的交互式建模画布</strong>，也是您之前章节（第5-9章）中操作的主要界面。在此视角下：</p>
+  <h3>9.4 本体推理视角（建模画布）</h3>
+  <p>本体推理视角是<strong>传统的交互式建模画布</strong>，也是您之前章节（第5-9章）中操作的主要界面。在此视角下：</p>
 
   <ul style="margin: 0 0 16px 20px; color: var(--color-text-secondary);">
     <li>节点和关系以图形方式呈现，支持拖拽、缩放、平移。</li>
@@ -1449,8 +1449,8 @@ kbd {
   <h3>9.5 视角切换说明</h3>
   <ul style="margin: 0 0 16px 20px; color: var(--color-text-secondary);">
     <li>点击顶部标签栏即可切换视角，带淡入淡出动画过渡。</li>
-    <li>切换到概览或知识组织视角时，画布区域被替换为对应视图。</li>
-    <li>切换回知识建模视角时，画布恢复，之前的位置和缩放状态保持。</li>
+    <li>切换到概览或数据映射视角时，画布区域被替换为对应视图。</li>
+    <li>切换回本体推理视角时，画布恢复，之前的位置和缩放状态保持。</li>
     <li>各视角<strong>共享同一份数据</strong>，在任一视角导入的数据在其它视角可见。</li>
   </ul>
 </section>
@@ -1608,9 +1608,9 @@ kbd {
     <thead><tr><th>场景</th><th>推荐流程</th></tr></thead>
     <tbody>
       <tr><td><strong>从零建模</strong></td><td>新建项目 → 创建核心知识概念 → 添加子概念构建层次 → 建立关系连线 → 设置逻辑规则 → 配置权重 → 贝叶斯分析</td></tr>
-      <tr><td><strong>从数据库导入</strong></td><td>新建项目 → 知识组织标签 → 连接数据库 → 选择表/列 → 导入 → 切换到建模标签补充关系</td></tr>
+      <tr><td><strong>从数据库导入</strong></td><td>新建项目 → 数据导入标签 → 连接数据库 → 选择表/列 → 导入 → 切换到建模标签补充关系</td></tr>
       <tr><td><strong>从 Excel 导入</strong></td><td>上传 Excel/CSV → Schema 预览 → 勾选并导入 → 调整布局 → 补充关系连线</td></tr>
-      <tr><td><strong>模板导入</strong></td><td>准备符合模板格式的 Excel → 知识组织标签 → 选择模板模式 → 导入实体关系+属性+规则</td></tr>
+      <tr><td><strong>模板导入</strong></td><td>准备符合模板格式的 Excel → 数据导入标签 → 选择模板模式 → 导入实体关系+属性+规则</td></tr>
       <tr><td><strong>因果分析</strong></td><td>配置权重 → 分析标签 → 选择目标节点 → 向上追溯/向下传播/全局概览 → 查看高亮路径</td></tr>
       <tr><td><strong>多版本管理</strong></td><td>为每个版本创建独立项目 → 项目间切换对比 → 定期备份 projects 目录</td></tr>
     </tbody>
