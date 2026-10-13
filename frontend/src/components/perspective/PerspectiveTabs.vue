@@ -131,22 +131,23 @@ function switchTab(key) {
   user-select: none;
 }
 
-/* 总栏目容器：标题 + 三种模式作为一个整体居中，并限制横向铺开形成视觉焦点 */
+/* 总栏目容器：标题 + 三种模式作为一个整体居中，并充分利用主内容区横向宽度。
+   上限 1600px 仅在超宽屏生效，1920px 及以下视口基本是满宽铺开。 */
 .nav-group {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px; /* 标题行与模式选项行之间的层级留白 */
+  gap: 12px; /* 标题行与模式选项行之间的层级留白 */
   width: 100%;
-  max-width: 640px;
-  padding: 20px 24px 18px;
+  max-width: 1600px;
+  padding: 16px 24px 14px; /* 左右保留 24px 呼吸边距，不贴边；上下收窄以压低整区高度 */
 }
 
 /* ======================== 总栏目标题 ======================== */
 
 .nav-group-title {
   margin: 0;
-  font-size: 20px; /* 20px vs 模式名 14px，约 1.43 倍，一眼可辨的总栏目层级 */
+  font-size: 20px; /* 20px vs 模式名 15px，约 1.33 倍，一眼可辨的总栏目层级 */
   font-weight: 700;
   color: #1e3a5f; /* 主题色：总栏目标题是区域视觉锚点 */
   letter-spacing: 0.04em;
@@ -174,7 +175,7 @@ function switchTab(key) {
   background: #ffffff;
   color: #475569;
   font-family: inherit;
-  font-size: 14px; /* 模式名下限，不再缩小 */
+  font-size: 15px; /* 模式名，适当放大以匹配加宽后的选项卡 */
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
@@ -214,9 +215,13 @@ function switchTab(key) {
   white-space: nowrap;
 }
 
-/* ======================== 窄屏：纵向堆叠，避免文字被挤压错位 ======================== */
-
-@media (max-width: 640px) {
+/* ======================== 窄屏：纵向堆叠，避免文字被挤压错位 ========================
+   断点依据「文字是否会被挤压」而非旧容器上限：
+   单个选项卡最小可用宽度 = 最长模式名「数据映射模式」6 全角字 ×15px(90)
+     + 图标 17 + 图文间距 8 + 左右内边距 24 + 边框 3 ≈ 142px
+   三栏 + 两个 gap 12px + .nav-group 左右 padding 48px ≈ 522px 才刚够用；
+   取 600px 作为断点，为字体渲染差异与滚动条预留安全余量。 */
+@media (max-width: 600px) {
   .nav-tabs {
     flex-direction: column;
   }
