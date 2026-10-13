@@ -1,8 +1,9 @@
 <script setup>
 import { ref } from "vue";
 
-const API_BASE = import.meta.env.VITE_API_BASE ||
-  (typeof window !== "undefined" ? `http://${window.location.hostname}:8000` : "http://127.0.0.1:8000");
+// 使用相对路径：开发模式下由 Vite dev server 的 proxy 在服务器本机代转到后端，
+// 打包后前后端同源。硬编码主机名会导致局域网其他电脑请求 http://<服务器IP>:8000 而超时。
+const API_BASE = import.meta.env.VITE_API_BASE || "";
 
 const emit = defineEmits(["close", "preview-ready"]);
 

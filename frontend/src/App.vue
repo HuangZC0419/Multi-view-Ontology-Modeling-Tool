@@ -9,8 +9,11 @@ import LoginView from "./components/auth/LoginView.vue";
 import KnowledgeSearchPanel from "./components/knowledge/KnowledgeSearchPanel.vue";
 
 // Use relative path for same-origin or explicit API_BASE. Fallback to current hostname with 8000 port.
-const defaultApiBase = typeof window !== 'undefined' ? `http://${window.location.hostname}:8000` : "http://127.0.0.1:8000";
-const API_BASE = import.meta.env.VITE_API_BASE || defaultApiBase;
+// 统一使用相对路径（空字符串）：所有请求打向当前源，由 Vite dev server 的 proxy
+// 在服务器本机代转到后端；打包部署时前后端同源。
+// 不硬编码主机名与端口 —— 否则局域网内其他电脑会把请求打到 http://<服务器IP>:8000，
+// 而后端仅监听 127.0.0.1，必然连接超时。
+const API_BASE = import.meta.env.VITE_API_BASE || "";
 
 const nodes = ref([]);
 const edges = ref([]);
