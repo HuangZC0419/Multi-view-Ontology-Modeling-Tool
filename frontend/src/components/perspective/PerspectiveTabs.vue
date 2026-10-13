@@ -53,7 +53,7 @@ function switchTab(key) {
         @click="switchTab(tab.key)"
         :title="tab.label"
       >
-        <!-- 概览图标：四格 -->
+        <!-- 知识概览图标：四格 -->
         <svg
           v-if="tab.key === 'leader'"
           class="tab-svg"
@@ -71,7 +71,7 @@ function switchTab(key) {
           <rect x="3" y="14" width="7" height="7" rx="1" />
           <rect x="14" y="14" width="7" height="7" rx="1" />
         </svg>
-        <!-- 数据映射图标：数据库 -->
+        <!-- 知识组织图标：数据库 -->
         <svg
           v-if="tab.key === 'engineer'"
           class="tab-svg"
