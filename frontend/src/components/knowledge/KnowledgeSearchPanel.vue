@@ -113,7 +113,7 @@ async function runSearch() {
     <div v-if="results" class="ksp-results">
       <div class="ksp-summary">共命中 {{ results.total }} 条结果</div>
 
-      <div v-if="results.concepts.length" class="ksp-group">
+      <div v-if="results.concepts?.length" class="ksp-group">
         <div class="ksp-group-title">知识概念（{{ results.concepts.length }}）</div>
         <button
           v-for="c in results.concepts"
@@ -130,7 +130,7 @@ async function runSearch() {
         </button>
       </div>
 
-      <div v-if="results.relations.length" class="ksp-group">
+      <div v-if="results.relations?.length" class="ksp-group">
         <div class="ksp-group-title">知识关系（{{ results.relations.length }}）</div>
         <button
           v-for="r in results.relations"
