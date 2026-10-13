@@ -78,10 +78,10 @@ async function handleLogin() {
       <div class="modern-content">
         <div class="modern-left">
           <div class="user-badge-top">
-            <span class="badge-icon">&#x2B50;</span> 自研本体建模分析工具
+            <span class="badge-icon">&#x2B50;</span> 自研装配工艺知识库工具
           </div>
-          <h1 class="modern-title">本体建模系统</h1>
-          <p class="modern-subtitle">专注于关系建模分析，实现多视角可视化。</p>
+          <h1 class="modern-title">装配工艺知识库软件</h1>
+          <p class="modern-subtitle">专注于装配工艺知识的建模、组织与检索。</p>
 
           <div class="modern-features">
             <div class="feature-item">
