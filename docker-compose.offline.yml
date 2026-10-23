@@ -1,0 +1,23 @@
+version: "3.3"
+services:
+  ontology-tool:
+    image: multi-view-ontology-tool:latest
+    container_name: multi-view-ontology-tool
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend/projects:/app/backend/projects:z
+      - ./backend/uploads:/app/backend/uploads:z
+      - ./backend/users.xlsx:/app/backend/users.xlsx:z
+    restart: unless-stopped
+    security_opt:
+      - seccomp:unconfined
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
+    environment:
+      - OPENBLAS_NUM_THREADS=1
+      - GOTO_NUM_THREADS=1
+      - OMP_NUM_THREADS=1

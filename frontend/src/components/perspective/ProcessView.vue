@@ -20,7 +20,11 @@ const error = ref("");
 const API_BASE = import.meta.env.VITE_API_BASE || "";
 
 async function loadGraph() {
-  if (!props.projectId) return;
+  // 防止 projectId 为 null/undefined 或字符串 'null' 时发出无效请求
+  if (!props.projectId || props.projectId === 'null') {
+    error.value = '请先创建或选择项目';
+    return;
+  }
   loading.value = true;
   error.value = "";
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import os
-import sys
+
 import uuid
 from pathlib import Path
 from fastapi import APIRouter, File, HTTPException, UploadFile
@@ -15,10 +15,7 @@ from app.services.ontology_extract import extract_ontology_nodes, extract_ontolo
 
 router = APIRouter(prefix="/api/datasource")
 
-if getattr(sys, "frozen", False):
-    BASE_DIR = Path(sys.executable).parent
-else:
-    BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 UPLOAD_DIR = BASE_DIR / "uploads"
 
 _sessions: dict[str, tuple] = {}

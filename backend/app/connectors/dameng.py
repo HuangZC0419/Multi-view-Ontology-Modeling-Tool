@@ -3,15 +3,12 @@
 from __future__ import annotations
 
 import sqlite3
-import sys
+
 from pathlib import Path
 from app.connectors.base import DataSourceConnector
 from app.models import TableInfo, ColumnInfo
 
-if getattr(sys, "frozen", False):
-    BASE_DIR = Path(sys.executable).parent
-else:
-    BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 
 class SimDamengConnector(DataSourceConnector):

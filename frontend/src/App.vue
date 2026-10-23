@@ -8,7 +8,6 @@ import DataSourcePanel from "./components/datasource/DataSourcePanel.vue";
 import LoginView from "./components/auth/LoginView.vue";
 import KnowledgeSearchPanel from "./components/knowledge/KnowledgeSearchPanel.vue";
 
-// Use relative path for same-origin or explicit API_BASE. Fallback to current hostname with 8000 port.
 // 统一使用相对路径（空字符串）：所有请求打向当前源，由 Vite dev server 的 proxy
 // 在服务器本机代转到后端；打包部署时前后端同源。
 // 不硬编码主机名与端口 —— 否则局域网内其他电脑会把请求打到 http://<服务器IP>:8000，
@@ -618,9 +617,13 @@ async function finishRename(id) {
   if (renamingProjectId.value !== id) return;
   const name = renameValue.value.trim();
   if (name) {
-    await request(`/api/projects/${id}`, { method: "PUT", body: JSON.stringify({ name }) });
-    const p = projects.value.find(p => p.id === id);
-    if (p) p.name = name;
+    try {
+      await request(`/api/projects/${id}`, { method: "PUT", body: JSON.stringify({ name }) });
+      const p = projects.value.find(p => p.id === id);
+      if (p) p.name = name;
+    } catch (error) {
+      statusMessage.value = `重命名失败：${error.message}`;
+    }
   }
   renamingProjectId.value = null;
 }
@@ -1151,6 +1154,7 @@ function handleGlobalKeyDown(e) {
 
 // 加载项目的权重配置
 async function loadWeightConfig() {
+  if (!currentProjectId.value) return;
   try {
     const data = await request(`/api/bayesian/weights/${currentProjectId.value}`);
     if (data && data.relation_weights) {
@@ -1162,6 +1166,7 @@ async function loadWeightConfig() {
 }
 
 async function saveWeightConfig() {
+  if (!currentProjectId.value) { statusMessage.value = "请先选择项目"; return; }
   try {
     await request(`/api/bayesian/weights/${currentProjectId.value}`, {
       method: 'PUT',
@@ -1184,6 +1189,7 @@ function removeWeightMapping(key) {
 }
 
 async function runUpstreamAnalysis() {
+  if (!currentProjectId.value) { statusMessage.value = "请先选择项目"; return; }
   if (!upstreamTargetId.value) { statusMessage.value = "请选择目标节点"; return; }
   bayesianLoading.value = true;
   try {
@@ -1196,6 +1202,7 @@ async function runUpstreamAnalysis() {
 }
 
 async function runDownstreamAnalysis() {
+  if (!currentProjectId.value) { statusMessage.value = "请先选择项目"; return; }
   if (!downstreamSourceId.value) { statusMessage.value = "请选择因子节点"; return; }
   bayesianLoading.value = true;
   try {
@@ -1215,6 +1222,7 @@ function getProbLevel(prob) {
 }
 
 async function runOverviewAnalysis() {
+  if (!currentProjectId.value) { statusMessage.value = "请先选择项目"; return; }
   bayesianLoading.value = true;
   try {
     overviewResult.value = await request(`/api/bayesian/overview/${currentProjectId.value}`);
@@ -1470,6 +1478,8 @@ function onLoginSuccess(user) {
   currentUser.value = user;
   isLoggedIn.value = true;
   localStorage.setItem("benti_user", JSON.stringify(user));
+  // 登录成功后重新加载项目列表（避免 onMounted 时 loadProjects 已失败导致 currentProjectId 为空）
+  loadProjects();
 }
 
 function onLogout() {
@@ -1785,9 +1795,12 @@ onUnmounted(() => {
         @after-leave="flushPendingLocate"
       >
         <div class="perspective-content" v-if="currentPerspective !== 'process'" :key="currentPerspective">
-          <LeaderView v-if="currentPerspective === 'leader'" :projectId="currentProjectId" />
+          <div v-if="!currentProjectId" class="no-project-hint">
+            <p>暂无项目，请先创建项目</p>
+          </div>
+          <LeaderView v-if="currentPerspective === 'leader' && currentProjectId" :projectId="currentProjectId" />
           <EngineerView
-            v-if="currentPerspective === 'engineer'"
+            v-if="currentPerspective === 'engineer' && currentProjectId"
             :projectId="currentProjectId"
             :projectName="projects.find(p => String(p.id) === String(currentProjectId))?.name || ''"
           />
@@ -2436,7 +2449,7 @@ onUnmounted(() => {
 
       <!-- ProcessView 用于加载数据（不可见，仅触发事件） -->
       <ProcessView
-        v-if="currentPerspective === 'process'"
+        v-if="currentPerspective === 'process' && currentProjectId"
         :projectId="currentProjectId"
         @graph-loaded="onGraphLoaded"
         @stats="onStats"
@@ -6247,6 +6260,17 @@ onUnmounted(() => {
   color: #1e293b;
   line-height: 1.5;
   word-break: break-word;
+  font-weight: 500;
+}
+
+.no-project-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  color: #94a3b8;
+  font-size: 14px;
   font-weight: 500;
 }
 

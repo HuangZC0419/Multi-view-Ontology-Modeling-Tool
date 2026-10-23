@@ -17,7 +17,7 @@ import jieba.posseg as pseg
 import numpy as np
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -27,27 +27,13 @@ warnings.filterwarnings("ignore", message=".*Unsupported Windows.*")
 from rapidocr_onnxruntime import RapidOCR
 
 
-# PyInstaller 兼容：frozen 模式下使用 exe 所在目录作为数据根目录
-if getattr(sys, "frozen", False):
-    BASE_DIR = Path(sys.executable).parent
-else:
-    BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 PROJECTS_DIR = BASE_DIR / "projects"
 INDEX_FILE = PROJECTS_DIR / "index.json"
 
-if getattr(sys, "frozen", False):
-    FRONTEND_DIST = Path(sys._MEIPASS) / "frontend" / "dist"
-    SAMPLE_OCR_FILE = Path(sys._MEIPASS) / "test.png"
-    # 首次启动时将打包内的默认 users.xlsx 复制到 exe 同级目录
-    _bundled_users = Path(sys._MEIPASS) / "users.xlsx"
-    _target_users = BASE_DIR / "users.xlsx"
-    if _bundled_users.exists() and not _target_users.exists():
-        import shutil
-        shutil.copy2(str(_bundled_users), str(_target_users))
-else:
-    FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
-    SAMPLE_OCR_FILE = Path(__file__).resolve().parent.parent.parent / "test.png"
+FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+SAMPLE_OCR_FILE = Path(__file__).resolve().parent.parent.parent / "test.png"
 
 _active_project_id: Optional[str] = None
 
@@ -252,10 +238,15 @@ def _load_project_index() -> list[dict]:
 def _save_project_index(projects: list[dict]) -> None:
     """保存项目索引列表"""
     _ensure_projects_dir()
-    INDEX_FILE.write_text(
-        json.dumps(projects, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    try:
+        INDEX_FILE.write_text(
+            json.dumps(projects, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    except (OSError, IOError) as e:
+        # 磁盘满 / 权限不足时避免崩溃，记录错误由上层处理
+        import sys
+        print(f"[ERROR] 保存项目索引失败: {e}", file=sys.stderr)
 
 
 def _project_file_path(project_id: str) -> Path:
@@ -277,10 +268,14 @@ def _load_project_data(project_id: str) -> GraphState:
 def _save_project_data(project_id: str, graph: GraphState) -> None:
     """将图数据保存到指定项目文件，并更新索引中的 updated_at"""
     _ensure_projects_dir()
-    _project_file_path(project_id).write_text(
-        json.dumps(graph.model_dump(), ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    try:
+        _project_file_path(project_id).write_text(
+            json.dumps(graph.model_dump(), ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    except (OSError, IOError) as e:
+        import sys
+        print(f"[ERROR] 保存项目数据失败 ({project_id}): {e}", file=sys.stderr)
     # 同步更新索引中的更新时间
     projects = _load_project_index()
     now = datetime.utcnow().isoformat()
@@ -296,10 +291,7 @@ def _save_project_data(project_id: str, graph: GraphState) -> None:
 
 def _migrate_old_data() -> str | None:
     """从旧 data.json 迁移数据到项目存储，返回默认项目 ID，无数据则返回 None"""
-    if getattr(sys, "frozen", False):
-        old_data_file = Path(sys.executable).parent / "data.json"
-    else:
-        old_data_file = Path(__file__).resolve().parent.parent / "data.json"
+    old_data_file = Path(__file__).resolve().parent.parent / "data.json"
     if not old_data_file.exists():
         return None
 
@@ -336,58 +328,17 @@ def _migrate_old_data() -> str | None:
     return project_id
 
 
-_BUNDLED_PROJECT_NAMES = {
-    "machining-demo": "机械加工工艺案例",
-}
-
-
-def _import_bundled_projects() -> None:
-    """从 PyInstaller 打包数据中导入预置项目（仅 frozen 模式生效）"""
-    if not getattr(sys, "frozen", False):
-        return
-    bundled_dir = Path(sys._MEIPASS) / "projects"
-    if not bundled_dir.is_dir():
-        return
-
-    projects = _load_project_index()
-    existing_ids = {p["id"] for p in projects}
-    imported = False
-
-    for f in sorted(bundled_dir.glob("*.json")):
-        if f.name == "index.json":
-            continue
-        project_id = f.stem
-        if project_id in existing_ids:
-            continue
-        target = _project_file_path(project_id)
-        if target.exists():
-            continue
-        target.write_text(f.read_text(encoding="utf-8"), encoding="utf-8")
-        now = datetime.utcnow().isoformat()
-        projects.append({
-            "id": project_id,
-            "name": _BUNDLED_PROJECT_NAMES.get(project_id, project_id),
-            "created_at": now,
-            "updated_at": now,
-        })
-        existing_ids.add(project_id)
-        imported = True
-
-    if imported:
-        _save_project_index(projects)
-
-
 def _init_default_project() -> str:
     """初始化默认项目（不存在任何项目时创建），返回默认项目 ID"""
     projects = _load_project_index()
     if projects:
-        _import_bundled_projects()
+    
         return projects[0]["id"]
 
     # 尝试从旧 data.json 迁移
     migrated_id = _migrate_old_data()
     if migrated_id:
-        _import_bundled_projects()
+    
         return migrated_id
 
     # 无旧数据，创建全新的默认项目
@@ -404,7 +355,7 @@ def _init_default_project() -> str:
     _save_project_data(project_id, GraphState())
 
     # 导入预置案例项目
-    _import_bundled_projects()
+
 
     return project_id
 
@@ -1561,6 +1512,16 @@ def bayesian_overview(project_id: str) -> OverviewResponse:
     )
 
 
+@app.get("/api/bayesian/weights/{project_id}")
+def get_weights(project_id: str) -> dict[str, object]:
+    """获取项目的贝叶斯关系权重配置"""
+    projects = _load_project_index()
+    if not any(p["id"] == project_id for p in projects):
+        raise HTTPException(status_code=400, detail="指定项目不存在")
+    graph = _load_project_data(project_id)
+    return {"relation_weights": graph.relation_weights}
+
+
 @app.put("/api/bayesian/weights/{project_id}")
 def update_weights(project_id: str, payload: WeightConfigPayload) -> dict[str, str]:
     """更新项目的贝叶斯关系权重配置。
@@ -1588,6 +1549,25 @@ def update_weights(project_id: str, payload: WeightConfigPayload) -> dict[str, s
 
 
 # ============================================================
+# Favicon（避免浏览器自动请求 /favicon.ico 产生 404）
+# ============================================================
+@app.get("/favicon.ico")
+async def favicon():
+    # 1x1 透明 ICO
+    return Response(
+        content=bytes([
+            0x00,0x00,0x01,0x00,0x01,0x00,0x01,0x01,
+            0x00,0x00,0x01,0x00,0x18,0x00,0x0b,0x00,
+            0x00,0x00,0x16,0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+        ]),
+        media_type="image/x-icon"
+    )
+
+
+# ============================================================
 # 前端静态文件服务（仅在 dist 目录存在时启用）
 # ============================================================
 if FRONTEND_DIST.exists() and (FRONTEND_DIST / "index.html").exists():
@@ -1600,6 +1580,7 @@ if __name__ == "__main__":
     # 支持直接用 python main.py 运行
     print("\n" + "=" * 56)
     print("  装配工艺知识库软件")
+    # 本地开发默认 8000；Docker 部署由 Dockerfile 的 CMD 指定 --port 3001
     print(f"  http://localhost:8000")
     print("=" * 56 + "\n")
     logging.getLogger("uvicorn").setLevel(logging.WARNING)

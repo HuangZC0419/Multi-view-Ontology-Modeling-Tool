@@ -20,6 +20,12 @@ const error = ref(null)
 const projectMetaName = ref('')
 
 async function loadData() {
+  // 防止 projectId 为 null/undefined 时发出无效请求
+  if (!props.projectId || props.projectId === 'null') {
+    error.value = '请先创建或选择项目';
+    loading.value = false;
+    return;
+  }
   loading.value = true
   error.value = null
   try {

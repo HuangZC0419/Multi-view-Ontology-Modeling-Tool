@@ -48,7 +48,7 @@
 | 图像 | OpenCV |
 | 数据库 | 达梦 DM 连接器 |
 | 认证 | openpyxl (Excel 用户表) |
-| 打包 | PyInstaller (单文件 exe, Win7 兼容) |
+| 打包 | Docker 容器化部署 |
 
 ## 目录结构
 
@@ -79,10 +79,11 @@
 │       │   └── perspective/     # 多视角视图
 │       ├── LoginView.vue        # 登录页
 │       └── OceanBreath.vue      # 动效背景
-├── build/                       # PyInstaller 构建中间文件
-├── dist/                        # 打包输出 (OCR-Benti.exe)
 ├── docs/                        # 文档
-├── OCR-Benti.spec               # PyInstaller 打包配置
+├── Dockerfile                   # Docker 镜像构建文件
+├── docker-compose.yml           # Docker 服务编排
+├── .dockerignore                # Docker 构建忽略文件
+├── DOCKER.md                    # Docker 部署说明
 ├── start.bat                    # 一键构建并启动脚本
 └── 测试数据/                    # 测试用例
 ```
@@ -115,23 +116,35 @@ npm run dev
 
 浏览器访问 `http://127.0.0.1:5173`。
 
-### 打包部署
+### Docker 部署（推荐）
+
+```bash
+docker compose up --build -d
+```
+
+启动后访问：
+- 应用页面：http://localhost:3001
+- API 文档：http://localhost:3001/docs
+
+停止服务：
+```bash
+docker compose down
+```
+
+数据持久化（自动挂载）：
+- `backend/projects/` —— 项目图谱数据
+- `backend/uploads/` —— 上传文件
+- `backend/users.xlsx` —— 用户认证表
+
+详见 [DOCKER.md](DOCKER.md)。
+
+### 开发模式一键启动
 
 使用 `start.bat` 一键构建前端并启动后端：
 
 ```bash
 start.bat
 ```
-
-或手动构建：
-
-```bash
-cd frontend && npm run build
-cd ..
-pyinstaller OCR-Benti.spec
-```
-
-生成的 `dist/OCR-Benti.exe` 为单文件可执行程序，包含前端、后端、OCR 模型等全部依赖，可直接在 Windows 7+ 上运行。
 
 ## 使用说明
 
