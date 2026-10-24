@@ -258,13 +258,15 @@ def _find_nested_array(container: dict, keys: tuple, predicate):
     先按别名优先级匹配键名属于 keys 的非空数组；都没有命中时，
     才退回按结构谓词扫描。返回 (数组, 映射路径) 或 None。
     """
+    containers = list(_iter_nested_dicts(container))
+
     for key in keys:
-        for current, current_path in _iter_nested_dicts(container):
+        for current, current_path in containers:
             value = current.get(key)
             if isinstance(value, list) and value:
                 return value, _join_path(current_path, key)
 
-    for current, current_path in _iter_nested_dicts(container):
+    for current, current_path in containers:
         for key, value in current.items():
             if key in NON_DATA_LIST_KEYS or not isinstance(value, list) or not value:
                 continue
@@ -388,3 +390,134 @@ def parse_jsonl(
         total_lines=total_lines,
         bad_lines=bad_lines,
     )
+
+
+def _escape_html(text: str) -> str:
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def _ring_offset(ordinal: int):
+    """按序号返回环形偏移：第一环 8 个（半径 170），之后每环 12 个（半径 +90）。"""
+    ring = 0
+    remaining = ordinal
+    capacity = 8
+    while remaining >= capacity:
+        remaining -= capacity
+        ring += 1
+        capacity = 12
+    radius = 170 + ring * 90
+    angle = 2 * math.pi * remaining / capacity
+    return radius * math.cos(angle), radius * math.sin(angle)
+
+
+def _add_edge(edges, seen, source, target, relation, origin):
+    if not source or not target or source == target:
+        return
+    key = (source, target, relation)
+    if key in seen:
+        return
+    seen.add(key)
+    edges.append({
+        "id": str(uuid.uuid4()),
+        "source": source,
+        "target": target,
+        "relation": relation,
+        "kind": "relation",
+        "characteristics": [],
+        "weight": 1.0,
+        "origin": origin,
+    })
+
+
+def build_graph(records, origin: str = "jsonl", fallback_file_name: str = ""):
+    """把规范化记录构建为节点、边与预览汇总。"""
+    nodes = []
+    edges = []
+    file_nodes = {}
+    entity_nodes = {}
+    entity_ordinal = {}
+    edge_seen = set()
+    labels = {}
+
+    for record in records:
+        name = record.get("file_name") or fallback_file_name or "未命名文件"
+        if name in file_nodes:
+            continue
+        index = len(file_nodes)
+        node = {
+            "id": str(uuid.uuid4()),
+            "name": _escape_html(name),
+            "label": FILE_LABEL,
+            "x": (index % 3) * 420,
+            "y": (index // 3) * 360,
+            "parent_id": None,
+            "attributes": [],
+            "origin": origin,
+        }
+        file_nodes[name] = node
+        nodes.append(node)
+
+    for record in records:
+        file_name = record.get("file_name") or fallback_file_name or "未命名文件"
+        file_node = file_nodes[file_name]
+        local_map = {}
+
+        for entity in record.get("entities", []):
+            text = entity.get("text", "")
+            label = entity.get("label") or DEFAULT_ENTITY_LABEL
+            key = (label, text)
+            node = entity_nodes.get(key)
+            if node is None:
+                ordinal = entity_ordinal.get(file_name, 0)
+                dx, dy = _ring_offset(ordinal)
+                entity_ordinal[file_name] = ordinal + 1
+                node = {
+                    "id": str(uuid.uuid4()),
+                    "name": _escape_html(text),
+                    "label": label,
+                    "x": file_node["x"] + 100 + dx,
+                    "y": file_node["y"] + 35 + dy,
+                    "parent_id": None,
+                    "attributes": [],
+                    "origin": origin,
+                }
+                entity_nodes[key] = node
+                nodes.append(node)
+                labels[label] = labels.get(label, 0) + 1
+            local_map[entity["id"]] = node
+            _add_edge(
+                edges, edge_seen, file_node["id"], node["id"], CONTAIN_RELATION, origin
+            )
+
+        for relation in record.get("relations", []):
+            source = local_map.get(relation["source"])
+            target = local_map.get(relation["target"])
+            if source is None or target is None:
+                continue
+            _add_edge(
+                edges,
+                edge_seen,
+                source["id"],
+                target["id"],
+                relation["type"] or DEFAULT_RELATION,
+                origin,
+            )
+
+    relation_edges = [e for e in edges if e["relation"] != CONTAIN_RELATION]
+    sample_edges = relation_edges[:10] or edges[:10]
+    summary = {
+        "records": len(records),
+        "files": len(file_nodes),
+        "entities": len(entity_nodes),
+        "relations": len(relation_edges),
+        "labels": dict(sorted(labels.items(), key=lambda item: item[1], reverse=True)),
+        "file_names": list(file_nodes.keys()),
+        "sample_nodes": [
+            {"name": n["name"], "label": n["label"]} for n in nodes[:10]
+        ],
+        "sample_edges": [
+            {"source": e["source"], "target": e["target"], "relation": e["relation"]}
+            for e in sample_edges
+        ],
+    }
+    return nodes, edges, summary

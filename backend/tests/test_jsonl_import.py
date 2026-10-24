@@ -3,7 +3,7 @@ import os
 import tempfile
 import unittest
 
-from app.services.jsonl_import import MAX_WARNINGS, parse_jsonl
+from app.services.jsonl_import import MAX_WARNINGS, build_graph, parse_jsonl
 
 
 SAMPLE_A = (
@@ -329,6 +329,78 @@ class ParseJsonlTests(TempFileMixin):
         )
         self.assertEqual(result.records[0]["entities"], [])
         self.assertNotIn("entities", result.mappings)
+
+
+class BuildGraphTests(TempFileMixin):
+    def test_global_merge_across_files(self):
+        text = (
+            '{"file_name":"a.pdf","spans":[{"id":"1","label":"参数","text":"2025 年"}]}\n'
+            '{"file_name":"b.pdf","spans":[{"id":"1","label":"参数","text":"2025 年"}]}\n'
+        )
+        nodes, edges, summary = build_graph(
+            parse_jsonl(self.write_temp(text)).records, origin="jsonl:test"
+        )
+        self.assertEqual(summary["files"], 2)
+        self.assertEqual(summary["entities"], 1)
+        containment = [e for e in edges if e["relation"] == "包含"]
+        self.assertEqual(len(containment), 2)
+
+    def test_same_text_different_label_is_separate(self):
+        text = (
+            '{"file_name":"a.pdf","spans":['
+            '{"id":"1","label":"参数","text":"甲"},'
+            '{"id":"2","label":"工序","text":"甲"}]}\n'
+        )
+        _, _, summary = build_graph(
+            parse_jsonl(self.write_temp(text)).records
+        )
+        self.assertEqual(summary["entities"], 2)
+
+    def test_duplicate_relation_is_deduped(self):
+        text = (
+            '{"file_name":"a.pdf","spans":['
+            '{"id":"1","label":"x","text":"甲"},{"id":"2","label":"x","text":"乙"}],'
+            '"relations":[{"fromId":"1","toId":"2","type":"关联"},'
+            '{"fromId":"1","toId":"2","type":"关联"}]}\n'
+        )
+        _, edges, summary = build_graph(
+            parse_jsonl(self.write_temp(text)).records
+        )
+        relations = [e for e in edges if e["relation"] == "关联"]
+        self.assertEqual(len(relations), 1)
+        self.assertEqual(summary["relations"], 1)
+
+    def test_positions_are_deterministic_and_unique(self):
+        text = (
+            '{"file_name":"a.pdf","spans":['
+            '{"id":"1","label":"x","text":"甲"},{"id":"2","label":"x","text":"乙"}]}\n'
+        )
+        nodes1, _, _ = build_graph(parse_jsonl(self.write_temp(text)).records)
+        nodes2, _, _ = build_graph(parse_jsonl(self.write_temp(text)).records)
+        positions1 = sorted(
+            (round(n["x"], 3), round(n["y"], 3)) for n in nodes1
+        )
+        positions2 = sorted(
+            (round(n["x"], 3), round(n["y"], 3)) for n in nodes2
+        )
+        self.assertEqual(positions1, positions2)
+        self.assertEqual(len({(n["x"], n["y"]) for n in nodes1}), len(nodes1))
+
+    def test_entity_text_is_html_escaped(self):
+        text = (
+            '{"file_name":"a.pdf","spans":'
+            '[{"id":"1","label":"x","text":"<b>&"}]}\n'
+        )
+        nodes, _, _ = build_graph(parse_jsonl(self.write_temp(text)).records)
+        self.assertIn("&lt;b&gt;&amp;", {n["name"] for n in nodes})
+
+    def test_file_label_and_origin(self):
+        text = '{"file_name":"a.pdf","spans":[]}\n'
+        nodes, _, _ = build_graph(
+            parse_jsonl(self.write_temp(text)).records, origin="jsonl:x.jsonl"
+        )
+        self.assertEqual(nodes[0]["label"], "文件")
+        self.assertEqual(nodes[0]["origin"], "jsonl:x.jsonl")
 
 
 if __name__ == "__main__":
