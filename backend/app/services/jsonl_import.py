@@ -148,6 +148,8 @@ def _split_records(text: str):
             bad = len(data) - len(records)
             if bad:
                 warnings.append(f"JSON 数组中有 {bad} 个元素不是对象，已跳过")
+            if not data and len(warnings) < MAX_WARNINGS:
+                warnings.append("文件为空或没有任何非空行")
             return records, bad, len(data), warnings
 
     records = []
@@ -173,7 +175,10 @@ def _split_records(text: str):
             bad += 1
             if len(warnings) < MAX_WARNINGS:
                 warnings.append(f"第 {line_no} 行不是 JSON 对象，已跳过")
-    if total and bad == total:
+    if total == 0:
+        if len(warnings) < MAX_WARNINGS:
+            warnings.append("文件为空或没有任何非空行")
+    elif bad == total:
         # 全坏行时优先级最高，即使逐行告警已占满也要保留
         warnings.insert(0, "所有非空行均解析失败，疑似编码不匹配")
         del warnings[MAX_WARNINGS:]

@@ -73,6 +73,9 @@ class FileParserConnector(DataSourceConnector):
         except Exception as exc:
             errors.append(f"openpyxl: {exc}")
 
+        # openpyxl 可能已部分写入结构，回退 xlrd 前必须清空，避免脏数据混入
+        self._tables = []
+        self._columns = {}
         try:
             import xlrd
             wb = xlrd.open_workbook(self._file_path)
@@ -129,7 +132,6 @@ class FileParserConnector(DataSourceConnector):
             self._tables.append(TableInfo(name=sheet_name, row_count=row_count))
             self._columns[sheet_name] = columns
 
-        wb.close()
         return True
 
     async def _parse_xlrd(self, wb) -> bool:

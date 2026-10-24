@@ -30,7 +30,7 @@ def _normalize_source_type(origin: str) -> str:
         origin = origin.split(":", 1)[0].strip()
     if not origin:
         return "manual"
-    if origin in {"excel", "csv", "dameng", "manual"}:
+    if origin in {"excel", "csv", "jsonl", "dameng", "manual"}:
         return origin
     if origin == "sim_dameng":
         return "dameng"
@@ -45,6 +45,8 @@ def _source_name_for_type(source_type: str) -> str:
         return "导入的Excel数据源"
     if source_type == "csv":
         return "导入的CSV数据源"
+    if source_type == "jsonl":
+        return "导入的JSONL标注数据源"
     if source_type == "dameng":
         return "达梦数据库"
     return "系统默认数据源"
@@ -62,7 +64,7 @@ def _parse_origin(origin: str) -> tuple[str, str]:
 
 
 def _source_table_label(source_type: str, source_name: str) -> str:
-    if source_type in {"excel", "csv"}:
+    if source_type in {"excel", "csv", "jsonl"}:
         return source_name
     if source_type == "manual":
         return "人工维护"

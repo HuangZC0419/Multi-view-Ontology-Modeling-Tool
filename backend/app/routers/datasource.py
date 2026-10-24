@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
+from starlette.concurrency import run_in_threadpool
 
 from app.models import ImportSelection, JsonlImportSelection
 from app.connectors.dameng import SimDamengConnector, DamengConnector
@@ -53,18 +53,32 @@ def _load_upload_meta(file_id: str) -> dict:
 
 
 ALLOWED_FILE_EXTS = (".xlsx", ".xls", ".csv", ".jsonl")
-_FILE_ID_PATTERN = re.compile(r"^[0-9a-fA-F-]{36}$")
+MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+
+
+def _validate_file_id(source_id: str) -> str:
+    """校验并规范化文件标识，阻止路径穿越。"""
+    try:
+        return str(uuid.UUID(source_id))
+    except (ValueError, AttributeError, TypeError):
+        raise HTTPException(400, "非法的文件标识")
 
 
 def _decode_upload_filename(name: str) -> str:
-    """修复 multipart 文件名被按 latin-1 解码导致的中文乱码。"""
+    """修复 multipart 文件名被错误解码的问题（UTF-8 或 GBK 字节被按 latin-1 解出）。"""
     if not name:
         return name
+    name = os.path.basename(name.replace("\\", "/")).strip()
     try:
-        fixed = name.encode("latin-1").decode("utf-8")
-    except (UnicodeEncodeError, UnicodeDecodeError):
+        raw = name.encode("latin-1")
+    except UnicodeEncodeError:
         return name
-    return fixed
+    for encoding in ("utf-8", "gb18030"):
+        try:
+            return raw.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    return name
 
 
 # ============================================================
@@ -155,42 +169,56 @@ async def upload_file(file: UploadFile = File(...)):
     file_id = str(uuid.uuid4())
     save_name = f"{file_id}{ext}"
     save_path = UPLOAD_DIR / save_name
+    display_name = original_name or save_name
 
-    content = await file.read()
+    content = await file.read(MAX_UPLOAD_BYTES + 1)
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(413, "文件过大，最大支持 50MB")
+
     with open(save_path, "wb") as f:
         f.write(content)
-    _save_upload_meta(file_id, original_name or save_name, ext)
+    _save_upload_meta(file_id, display_name, ext)
 
     if ext == ".jsonl":
-        result = parse_jsonl(save_path, fallback_file_name=original_name)
-        _, _, summary = build_graph(
+        result = await run_in_threadpool(parse_jsonl, save_path, display_name)
+        _, _, summary = await run_in_threadpool(
+            build_graph,
             result.records,
-            origin=f"jsonl:{original_name or save_name}",
-            fallback_file_name=original_name,
+            f"jsonl:{display_name}",
+            display_name,
         )
         summary["mappings"] = result.mappings
         summary["warnings"] = result.warnings
         summary["bad_lines"] = result.bad_lines
         summary["records"] = len(result.records)
+        summary["total_lines"] = result.total_lines
         return {
             "file_id": file_id,
-            "file_name": original_name,
+            "file_name": display_name,
             "file_type": ext,
             "jsonl_summary": summary,
         }
 
     parser = FileParserConnector()
-    await parser.connect({"file_path": str(save_path), "file_type": ext})
-    tables = await parser.get_tables()
-    columns_map = {}
-    for t in tables:
-        cols = await parser.get_columns(t.name)
-        columns_map[t.name] = [c.model_dump() for c in cols]
-    await parser.disconnect()
+    try:
+        await parser.connect({"file_path": str(save_path), "file_type": ext})
+        tables = await parser.get_tables()
+        columns_map = {}
+        for t in tables:
+            cols = await parser.get_columns(t.name)
+            columns_map[t.name] = [c.model_dump() for c in cols]
+        await parser.disconnect()
+    except Exception as exc:
+        try:
+            save_path.unlink(missing_ok=True)
+            _upload_meta_path(file_id).unlink(missing_ok=True)
+        except OSError:
+            pass
+        raise HTTPException(400, f"文件解析失败：{str(exc)[:300]}")
 
     return {
         "file_id": file_id,
-        "file_name": original_name,
+        "file_name": display_name,
         "file_type": ext,
         "tables": [t.model_dump() for t in tables],
         "columns": columns_map,
@@ -200,18 +228,24 @@ async def upload_file(file: UploadFile = File(...)):
 @router.get("/file/{file_id}/preview")
 async def preview_file_data(file_id: str, table: str = "", limit: int = 10):
     """预览上传文件的数据"""
+    file_id = _validate_file_id(file_id)
     _ensure_upload_dir()
+    if (UPLOAD_DIR / f"{file_id}.jsonl").exists():
+        raise HTTPException(400, "JSONL 文件不支持结构预览，请先上传后使用 /jsonl/import")
     for ext in (".xlsx", ".xls", ".csv"):
         path = UPLOAD_DIR / f"{file_id}{ext}"
         if path.exists():
             parser = FileParserConnector()
-            await parser.connect({"file_path": str(path), "file_type": ext})
-            if table:
-                rows = await parser.preview_data(table, limit=limit)
-            else:
-                tables = await parser.get_tables()
-                rows = await parser.preview_data(tables[0].name, limit=limit) if tables else []
-            await parser.disconnect()
+            try:
+                await parser.connect({"file_path": str(path), "file_type": ext})
+                if table:
+                    rows = await parser.preview_data(table, limit=limit)
+                else:
+                    tables = await parser.get_tables()
+                    rows = await parser.preview_data(tables[0].name, limit=limit) if tables else []
+                await parser.disconnect()
+            except Exception as exc:
+                raise HTTPException(400, f"文件解析失败：{str(exc)[:300]}")
             return {"rows": rows}
     raise HTTPException(404, "文件不存在或已过期")
 
@@ -254,23 +288,23 @@ async def import_ontology(selection: ImportSelection):
                 source_name=db_type
             )
     else:
+        source_id = _validate_file_id(source_id)
         _ensure_upload_dir()
+        if (UPLOAD_DIR / f"{source_id}.jsonl").exists():
+            raise HTTPException(400, "JSONL 文件请使用 /api/datasource/jsonl/import")
         for ext in (".xlsx", ".xls", ".csv"):
             path = UPLOAD_DIR / f"{source_id}{ext}"
-            if path.exists():
-                parser = FileParserConnector()
+            if not path.exists():
+                continue
+
+            parser = FileParserConnector()
+            try:
                 await parser.connect({"file_path": str(path), "file_type": ext})
-                origin_type = "csv" if ext == ".csv" else "excel"
-                upload_meta = _load_upload_meta(source_id)
-                original_file_name = upload_meta.get("file_name", "").strip()
-                origin_name = f"{origin_type}:{original_file_name}" if original_file_name else origin_type
-                
                 if is_template:
                     relations_data = await parser.preview_data("实体关系", limit=10000) if "实体关系" in selection.tables else []
                     attributes_data = await parser.preview_data("实体属性", limit=10000) if "实体属性" in selection.tables else []
                     inference_data = await parser.preview_data("推理规则", limit=10000) if "推理规则" in selection.tables else []
                     mutex_data = await parser.preview_data("互斥规则", limit=10000) if "互斥规则" in selection.tables else []
-                    nodes, edges, inf_rules, mut_rules = extract_ontology_from_data(relations_data, attributes_data, inference_data, mutex_data, source_name=origin_name)
                 else:
                     tables = await parser.get_tables()
                     columns_map = {}
@@ -278,14 +312,31 @@ async def import_ontology(selection: ImportSelection):
                         if t.name in selection.tables:
                             cols = await parser.get_columns(t.name)
                             columns_map[t.name] = cols
-                    nodes = extract_ontology_nodes(
-                        tables=tables,
-                        columns_map=columns_map,
-                        selection=selection,
-                        source_name=origin_name
-                    )
                 await parser.disconnect()
-                break
+            except Exception as exc:
+                raise HTTPException(400, f"文件解析失败：{str(exc)[:300]}")
+
+            origin_type = "csv" if ext == ".csv" else "excel"
+            upload_meta = _load_upload_meta(source_id)
+            original_file_name = upload_meta.get("file_name", "").strip()
+            origin_name = f"{origin_type}:{original_file_name}" if original_file_name else origin_type
+
+            if is_template:
+                nodes, edges, inf_rules, mut_rules = extract_ontology_from_data(
+                    relations_data,
+                    attributes_data,
+                    inference_data,
+                    mutex_data,
+                    source_name=origin_name,
+                )
+            else:
+                nodes = extract_ontology_nodes(
+                    tables=tables,
+                    columns_map=columns_map,
+                    selection=selection,
+                    source_name=origin_name,
+                )
+            break
 
     return {
         "nodes": nodes,
@@ -304,20 +355,20 @@ async def import_ontology(selection: ImportSelection):
 async def import_jsonl(payload: JsonlImportSelection):
     """把 JSONL 标注文件转换为文件节点、实体节点与关系边"""
     _ensure_upload_dir()
-    if not _FILE_ID_PATTERN.match(payload.source_id):
-        raise HTTPException(400, "非法的文件标识")
+    source_id = _validate_file_id(payload.source_id)
 
-    path = UPLOAD_DIR / f"{payload.source_id}.jsonl"
+    path = UPLOAD_DIR / f"{source_id}.jsonl"
     if not path.exists():
         raise HTTPException(404, "文件不存在或已过期")
 
-    meta = _load_upload_meta(payload.source_id)
+    meta = _load_upload_meta(source_id)
     original_name = meta.get("file_name", "") or path.name
-    result = parse_jsonl(path, fallback_file_name=original_name)
-    nodes, edges, summary = build_graph(
+    result = await run_in_threadpool(parse_jsonl, path, original_name)
+    nodes, edges, summary = await run_in_threadpool(
+        build_graph,
         result.records,
-        origin=f"jsonl:{original_name}",
-        fallback_file_name=original_name,
+        f"jsonl:{original_name}",
+        original_name,
     )
     if not nodes:
         raise HTTPException(400, "未识别到有效记录，请检查 JSONL 格式")
@@ -326,4 +377,5 @@ async def import_jsonl(payload: JsonlImportSelection):
     summary["warnings"] = result.warnings
     summary["bad_lines"] = result.bad_lines
     summary["records"] = len(result.records)
+    summary["total_lines"] = result.total_lines
     return {"nodes": nodes, "edges": edges, "summary": summary}
