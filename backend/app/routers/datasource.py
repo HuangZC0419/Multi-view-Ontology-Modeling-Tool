@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import json
 import os
-
+import re
 import uuid
 from pathlib import Path
+
 from fastapi import APIRouter, File, HTTPException, UploadFile
-from app.models import ImportSelection
+
+from app.models import ImportSelection, JsonlImportSelection
 from app.connectors.dameng import SimDamengConnector, DamengConnector
 from app.connectors.file_parser import FileParserConnector
+from app.services.jsonl_import import build_graph, parse_jsonl
 from app.services.ontology_extract import extract_ontology_nodes, extract_ontology_from_data
 
 router = APIRouter(prefix="/api/datasource")
@@ -47,6 +50,21 @@ def _load_upload_meta(file_id: str) -> dict:
         return json.loads(meta_path.read_text(encoding="utf-8"))
     except Exception:
         return {}
+
+
+ALLOWED_FILE_EXTS = (".xlsx", ".xls", ".csv", ".jsonl")
+_FILE_ID_PATTERN = re.compile(r"^[0-9a-fA-F-]{36}$")
+
+
+def _decode_upload_filename(name: str) -> str:
+    """修复 multipart 文件名被按 latin-1 解码导致的中文乱码。"""
+    if not name:
+        return name
+    try:
+        fixed = name.encode("latin-1").decode("utf-8")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return name
+    return fixed
 
 
 # ============================================================
@@ -126,12 +144,13 @@ async def disconnect_db(session_id: str):
 
 @router.post("/file/upload")
 async def upload_file(file: UploadFile = File(...)):
-    """上传 Excel/CSV 文件，返回解析后的结构"""
+    """上传 Excel/CSV/JSONL 文件，返回解析后的结构"""
     _ensure_upload_dir()
 
-    ext = os.path.splitext(file.filename or "")[1].lower()
-    if ext not in (".xlsx", ".xls", ".csv"):
-        raise HTTPException(400, f"不支持的文件格式: {ext}，仅支持 .xlsx .xls .csv")
+    original_name = _decode_upload_filename(file.filename or "")
+    ext = os.path.splitext(original_name)[1].lower()
+    if ext not in ALLOWED_FILE_EXTS:
+        raise HTTPException(400, f"不支持的文件格式: {ext}，仅支持 .xlsx .xls .csv .jsonl")
 
     file_id = str(uuid.uuid4())
     save_name = f"{file_id}{ext}"
@@ -140,7 +159,25 @@ async def upload_file(file: UploadFile = File(...)):
     content = await file.read()
     with open(save_path, "wb") as f:
         f.write(content)
-    _save_upload_meta(file_id, file.filename or save_name, ext)
+    _save_upload_meta(file_id, original_name or save_name, ext)
+
+    if ext == ".jsonl":
+        result = parse_jsonl(save_path, fallback_file_name=original_name)
+        _, _, summary = build_graph(
+            result.records,
+            origin=f"jsonl:{original_name or save_name}",
+            fallback_file_name=original_name,
+        )
+        summary["mappings"] = result.mappings
+        summary["warnings"] = result.warnings
+        summary["bad_lines"] = result.bad_lines
+        summary["records"] = len(result.records)
+        return {
+            "file_id": file_id,
+            "file_name": original_name,
+            "file_type": ext,
+            "jsonl_summary": summary,
+        }
 
     parser = FileParserConnector()
     await parser.connect({"file_path": str(save_path), "file_type": ext})
@@ -153,10 +190,10 @@ async def upload_file(file: UploadFile = File(...)):
 
     return {
         "file_id": file_id,
-        "file_name": file.filename,
+        "file_name": original_name,
         "file_type": ext,
         "tables": [t.model_dump() for t in tables],
-        "columns": columns_map
+        "columns": columns_map,
     }
 
 
@@ -257,3 +294,36 @@ async def import_ontology(selection: ImportSelection):
         "mutex_rules": mut_rules,
         "count": len(nodes)
     }
+
+
+# ============================================================
+# JSONL 标注导入
+# ============================================================
+
+@router.post("/jsonl/import")
+async def import_jsonl(payload: JsonlImportSelection):
+    """把 JSONL 标注文件转换为文件节点、实体节点与关系边"""
+    _ensure_upload_dir()
+    if not _FILE_ID_PATTERN.match(payload.source_id):
+        raise HTTPException(400, "非法的文件标识")
+
+    path = UPLOAD_DIR / f"{payload.source_id}.jsonl"
+    if not path.exists():
+        raise HTTPException(404, "文件不存在或已过期")
+
+    meta = _load_upload_meta(payload.source_id)
+    original_name = meta.get("file_name", "") or path.name
+    result = parse_jsonl(path, fallback_file_name=original_name)
+    nodes, edges, summary = build_graph(
+        result.records,
+        origin=f"jsonl:{original_name}",
+        fallback_file_name=original_name,
+    )
+    if not nodes:
+        raise HTTPException(400, "未识别到有效记录，请检查 JSONL 格式")
+
+    summary["mappings"] = result.mappings
+    summary["warnings"] = result.warnings
+    summary["bad_lines"] = result.bad_lines
+    summary["records"] = len(result.records)
+    return {"nodes": nodes, "edges": edges, "summary": summary}

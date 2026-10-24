@@ -62,17 +62,25 @@ class FileParserConnector(DataSourceConnector):
     # ---- Excel 解析 ----
 
     async def _parse_excel(self) -> bool:
+        errors = []
         try:
             import openpyxl
             wb = openpyxl.load_workbook(self._file_path, read_only=True, data_only=True)
-            return await self._parse_openpyxl(wb)
-        except Exception:
             try:
-                import xlrd
-                wb = xlrd.open_workbook(self._file_path)
-                return await self._parse_xlrd(wb)
-            except Exception:
-                raise RuntimeError("无法打开 Excel 文件，请安装 openpyxl 或 xlrd")
+                return await self._parse_openpyxl(wb)
+            finally:
+                wb.close()
+        except Exception as exc:
+            errors.append(f"openpyxl: {exc}")
+
+        try:
+            import xlrd
+            wb = xlrd.open_workbook(self._file_path)
+            return await self._parse_xlrd(wb)
+        except Exception as exc:
+            errors.append(f"xlrd: {exc}")
+
+        raise RuntimeError("无法打开 Excel 文件：" + "；".join(errors))
 
     async def _parse_openpyxl(self, wb) -> bool:
         for sheet_name in wb.sheetnames:

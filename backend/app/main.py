@@ -41,6 +41,7 @@ _active_project_id: Optional[str] = None
 class OntologyNode(BaseModel):
     id: str
     name: str = Field(min_length=1)
+    label: str = ""
     x: float
     y: float
     parent_id: str | None = None

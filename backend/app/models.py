@@ -102,3 +102,12 @@ class EngineerViewData(BaseModel):
     nodes: list = Field(default_factory=list)
     mappings: list[DataMapping] = Field(default_factory=list)
     domains: list[BusinessDomain] = Field(default_factory=list)
+
+
+# ============================================================
+# JSONL 标注导入相关模型
+# ============================================================
+
+class JsonlImportSelection(BaseModel):
+    """JSONL 导入请求"""
+    source_id: str

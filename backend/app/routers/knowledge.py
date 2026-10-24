@@ -18,6 +18,7 @@ class ConceptMatch(BaseModel):
 
     id: str
     name: str
+    label: str = ""
     match_field: str  # 取值域：name | attribute | source
     match_snippet: str  # 命中字段的完整原值，非上下文片段
     parent_path: str = ""
@@ -139,6 +140,7 @@ def search_knowledge(
             ConceptMatch(
                 id=node.id,
                 name=node.name,
+                label=node.label or "",
                 match_field=hit[0],
                 match_snippet=hit[1],
                 parent_path=_build_parent_path(node, node_map),
