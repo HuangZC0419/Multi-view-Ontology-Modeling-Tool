@@ -139,7 +139,8 @@ def build_graph(records: list[dict], origin: str) -> tuple[list[dict], list[dict
 - 关系端点先按 id 匹配；匹配不到再按实体文本匹配；仍匹配不到则跳过该关系并计数告警。
 - id 在记录内命名空间化（`<record_index>:<raw_id>`），避免跨行冲突。
 - 有界递归兜底：顶层找不到实体/关系数组时，最多递归 3 层查找符合命名的数组字段；实体判定条件为「对象含文本类字段 + 标签类字段」。
-- 实体文本做 HTML 转义（`<`、`>`、`&`），避免节点卡片 `v-html` 渲染异常。
+- 实体文本与文件名保留原文，写入图数据时不转义；HTML 安全由前端渲染层负责（`NodeCard.vue` 与 `App.vue` 的 `formatSymbol` 在 `v-html` 前调用 `escapeHtml`）。
+- 关系支持同文件跨记录引用：先按记录内映射解析，再回退到文件级映射；仍无法解析的关系跳过，并在 summary 的 `unresolved_relations` 中计数。
 
 #### 5.3.3 合并与去重
 
@@ -152,8 +153,9 @@ def build_graph(records: list[dict], origin: str) -> tuple[list[dict], list[dict
 
 后端在原点附近完成布局，前端负责整体平移：
 
-- 文件节点按 3 列网格，间距 `420 × 360`
-- 每个文件下的新实体按环形排布：第一环 8 个、半径 170；第二环 12 个、半径 260；更多实体继续外扩
+- 采用「文件块」布局：文件节点放在块首 `(0, cursor_y)`，该文件的新实体按 4 列网格排布在文件右侧（起始 x=320，列距 240，行距 120）
+- 块高度取 `max(88, rows × 120) + 80`，下一个文件块从新的 `cursor_y` 开始
+- 卡片尺寸按 200 × 88 计算，保证任意两个节点矩形不相交；已有单元测试锁定
 - 已被前一个文件放置的合并实体不移动
 - 位置确定、不使用随机数，保证重复导入结果稳定
 
@@ -182,6 +184,8 @@ def build_graph(records: list[dict], origin: str) -> tuple[list[dict], list[dict
     "file_names": ["测试文本.png"],
     "warnings": [],
     "bad_lines": 0,
+    "total_lines": 4,
+    "unresolved_relations": 0,
     "sample_nodes": [],
     "sample_edges": []
   }
@@ -315,4 +319,4 @@ def _decode_upload_filename(name: str) -> str:
 | 别名表覆盖不到某些格式 | 预览页展示识别结果；坏行/缺字段有告警；后续可补别名 |
 | 全局合并产生过大连通图 | 文件节点与实体节点标签区分；后续可加按标签折叠 |
 | 大量实体导致布局拥挤 | 环形分环 + 前端整体平移；先保证不重叠，不做自动力导布局 |
-| `v-html` 渲染导入文本 | 导入时 HTML 转义 |
+| `v-html` 渲染导入文本 | 数据层保留原文，渲染层 `escapeHtml` 后再 `v-html` |
