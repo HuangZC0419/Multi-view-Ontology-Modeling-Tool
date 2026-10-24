@@ -213,16 +213,16 @@ class ParseJsonlTests(TempFileMixin, unittest.TestCase):
         self.assertEqual(result.records[0]["relations"], [])
         self.assertTrue(any("无法匹配" in warning for warning in result.warnings))
 
-        missing_keys = {
+        invalid_relations = {
             "file_name": "a.png",
             "spans": [{"text": "甲", "label": "x"}],
             "relations": [{"type": "关联"}],
         }
         result = parse_jsonl(
-            self.write_temp(json.dumps(missing_keys, ensure_ascii=False))
+            self.write_temp(json.dumps(invalid_relations, ensure_ascii=False))
         )
+        # 无效的顶层关系数组现在被忽略，以便后续别名或嵌套兜底接管
         self.assertEqual(result.records[0]["relations"], [])
-        self.assertTrue(any("from/to" in warning for warning in result.warnings))
 
     def test_nested_entity_structure_is_detected(self):
         record = {
@@ -345,6 +345,47 @@ class ParseJsonlTests(TempFileMixin, unittest.TestCase):
             [e["text"] for e in result.records[0]["entities"]], ["甲"]
         )
         self.assertEqual(result.mappings["entities"], "data.annotations")
+
+    def test_top_level_weak_alias_with_strings_is_rejected(self):
+        record = {
+            "labels": ["cat", "dog"],
+            "annotations": [{"text": "甲", "label": "x"}],
+        }
+        result = parse_jsonl(
+            self.write_temp(json.dumps(record, ensure_ascii=False))
+        )
+        self.assertEqual(
+            [e["text"] for e in result.records[0]["entities"]], ["甲"]
+        )
+        self.assertEqual(result.mappings["entities"], "annotations")
+
+    def test_top_level_strong_alias_without_text_is_rejected(self):
+        record = {
+            "spans": [{"name": "cat"}],
+            "annotations": [{"text": "乙", "label": "x"}],
+        }
+        result = parse_jsonl(
+            self.write_temp(json.dumps(record, ensure_ascii=False))
+        )
+        self.assertEqual(
+            [e["text"] for e in result.records[0]["entities"]], ["乙"]
+        )
+        self.assertEqual(result.mappings["entities"], "annotations")
+
+    def test_invalid_top_level_relations_fall_back_to_links(self):
+        record = {
+            "relations": [{"foo": 1}],
+            "links": [{"source": "甲", "target": "乙", "type": "关联"}],
+            "spans": [
+                {"id": "1", "text": "甲", "label": "x"},
+                {"id": "2", "text": "乙", "label": "x"},
+            ],
+        }
+        result = parse_jsonl(
+            self.write_temp(json.dumps(record, ensure_ascii=False))
+        )
+        self.assertEqual(len(result.records[0]["relations"]), 1)
+        self.assertEqual(result.mappings["relations"], "links")
 
     def test_relation_can_reference_entity_in_another_record(self):
         text = (
@@ -500,6 +541,7 @@ class BuildGraphTests(TempFileMixin, unittest.TestCase):
         self.assertEqual(summary["files"], 0)
         self.assertEqual(summary["entities"], 0)
         self.assertEqual(summary["relations"], 0)
+        self.assertEqual(summary["unresolved_relations"], 0)
         self.assertEqual(summary["labels"], {})
         self.assertEqual(summary["file_names"], [])
         self.assertEqual(summary["sample_nodes"], [])
@@ -580,6 +622,37 @@ class BuildGraphTests(TempFileMixin, unittest.TestCase):
         _, _, summary = build_graph(parse_jsonl(self.write_temp(text)).records)
         self.assertEqual(summary["labels"], {"A": 2, "B": 1})
         self.assertEqual(list(summary["labels"]), ["A", "B"])
+
+    def test_cross_record_relation_is_built(self):
+        text = (
+            '{"file_name":"a.pdf","spans":['
+            '{"id":1,"text":"A"},{"id":2,"text":"B"}]}\n'
+            '{"file_name":"a.pdf","relations":['
+            '{"fromId":1,"toId":2,"type":"关联"}]}\n'
+        )
+        records = parse_jsonl(self.write_temp(text)).records
+        nodes, edges, summary = build_graph(records)
+        relations = [e for e in edges if e["relation"] == "关联"]
+        self.assertEqual(len(relations), 1)
+        node_names = {n["id"]: n["name"] for n in nodes}
+        self.assertEqual(node_names[relations[0]["source"]], "A")
+        self.assertEqual(node_names[relations[0]["target"]], "B")
+        self.assertEqual(summary["relations"], 1)
+        self.assertEqual(summary["unresolved_relations"], 0)
+
+    def test_unresolved_relation_is_counted(self):
+        records = [{
+            "file_name": "a.pdf",
+            "entities": [
+                {"id": "0:id:1", "raw_id": "1", "text": "A", "label": "x"}
+            ],
+            "relations": [
+                {"source": "0:id:1", "target": "0:id:999", "type": "关联"}
+            ],
+        }]
+        nodes, edges, summary = build_graph(records)
+        self.assertEqual([e for e in edges if e["relation"] == "关联"], [])
+        self.assertEqual(summary["unresolved_relations"], 1)
 
     def test_layout_rectangles_do_not_overlap(self):
         lines = []

@@ -2,6 +2,8 @@
 
 兼容：字段别名、数字/字符串 id、行首脏前缀、同文件多行、
 整文件 JSON 数组、id 或实体文本作为关系端点、实体与关系分行的导出格式。
+跨记录关系按「记录内映射优先、同文件文件级映射其次」解析；
+同一文件内重复 raw_id 时，文件级映射取首次出现。
 
 节点 name 保留原始文本，不做 HTML 转义；HTML 安全显示由渲染层
 （NodeCard.vue / App.vue）负责，避免污染检索、tooltip 与手工节点合并。
@@ -24,6 +26,7 @@ DEFAULT_RELATION = "关联"
 CONTAIN_RELATION = "包含"
 
 # 卡片尺寸与布局参数：200×88 对应前端 NodeCard.vue 的卡片尺寸。
+# 注意：Task 6 为卡片增加标签条后，CARD_H 需要重新核对。
 # 文件块按首次出现顺序纵向堆叠，实体在文件右侧按 4 列网格排列。
 CARD_W = 200
 CARD_H = 88
@@ -219,19 +222,25 @@ def _normalize_entity(
 
 
 def _extract_entities(record: dict):
-    """仅接受非空数组，空数组视为不存在以便后续别名或嵌套兜底。"""
+    """按别名顺序返回第一个通过结构校验的非空数组。
+
+    空数组或校验失败的数组视为不存在，以便后续别名或嵌套兜底接管。
+    """
     for key in ENTITY_ARRAY_KEYS:
         value = record.get(key)
-        if isinstance(value, list) and value:
+        if isinstance(value, list) and value and _valid_entity_array(value, key):
             return value, key
     return [], ""
 
 
 def _extract_relations(record: dict):
-    """仅接受非空数组，空数组视为不存在以便后续别名或嵌套兜底。"""
+    """按别名顺序返回第一个通过结构校验的非空数组。
+
+    空数组或校验失败的数组视为不存在，以便后续别名或嵌套兜底接管。
+    """
     for key in RELATION_ARRAY_KEYS:
         value = record.get(key)
-        if isinstance(value, list) and value:
+        if isinstance(value, list) and value and _valid_relation_array(value, key):
             return value, key
     return [], ""
 
@@ -528,11 +537,13 @@ def build_graph(records, origin: str = "jsonl", fallback_file_name: str = ""):
     edges = []
     file_nodes = {}
     entity_nodes = {}
+    entity_id_nodes = {}
     entities_by_file = {}
     file_order = []
     edge_seen = set()
     labels = {}
     relation_edges = []
+    unresolved_relations = 0
 
     # 1. 先创建文件节点，保持首次出现顺序
     for record in records:
@@ -583,15 +594,22 @@ def build_graph(records, origin: str = "jsonl", fallback_file_name: str = ""):
                 nodes.append(node)
                 created.append(node)
                 labels[label] = labels.get(label, 0) + 1
+            entity_id_nodes[entity["id"]] = node
             local_map[entity["id"]] = node
             _add_edge(
                 edges, edge_seen, file_node["id"], node["id"], CONTAIN_RELATION, origin
             )
 
         for relation in record.get("relations", []):
-            source = local_map.get(relation["source"])
-            target = local_map.get(relation["target"])
+            # 跨记录关系：记录内优先，回退到本文件其他记录创建的实体
+            source = local_map.get(relation["source"]) or entity_id_nodes.get(
+                relation["source"]
+            )
+            target = local_map.get(relation["target"]) or entity_id_nodes.get(
+                relation["target"]
+            )
             if source is None or target is None:
+                unresolved_relations += 1
                 continue
             edge = _add_edge(
                 edges,
@@ -628,6 +646,7 @@ def build_graph(records, origin: str = "jsonl", fallback_file_name: str = ""):
         "files": len(file_nodes),
         "entities": len(entity_nodes),
         "relations": len(relation_edges),
+        "unresolved_relations": unresolved_relations,
         "labels": dict(sorted(labels.items(), key=lambda item: item[1], reverse=True)),
         "file_names": list(file_order),
         "sample_nodes": [
