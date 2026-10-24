@@ -224,6 +224,15 @@ class ParseJsonlTests(TempFileMixin, unittest.TestCase):
         # 无效的顶层关系数组现在被忽略，以便后续别名或嵌套兜底接管
         self.assertEqual(result.records[0]["relations"], [])
 
+    def test_unresolved_relation_is_counted_at_parse_time(self):
+        record = {
+            "file_name": "a.png",
+            "spans": [{"text": "甲", "label": "x"}],
+            "relations": [{"from": "甲", "to": "不存在", "type": "关联"}],
+        }
+        result = parse_jsonl(self.write_temp(json.dumps(record, ensure_ascii=False)))
+        self.assertEqual(result.unresolved_relations, 1)
+
     def test_nested_entity_structure_is_detected(self):
         record = {
             "file_name": "a.png",

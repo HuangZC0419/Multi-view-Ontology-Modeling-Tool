@@ -1528,7 +1528,7 @@ function onImportNodes(importedNodes, importedEdges, importedInfRules, importedM
 
     // 新节点整体右移，避免与画布上已有节点重叠
     if (nodes.value.length > 0 && merged.length > 0) {
-      const maxX = Math.max(...nodes.value.map((node) => node.x));
+      const maxX = nodes.value.reduce((max, node) => Math.max(max, node.x), -Infinity);
       const offsetX = maxX + 320;
       merged.forEach((node) => {
         node.x += offsetX;

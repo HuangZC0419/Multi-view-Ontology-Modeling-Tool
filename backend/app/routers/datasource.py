@@ -55,6 +55,12 @@ def _load_upload_meta(file_id: str) -> dict:
 ALLOWED_FILE_EXTS = (".xlsx", ".xls", ".csv", ".jsonl")
 MAX_UPLOAD_BYTES = 50 * 1024 * 1024
 
+# JSONL 导入规模上限：避免超大标注文件在单请求内构建图谱，
+# 拖垮内存与事件循环。超限时返回 413，由调用方拆分文件后重试。
+MAX_JSONL_RECORDS = 50000
+MAX_GRAPH_NODES = 50000
+MAX_GRAPH_EDGES = 100000
+
 
 def _validate_file_id(source_id: str) -> str:
     """校验并规范化文件标识，阻止路径穿越。"""
@@ -65,13 +71,17 @@ def _validate_file_id(source_id: str) -> str:
 
 
 def _decode_upload_filename(name: str) -> str:
-    """修复 multipart 文件名被错误解码的问题（UTF-8 或 GBK 字节被按 latin-1 解出）。"""
+    """修复 multipart 文件名被错误解码的问题（仅处理字节型乱码）。"""
     if not name:
         return name
     name = os.path.basename(name.replace("\\", "/")).strip()
     try:
         raw = name.encode("latin-1")
     except UnicodeEncodeError:
+        return name
+    # 真实乱码（GBK/UTF-8 字节被按 latin-1 解出）必然存在连续两个 >=0x80 的字节；
+    # café / Müller 这类正常文件名不会有，避免误伤。
+    if not any(raw[i] >= 0x80 and raw[i + 1] >= 0x80 for i in range(len(raw) - 1)):
         return name
     for encoding in ("utf-8", "gb18030"):
         try:
@@ -181,17 +191,34 @@ async def upload_file(file: UploadFile = File(...)):
 
     if ext == ".jsonl":
         result = await run_in_threadpool(parse_jsonl, save_path, display_name)
-        _, _, summary = await run_in_threadpool(
+        if len(result.records) > MAX_JSONL_RECORDS:
+            try:
+                save_path.unlink(missing_ok=True)
+                _upload_meta_path(file_id).unlink(missing_ok=True)
+            except OSError:
+                pass
+            raise HTTPException(413, f"JSONL 记录过多，最多支持 {MAX_JSONL_RECORDS} 条")
+        nodes, edges, summary = await run_in_threadpool(
             build_graph,
             result.records,
             f"jsonl:{display_name}",
             display_name,
         )
+        if len(nodes) > MAX_GRAPH_NODES or len(edges) > MAX_GRAPH_EDGES:
+            try:
+                save_path.unlink(missing_ok=True)
+                _upload_meta_path(file_id).unlink(missing_ok=True)
+            except OSError:
+                pass
+            raise HTTPException(413, "导入数据规模过大，请拆分文件后重试")
         summary["mappings"] = result.mappings
         summary["warnings"] = result.warnings
         summary["bad_lines"] = result.bad_lines
         summary["records"] = len(result.records)
         summary["total_lines"] = result.total_lines
+        summary["unresolved_relations"] = result.unresolved_relations + summary.get(
+            "unresolved_relations", 0
+        )
         return {
             "file_id": file_id,
             "file_name": display_name,
@@ -364,12 +391,16 @@ async def import_jsonl(payload: JsonlImportSelection):
     meta = _load_upload_meta(source_id)
     original_name = meta.get("file_name", "") or path.name
     result = await run_in_threadpool(parse_jsonl, path, original_name)
+    if len(result.records) > MAX_JSONL_RECORDS:
+        raise HTTPException(413, f"JSONL 记录过多，最多支持 {MAX_JSONL_RECORDS} 条")
     nodes, edges, summary = await run_in_threadpool(
         build_graph,
         result.records,
         f"jsonl:{original_name}",
         original_name,
     )
+    if len(nodes) > MAX_GRAPH_NODES or len(edges) > MAX_GRAPH_EDGES:
+        raise HTTPException(413, "导入数据规模过大，请拆分文件后重试")
     if not nodes:
         raise HTTPException(400, "未识别到有效记录，请检查 JSONL 格式")
 
@@ -378,4 +409,7 @@ async def import_jsonl(payload: JsonlImportSelection):
     summary["bad_lines"] = result.bad_lines
     summary["records"] = len(result.records)
     summary["total_lines"] = result.total_lines
+    summary["unresolved_relations"] = result.unresolved_relations + summary.get(
+        "unresolved_relations", 0
+    )
     return {"nodes": nodes, "edges": edges, "summary": summary}

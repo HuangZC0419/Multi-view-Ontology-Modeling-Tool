@@ -76,6 +76,8 @@ class JsonlParseResult:
 
     total_lines：逐行模式下为非空行数，JSON 数组模式下为数组元素个数。
     bad_lines：逐行模式下为解析失败（含非对象）的行数，JSON 数组模式下为非对象元素个数。
+    unresolved_relations：解析阶段因缺少 from/to 或端点无法匹配而丢弃的关系数，
+        用于和 build_graph 的同类计数合并后透出给调用方。
     """
 
     records: list[dict] = field(default_factory=list)
@@ -83,6 +85,7 @@ class JsonlParseResult:
     warnings: list[str] = field(default_factory=list)
     total_lines: int = 0
     bad_lines: int = 0
+    unresolved_relations: int = 0
 
 
 def _clean_text(value: str) -> str:
@@ -451,6 +454,7 @@ def parse_jsonl(
 
     # 第二遍：解析关系，先记录内映射，再回退到同文件的其他记录
     records: list[dict] = []
+    unresolved_relations = 0
     for item in prepared:
         record_index = item["record_index"]
         file_name = item["file_name"]
@@ -467,6 +471,7 @@ def parse_jsonl(
             from_key, raw_from = _first_scalar(raw_relation, REL_FROM_KEYS)
             to_key, raw_to = _first_scalar(raw_relation, REL_TO_KEYS)
             if not from_key or not to_key:
+                unresolved_relations += 1
                 if len(warnings) < MAX_WARNINGS:
                     warnings.append(
                         f"第 {record_index + 1} 条记录：关系缺少 from/to 字段，已跳过"
@@ -479,6 +484,7 @@ def parse_jsonl(
                 _resolve_endpoint(raw_to, file_ids, file_texts)
             )
             if not source or not target:
+                unresolved_relations += 1
                 if len(warnings) < MAX_WARNINGS:
                     warnings.append(
                         f"第 {record_index + 1} 条记录：关系端点无法匹配，已跳过（{raw_from} → {raw_to}）"
@@ -507,6 +513,7 @@ def parse_jsonl(
         warnings=warnings,
         total_lines=total_lines,
         bad_lines=bad_lines,
+        unresolved_relations=unresolved_relations,
     )
 
 

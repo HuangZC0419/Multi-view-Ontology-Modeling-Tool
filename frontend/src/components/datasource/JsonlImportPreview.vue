@@ -112,6 +112,9 @@ async function confirmImport() {
             <li v-if="summary.unresolved_relations">
               {{ summary.unresolved_relations }} 条关系的端点无法解析，已跳过
             </li>
+            <li v-if="summary.bad_lines">
+              共 {{ summary.bad_lines }} 行无法解析（总行数 {{ summary.total_lines || 0 }}）
+            </li>
             <li v-for="(item, index) in warnings.slice(0, 20)" :key="index">{{ item }}</li>
           </ul>
         </div>
