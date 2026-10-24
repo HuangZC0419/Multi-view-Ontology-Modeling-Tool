@@ -55,6 +55,7 @@ class JsonlParseResult:
     """JSONL 解析结果。
 
     total_lines：逐行模式下为非空行数，JSON 数组模式下为数组元素个数。
+    bad_lines：逐行模式下为解析失败（含非对象）的行数，JSON 数组模式下为非对象元素个数。
     """
 
     records: list[dict] = field(default_factory=list)
@@ -152,7 +153,7 @@ def _split_records(text: str):
             bad += 1
             if len(warnings) < MAX_WARNINGS:
                 warnings.append(f"第 {line_no} 行不是 JSON 对象，已跳过")
-    if total and bad == total:
+    if total and bad == total and len(warnings) < MAX_WARNINGS:
         warnings.append("所有非空行均解析失败，疑似编码不匹配")
     return records, bad, total, warnings
 
@@ -228,21 +229,49 @@ def _looks_like_relation(item: dict) -> bool:
     return bool(source and target)
 
 
-def _find_nested_list(container: dict, predicate, depth: int = 1, path: str = ""):
-    """在记录内最多递归 MAX_NESTED_DEPTH 层查找符合结构的数组。"""
-    for key, value in container.items():
-        child_path = f"{path}.{key}" if path else key
-        if isinstance(value, list):
-            if key in NON_DATA_LIST_KEYS:
+def _join_path(path: str, key) -> str:
+    """拼接映射路径，并清洗键名中的孤立代理字符。"""
+    safe_key = _clean_text(str(key))
+    return f"{path}.{safe_key}" if path else safe_key
+
+
+def _iter_nested_dicts(container: dict, depth: int = 1, path: str = ""):
+    """广度优先产出 MAX_NESTED_DEPTH 层以内的字典及其路径。
+
+    NON_DATA_LIST_KEYS 下的整棵子树（无论数组还是对象）都不参与搜索。
+    """
+    queue = [(container, depth, path)]
+    while queue:
+        current, current_depth, current_path = queue.pop(0)
+        yield current, current_path
+        if current_depth >= MAX_NESTED_DEPTH:
+            continue
+        for key, value in current.items():
+            if key in NON_DATA_LIST_KEYS or not isinstance(value, dict):
                 continue
-            if value and all(
+            queue.append((value, current_depth + 1, _join_path(current_path, key)))
+
+
+def _find_nested_array(container: dict, keys: tuple, predicate):
+    """两阶段查找嵌套数组。
+
+    先按别名优先级匹配键名属于 keys 的非空数组；都没有命中时，
+    才退回按结构谓词扫描。返回 (数组, 映射路径) 或 None。
+    """
+    for key in keys:
+        for current, current_path in _iter_nested_dicts(container):
+            value = current.get(key)
+            if isinstance(value, list) and value:
+                return value, _join_path(current_path, key)
+
+    for current, current_path in _iter_nested_dicts(container):
+        for key, value in current.items():
+            if key in NON_DATA_LIST_KEYS or not isinstance(value, list) or not value:
+                continue
+            if all(
                 isinstance(item, dict) and predicate(item) for item in value
             ):
-                return value, child_path
-        elif isinstance(value, dict) and depth < MAX_NESTED_DEPTH:
-            found = _find_nested_list(value, predicate, depth + 1, child_path)
-            if found is not None:
-                return found
+                return value, _join_path(current_path, key)
     return None
 
 
@@ -284,12 +313,14 @@ def parse_jsonl(
 
         raw_entities, entities_path = _extract_entities(record)
         if not raw_entities:
-            nested = _find_nested_list(record, _looks_like_entity)
+            nested = _find_nested_array(record, ENTITY_ARRAY_KEYS, _looks_like_entity)
             if nested is not None:
                 raw_entities, entities_path = nested
         raw_relations, relations_path = _extract_relations(record)
         if not raw_relations:
-            nested = _find_nested_list(record, _looks_like_relation)
+            nested = _find_nested_array(
+                record, RELATION_ARRAY_KEYS, _looks_like_relation
+            )
             if nested is not None:
                 raw_relations, relations_path = nested
 

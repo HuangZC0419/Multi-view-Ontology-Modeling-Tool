@@ -3,7 +3,7 @@ import os
 import tempfile
 import unittest
 
-from app.services.jsonl_import import parse_jsonl
+from app.services.jsonl_import import MAX_WARNINGS, parse_jsonl
 
 
 SAMPLE_A = (
@@ -16,7 +16,9 @@ SAMPLE_A = (
 )
 
 
-class ParseJsonlTests(unittest.TestCase):
+class TempFileMixin(unittest.TestCase):
+    """测试用例共用的临时文件写入助手。"""
+
     def write_temp(self, text, suffix=".jsonl", encoding="utf-8"):
         fd, path = tempfile.mkstemp(suffix=suffix)
         os.close(fd)
@@ -25,6 +27,8 @@ class ParseJsonlTests(unittest.TestCase):
         self.addCleanup(os.remove, path)
         return path
 
+
+class ParseJsonlTests(TempFileMixin):
     def test_tolerates_leading_garbage_prefix(self):
         result = parse_jsonl(self.write_temp(SAMPLE_A))
         self.assertEqual(result.bad_lines, 0)
@@ -254,6 +258,77 @@ class ParseJsonlTests(unittest.TestCase):
         entity = result.records[0]["entities"][0]
         self.assertIn("甲", entity["text"])
         entity["text"].encode("utf-8")
+
+    def test_utf16_bom_file_is_decoded(self):
+        payload = {
+            "file_name": "标准.pdf",
+            "spans": [{"text": "甲", "label": "x"}],
+        }
+        path = self.write_temp(
+            json.dumps(payload, ensure_ascii=False), encoding="utf-16"
+        )
+        result = parse_jsonl(path)
+        self.assertEqual(len(result.records), 1)
+        self.assertEqual(result.records[0]["file_name"], "标准.pdf")
+        self.assertEqual(
+            [e["text"] for e in result.records[0]["entities"]], ["甲"]
+        )
+
+    def test_all_bad_lines_warning_respects_limit(self):
+        text = "坏行\n" * (MAX_WARNINGS + 5)
+        result = parse_jsonl(self.write_temp(text))
+        self.assertEqual(result.bad_lines, MAX_WARNINGS + 5)
+        self.assertEqual(len(result.warnings), MAX_WARNINGS)
+        self.assertFalse(
+            any("编码不匹配" in warning for warning in result.warnings)
+        )
+
+        single = parse_jsonl(self.write_temp("坏行\n"))
+        self.assertEqual(single.bad_lines, 1)
+        self.assertTrue(
+            any("编码不匹配" in warning for warning in single.warnings)
+        )
+
+    def test_deeply_nested_array_does_not_raise_and_counts_as_bad(self):
+        depth = 3000
+        text = "[" * depth + "]" * depth
+        result = parse_jsonl(self.write_temp(text))
+        self.assertEqual(result.records, [])
+        self.assertEqual(result.total_lines, 1)
+        self.assertEqual(result.bad_lines, 1)
+
+    def test_nested_search_depth_limit_and_non_data_subtree_skipped(self):
+        at_limit = {
+            "file_name": "a.png",
+            "a": {"b": {"entities": [{"text": "甲", "label": "x"}]}},
+        }
+        result = parse_jsonl(
+            self.write_temp(json.dumps(at_limit, ensure_ascii=False))
+        )
+        self.assertEqual(
+            [e["text"] for e in result.records[0]["entities"]], ["甲"]
+        )
+        self.assertEqual(result.mappings["entities"], "a.b.entities")
+
+        beyond_limit = {
+            "file_name": "a.png",
+            "a": {"b": {"c": {"entities": [{"text": "甲", "label": "x"}]}}},
+        }
+        result = parse_jsonl(
+            self.write_temp(json.dumps(beyond_limit, ensure_ascii=False))
+        )
+        self.assertEqual(result.records[0]["entities"], [])
+        self.assertNotIn("entities", result.mappings)
+
+        under_metadata = {
+            "file_name": "a.png",
+            "metadata": {"entities": [{"text": "乙", "label": "x"}]},
+        }
+        result = parse_jsonl(
+            self.write_temp(json.dumps(under_metadata, ensure_ascii=False))
+        )
+        self.assertEqual(result.records[0]["entities"], [])
+        self.assertNotIn("entities", result.mappings)
 
 
 if __name__ == "__main__":
