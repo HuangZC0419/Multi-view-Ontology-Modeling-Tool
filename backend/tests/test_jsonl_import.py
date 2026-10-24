@@ -3,7 +3,13 @@ import os
 import tempfile
 import unittest
 
-from app.services.jsonl_import import MAX_WARNINGS, build_graph, parse_jsonl
+from app.services.jsonl_import import (
+    CARD_H,
+    CARD_W,
+    MAX_WARNINGS,
+    build_graph,
+    parse_jsonl,
+)
 
 
 SAMPLE_A = (
@@ -16,8 +22,8 @@ SAMPLE_A = (
 )
 
 
-class TempFileMixin(unittest.TestCase):
-    """测试用例共用的临时文件写入助手。"""
+class TempFileMixin:
+    """测试用例共用的临时文件写入助手（普通 mixin，不继承 TestCase）。"""
 
     def write_temp(self, text, suffix=".jsonl", encoding="utf-8"):
         fd, path = tempfile.mkstemp(suffix=suffix)
@@ -28,7 +34,7 @@ class TempFileMixin(unittest.TestCase):
         return path
 
 
-class ParseJsonlTests(TempFileMixin):
+class ParseJsonlTests(TempFileMixin, unittest.TestCase):
     def test_tolerates_leading_garbage_prefix(self):
         result = parse_jsonl(self.write_temp(SAMPLE_A))
         self.assertEqual(result.bad_lines, 0)
@@ -279,15 +285,11 @@ class ParseJsonlTests(TempFileMixin):
         result = parse_jsonl(self.write_temp(text))
         self.assertEqual(result.bad_lines, MAX_WARNINGS + 5)
         self.assertEqual(len(result.warnings), MAX_WARNINGS)
-        self.assertFalse(
-            any("编码不匹配" in warning for warning in result.warnings)
-        )
+        self.assertIn("编码不匹配", result.warnings[0])
 
         single = parse_jsonl(self.write_temp("坏行\n"))
         self.assertEqual(single.bad_lines, 1)
-        self.assertTrue(
-            any("编码不匹配" in warning for warning in single.warnings)
-        )
+        self.assertIn("编码不匹配", single.warnings[0])
 
     def test_deeply_nested_array_does_not_raise_and_counts_as_bad(self):
         depth = 3000
@@ -330,8 +332,38 @@ class ParseJsonlTests(TempFileMixin):
         self.assertEqual(result.records[0]["entities"], [])
         self.assertNotIn("entities", result.mappings)
 
+    def test_nested_weak_alias_requires_text_field(self):
+        record = {
+            "file_name": "a.png",
+            "config": {"labels": [{"name": "cat"}]},
+            "data": {"annotations": [{"text": "甲", "label": "x"}]},
+        }
+        result = parse_jsonl(
+            self.write_temp(json.dumps(record, ensure_ascii=False))
+        )
+        self.assertEqual(
+            [e["text"] for e in result.records[0]["entities"]], ["甲"]
+        )
+        self.assertEqual(result.mappings["entities"], "data.annotations")
 
-class BuildGraphTests(TempFileMixin):
+    def test_relation_can_reference_entity_in_another_record(self):
+        text = (
+            '{"file_name":"a.pdf","spans":['
+            '{"id":1,"text":"A"},{"id":2,"text":"B"}]}\n'
+            '{"file_name":"a.pdf","relations":[{"fromId":1,"toId":2}]}\n'
+        )
+        result = parse_jsonl(self.write_temp(text))
+        self.assertEqual(len(result.records[1]["relations"]), 1)
+        relation = result.records[1]["relations"][0]
+        entities = result.records[0]["entities"]
+        self.assertEqual(relation["source"], entities[0]["id"])
+        self.assertEqual(relation["target"], entities[1]["id"])
+        self.assertFalse(
+            any("无法匹配" in warning for warning in result.warnings)
+        )
+
+
+class BuildGraphTests(TempFileMixin, unittest.TestCase):
     def test_global_merge_across_files(self):
         text = (
             '{"file_name":"a.pdf","spans":[{"id":"1","label":"参数","text":"2025 年"}]}\n'
@@ -386,13 +418,13 @@ class BuildGraphTests(TempFileMixin):
         self.assertEqual(positions1, positions2)
         self.assertEqual(len({(n["x"], n["y"]) for n in nodes1}), len(nodes1))
 
-    def test_entity_text_is_html_escaped(self):
+    def test_entity_text_is_preserved_raw(self):
         text = (
             '{"file_name":"a.pdf","spans":'
             '[{"id":"1","label":"x","text":"<b>&"}]}\n'
         )
         nodes, _, _ = build_graph(parse_jsonl(self.write_temp(text)).records)
-        self.assertIn("&lt;b&gt;&amp;", {n["name"] for n in nodes})
+        self.assertIn("<b>&", {n["name"] for n in nodes})
 
     def test_file_label_and_origin(self):
         text = '{"file_name":"a.pdf","spans":[]}\n'
@@ -401,6 +433,182 @@ class BuildGraphTests(TempFileMixin):
         )
         self.assertEqual(nodes[0]["label"], "文件")
         self.assertEqual(nodes[0]["origin"], "jsonl:x.jsonl")
+
+    def test_relation_typed_containment_is_counted(self):
+        text = (
+            '{"file_name":"a.pdf","spans":['
+            '{"id":"1","label":"x","text":"甲"},'
+            '{"id":"2","label":"x","text":"乙"},'
+            '{"id":"3","label":"x","text":"丙"}],'
+            '"relations":[{"fromId":"1","toId":"2","type":"包含"},'
+            '{"fromId":"2","toId":"3","type":"包含"},'
+            '{"fromId":"1","toId":"3","type":"包含"}]}\n'
+        )
+        _, edges, summary = build_graph(
+            parse_jsonl(self.write_temp(text)).records
+        )
+        self.assertEqual(summary["relations"], 3)
+        self.assertEqual(len(edges), 6)  # 3 条实体关系 + 3 条文件包含边
+        self.assertEqual(len(summary["sample_edges"]), 3)
+        self.assertTrue(
+            all(e["relation"] == "包含" for e in summary["sample_edges"])
+        )
+
+    def test_global_merge_relation_targets_shared_node(self):
+        text = (
+            '{"file_name":"a.pdf","spans":['
+            '{"id":"1","label":"x","text":"甲"},'
+            '{"id":"2","label":"x","text":"乙"}],'
+            '"relations":[{"fromId":"1","toId":"2","type":"关联"}]}\n'
+            '{"file_name":"b.pdf","spans":[{"id":"1","label":"x","text":"甲"}]}\n'
+        )
+        nodes, edges, summary = build_graph(
+            parse_jsonl(self.write_temp(text)).records
+        )
+        entity_nodes = [n for n in nodes if n["label"] == "x"]
+        names = [n["name"] for n in entity_nodes]
+        self.assertEqual(names.count("甲"), 1)
+        self.assertEqual(names.count("乙"), 1)
+        names_by_id = {n["id"]: n["name"] for n in entity_nodes}
+        relation = [e for e in edges if e["relation"] == "关联"][0]
+        self.assertEqual(names_by_id[relation["source"]], "甲")
+        self.assertEqual(names_by_id[relation["target"]], "乙")
+        self.assertEqual(summary["entities"], 2)
+
+    def test_same_file_records_share_one_file_node(self):
+        text = (
+            '{"file_name":"a.pdf","spans":[{"id":"1","label":"x","text":"甲"}]}\n'
+            '{"file_name":"a.pdf","spans":[{"id":"1","label":"x","text":"甲"}]}\n'
+        )
+        nodes, edges, summary = build_graph(
+            parse_jsonl(self.write_temp(text)).records
+        )
+        self.assertEqual(
+            len([n for n in nodes if n["label"] == "文件"]), 1
+        )
+        self.assertEqual(
+            len([e for e in edges if e["relation"] == "包含"]), 1
+        )
+        self.assertEqual(summary["files"], 1)
+        self.assertEqual(summary["entities"], 1)
+
+    def test_empty_records_produce_empty_graph(self):
+        nodes, edges, summary = build_graph([])
+        self.assertEqual(nodes, [])
+        self.assertEqual(edges, [])
+        self.assertEqual(summary["records"], 0)
+        self.assertEqual(summary["files"], 0)
+        self.assertEqual(summary["entities"], 0)
+        self.assertEqual(summary["relations"], 0)
+        self.assertEqual(summary["labels"], {})
+        self.assertEqual(summary["file_names"], [])
+        self.assertEqual(summary["sample_nodes"], [])
+        self.assertEqual(summary["sample_edges"], [])
+
+    def test_file_without_entities(self):
+        text = '{"file_name":"a.pdf","spans":[]}\n'
+        nodes, edges, summary = build_graph(
+            parse_jsonl(self.write_temp(text)).records
+        )
+        self.assertEqual(summary["entities"], 0)
+        self.assertEqual([n["label"] for n in nodes], ["文件"])
+        self.assertEqual(edges, [])
+
+    def test_self_loop_relation_is_dropped(self):
+        text = (
+            '{"file_name":"a.pdf","spans":[{"id":"1","label":"x","text":"甲"}],'
+            '"relations":[{"fromId":"1","toId":"1","type":"关联"}]}\n'
+        )
+        _, edges, summary = build_graph(
+            parse_jsonl(self.write_temp(text)).records
+        )
+        self.assertEqual([e for e in edges if e["relation"] == "关联"], [])
+        self.assertEqual(len(edges), 1)  # 仅保留文件包含边
+        self.assertEqual(summary["relations"], 0)
+
+    def test_missing_relation_type_falls_back(self):
+        text = (
+            '{"file_name":"a.pdf","spans":['
+            '{"id":"1","label":"x","text":"甲"},'
+            '{"id":"2","label":"x","text":"乙"}],'
+            '"relations":[{"fromId":"1","toId":"2"}]}\n'
+        )
+        _, edges, summary = build_graph(
+            parse_jsonl(self.write_temp(text)).records
+        )
+        self.assertEqual(len([e for e in edges if e["relation"] == "关联"]), 1)
+        self.assertEqual(summary["relations"], 1)
+        sample = summary["sample_edges"][0]
+        self.assertEqual(sample["source_name"], "甲")
+        self.assertEqual(sample["target_name"], "乙")
+
+    def test_entity_label_named_file_is_rewritten(self):
+        text = (
+            '{"file_name":"a.pdf","spans":'
+            '[{"id":"1","label":"文件","text":"甲"}]}\n'
+        )
+        nodes, _, summary = build_graph(
+            parse_jsonl(self.write_temp(text)).records
+        )
+        by_name = {n["name"]: n for n in nodes}
+        self.assertEqual(by_name["a.pdf"]["label"], "文件")
+        self.assertEqual(by_name["甲"]["label"], "实体")
+        self.assertEqual(summary["labels"], {"实体": 1})
+
+    def test_file_name_is_preserved_raw(self):
+        text = '{"file_name":"a&b<c>.pdf","spans":[]}\n'
+        nodes, _, _ = build_graph(parse_jsonl(self.write_temp(text)).records)
+        self.assertEqual(nodes[0]["name"], "a&b<c>.pdf")
+
+    def test_fallback_file_name_is_used(self):
+        records = [{"file_name": "", "entities": [], "relations": []}]
+        nodes, _, summary = build_graph(
+            records, fallback_file_name="fb.pdf"
+        )
+        self.assertEqual(nodes[0]["name"], "fb.pdf")
+        self.assertEqual(summary["file_names"], ["fb.pdf"])
+
+    def test_labels_count_and_order(self):
+        spans = [
+            {"id": "1", "label": "A", "text": "甲"},
+            {"id": "2", "label": "B", "text": "乙"},
+            {"id": "3", "label": "A", "text": "丙"},
+        ]
+        text = json.dumps(
+            {"file_name": "a.pdf", "spans": spans}, ensure_ascii=False
+        )
+        _, _, summary = build_graph(parse_jsonl(self.write_temp(text)).records)
+        self.assertEqual(summary["labels"], {"A": 2, "B": 1})
+        self.assertEqual(list(summary["labels"]), ["A", "B"])
+
+    def test_layout_rectangles_do_not_overlap(self):
+        lines = []
+        for file_index in range(4):
+            spans = [
+                {
+                    "id": "{0}-{1}".format(file_index, entity_index),
+                    "label": "x",
+                    "text": "t{0}-{1}".format(file_index, entity_index),
+                }
+                for entity_index in range(12)
+            ]
+            lines.append(
+                json.dumps(
+                    {"file_name": "f{0}.pdf".format(file_index), "spans": spans},
+                    ensure_ascii=False,
+                )
+            )
+        nodes, _, _ = build_graph(
+            parse_jsonl(self.write_temp("\n".join(lines))).records
+        )
+        self.assertEqual(len(nodes), 52)
+        for index, first in enumerate(nodes):
+            for second in nodes[index + 1:]:
+                self.assertTrue(
+                    abs(first["x"] - second["x"]) >= CARD_W
+                    or abs(first["y"] - second["y"]) >= CARD_H,
+                    "节点矩形重叠：{0} 与 {1}".format(first, second),
+                )
 
 
 if __name__ == "__main__":

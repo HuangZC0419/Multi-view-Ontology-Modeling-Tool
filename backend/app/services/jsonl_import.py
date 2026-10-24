@@ -1,7 +1,10 @@
 """通用 JSONL 标注数据解析与知识图谱构建。
 
 兼容：字段别名、数字/字符串 id、行首脏前缀、同文件多行、
-整文件 JSON 数组、id 或实体文本作为关系端点。
+整文件 JSON 数组、id 或实体文本作为关系端点、实体与关系分行的导出格式。
+
+节点 name 保留原始文本，不做 HTML 转义；HTML 安全显示由渲染层
+（NodeCard.vue / App.vue）负责，避免污染检索、tooltip 与手工节点合并。
 """
 
 from __future__ import annotations
@@ -10,6 +13,7 @@ import json
 import math
 import re
 import uuid
+from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -19,13 +23,26 @@ DEFAULT_ENTITY_LABEL = "实体"
 DEFAULT_RELATION = "关联"
 CONTAIN_RELATION = "包含"
 
+# 卡片尺寸与布局参数：200×88 对应前端 NodeCard.vue 的卡片尺寸。
+# 文件块按首次出现顺序纵向堆叠，实体在文件右侧按 4 列网格排列。
+CARD_W = 200
+CARD_H = 88
+ENTITY_COLS = 4
+ENTITY_DX = 240
+ENTITY_DY = 120
+ENTITY_START_X = 320
+BLOCK_GAP = 80
+
 FILE_NAME_KEYS = (
     "file_name", "fileName", "filename", "document_name", "doc_name",
     "source_file", "file", "文件名", "文档名", "文件",
 )
-ENTITY_ARRAY_KEYS = (
-    "spans", "entities", "mentions", "ner", "实体", "标注片段", "labels", "annotations",
+# 强别名允许字符串元素；弱别名（labels/annotations）必须是带文本字段的对象
+STRONG_ENTITY_ARRAY_KEYS = (
+    "spans", "entities", "mentions", "ner", "实体", "标注片段",
 )
+WEAK_ENTITY_ARRAY_KEYS = ("labels", "annotations")
+ENTITY_ARRAY_KEYS = STRONG_ENTITY_ARRAY_KEYS + WEAK_ENTITY_ARRAY_KEYS
 RELATION_ARRAY_KEYS = (
     "relations", "links", "edges", "triples", "关系", "三元组",
 )
@@ -153,8 +170,10 @@ def _split_records(text: str):
             bad += 1
             if len(warnings) < MAX_WARNINGS:
                 warnings.append(f"第 {line_no} 行不是 JSON 对象，已跳过")
-    if total and bad == total and len(warnings) < MAX_WARNINGS:
-        warnings.append("所有非空行均解析失败，疑似编码不匹配")
+    if total and bad == total:
+        # 全坏行时优先级最高，即使逐行告警已占满也要保留
+        warnings.insert(0, "所有非空行均解析失败，疑似编码不匹配")
+        del warnings[MAX_WARNINGS:]
     return records, bad, total, warnings
 
 
@@ -236,14 +255,14 @@ def _join_path(path: str, key) -> str:
 
 
 def _iter_nested_dicts(container: dict, depth: int = 1, path: str = ""):
-    """广度优先产出 MAX_NESTED_DEPTH 层以内的字典及其路径。
+    """广度优先产出 (字典, 深度, 路径)，最多 MAX_NESTED_DEPTH 层。
 
     NON_DATA_LIST_KEYS 下的整棵子树（无论数组还是对象）都不参与搜索。
     """
-    queue = [(container, depth, path)]
+    queue = deque([(container, depth, path)])
     while queue:
-        current, current_depth, current_path = queue.pop(0)
-        yield current, current_path
+        current, current_depth, current_path = queue.popleft()
+        yield current, current_depth, current_path
         if current_depth >= MAX_NESTED_DEPTH:
             continue
         for key, value in current.items():
@@ -252,21 +271,47 @@ def _iter_nested_dicts(container: dict, depth: int = 1, path: str = ""):
             queue.append((value, current_depth + 1, _join_path(current_path, key)))
 
 
-def _find_nested_array(container: dict, keys: tuple, predicate):
+def _valid_entity_array(value: list, key: str) -> bool:
+    """至少有一个元素能产出非空文本；弱别名不接受字符串元素。"""
+    allow_strings = key in STRONG_ENTITY_ARRAY_KEYS
+    for item in value:
+        if isinstance(item, dict):
+            _, text = _first_scalar(item, ENTITY_TEXT_KEYS)
+            if text:
+                return True
+        elif allow_strings and _scalar_text(item):
+            return True
+    return False
+
+
+def _valid_relation_array(value: list, key: str) -> bool:
+    """至少有一个 dict 元素同时含 from 类与 to 类字段。"""
+    return any(
+        isinstance(item, dict) and _looks_like_relation(item) for item in value
+    )
+
+
+def _find_nested_array(container: dict, keys: tuple, validator, predicate):
     """两阶段查找嵌套数组。
 
-    先按别名优先级匹配键名属于 keys 的非空数组；都没有命中时，
+    第一阶段按「别名优先级 → BFS 深度」收集候选并逐个校验；全部不通过时，
     才退回按结构谓词扫描。返回 (数组, 映射路径) 或 None。
     """
     containers = list(_iter_nested_dicts(container))
-
-    for key in keys:
-        for current, current_path in containers:
+    candidates = []
+    for priority, key in enumerate(keys):
+        for current, current_depth, current_path in containers:
             value = current.get(key)
             if isinstance(value, list) and value:
-                return value, _join_path(current_path, key)
+                candidates.append(
+                    (priority, current_depth, key, value, _join_path(current_path, key))
+                )
+    candidates.sort(key=lambda item: (item[0], item[1]))
+    for _, _, key, value, path in candidates:
+        if validator(value, key):
+            return value, path
 
-    for current, current_path in containers:
+    for current, _, current_path in containers:
         for key, value in current.items():
             if key in NON_DATA_LIST_KEYS or not isinstance(value, list) or not value:
                 continue
@@ -285,43 +330,79 @@ def _resolve_endpoint(value: str, entity_ids: dict, text_ids: dict) -> str:
     return text_ids.get(value, "")
 
 
+def _extract_file_name(record: dict, fallback_file_name: str):
+    """返回 (文件名, 命中的文件字段键)。"""
+    file_key = _first_str_key(record, FILE_NAME_KEYS)
+    if not file_key:
+        for path_key in ("source_path", "markdown_path"):
+            value = record.get(path_key)
+            if isinstance(value, str) and value.strip():
+                file_key = path_key
+                break
+
+    file_name = ""
+    if file_key:
+        raw_value = _scalar_text(record.get(file_key))
+        if raw_value:
+            file_name = re.split(r"[\\/]", raw_value)[-1].strip()
+    if not file_name:
+        file_name = _scalar_text(fallback_file_name) or "未命名文件"
+    return file_name, file_key
+
+
+def _build_endpoint_map(entities: list) -> dict:
+    """raw_id → 实体 id，同一 raw_id 首次出现优先。"""
+    entity_ids = {}
+    for entity in entities:
+        raw_id = entity["raw_id"]
+        if raw_id and raw_id not in entity_ids:
+            entity_ids[raw_id] = entity["id"]
+    return entity_ids
+
+
+def _build_text_map(entities: list) -> dict:
+    """实体文本 → 实体 id，同一文本首次出现优先。"""
+    text_ids = {}
+    for entity in entities:
+        text_ids.setdefault(entity["text"], entity["id"])
+    return text_ids
+
+
 def parse_jsonl(
     path: str | Path, fallback_file_name: str = ""
 ) -> JsonlParseResult:
-    """解析 JSONL 文件，返回规范化记录与识别到的字段映射。"""
+    """解析 JSONL 文件，返回规范化记录与识别到的字段映射。
+
+    先逐记录提取实体并建立文件级端点映射，再解析关系，
+    从而支持实体与关系分行导出的格式。
+    """
     text = _read_text(path)
     raw_records, bad_lines, total_lines, warnings = _split_records(text)
     mappings: dict[str, str] = {}
-    records: list[dict] = []
+    prepared: list[dict] = []
+    file_id_maps: dict[str, dict] = {}
+    file_text_maps: dict[str, dict] = {}
 
+    # 第一遍：提取实体，建立记录内与文件级的端点映射
     for record_index, record in enumerate(raw_records):
-        file_key = _first_str_key(record, FILE_NAME_KEYS)
-        if not file_key:
-            for path_key in ("source_path", "markdown_path"):
-                value = record.get(path_key)
-                if isinstance(value, str) and value.strip():
-                    file_key = path_key
-                    break
+        file_name, file_key = _extract_file_name(record, fallback_file_name)
         if file_key and "file" not in mappings:
             mappings["file"] = file_key
 
-        file_name = ""
-        if file_key:
-            raw_value = _scalar_text(record.get(file_key))
-            if raw_value:
-                file_name = re.split(r"[\\/]", raw_value)[-1].strip()
-        if not file_name:
-            file_name = _scalar_text(fallback_file_name) or "未命名文件"
-
         raw_entities, entities_path = _extract_entities(record)
         if not raw_entities:
-            nested = _find_nested_array(record, ENTITY_ARRAY_KEYS, _looks_like_entity)
+            nested = _find_nested_array(
+                record, ENTITY_ARRAY_KEYS, _valid_entity_array, _looks_like_entity
+            )
             if nested is not None:
                 raw_entities, entities_path = nested
         raw_relations, relations_path = _extract_relations(record)
         if not raw_relations:
             nested = _find_nested_array(
-                record, RELATION_ARRAY_KEYS, _looks_like_relation
+                record,
+                RELATION_ARRAY_KEYS,
+                _valid_relation_array,
+                _looks_like_relation,
             )
             if nested is not None:
                 raw_relations, relations_path = nested
@@ -338,42 +419,65 @@ def parse_jsonl(
         if entities and entities_path and "entities" not in mappings:
             mappings["entities"] = entities_path
 
-        entity_ids = {}
+        file_ids = file_id_maps.setdefault(file_name, {})
+        file_texts = file_text_maps.setdefault(file_name, {})
         for entity in entities:
             raw_id = entity["raw_id"]
-            if raw_id and raw_id not in entity_ids:
-                entity_ids[raw_id] = entity["id"]
-        text_ids = {}
-        for entity in entities:
-            text_ids.setdefault(entity["text"], entity["id"])
+            if raw_id:
+                file_ids.setdefault(raw_id, entity["id"])
+            file_texts.setdefault(entity["text"], entity["id"])
+
+        prepared.append({
+            "record_index": record_index,
+            "file_name": file_name,
+            "entities": entities,
+            "raw_relations": raw_relations,
+            "relations_path": relations_path,
+        })
+
+    # 第二遍：解析关系，先记录内映射，再回退到同文件的其他记录
+    records: list[dict] = []
+    for item in prepared:
+        record_index = item["record_index"]
+        file_name = item["file_name"]
+        entities = item["entities"]
+        entity_ids = _build_endpoint_map(entities)
+        text_ids = _build_text_map(entities)
+        file_ids = file_id_maps.get(file_name, {})
+        file_texts = file_text_maps.get(file_name, {})
 
         relations = []
-        for item in raw_relations:
-            if not isinstance(item, dict):
+        for raw_relation in item["raw_relations"]:
+            if not isinstance(raw_relation, dict):
                 continue
-            from_key, raw_from = _first_scalar(item, REL_FROM_KEYS)
-            to_key, raw_to = _first_scalar(item, REL_TO_KEYS)
+            from_key, raw_from = _first_scalar(raw_relation, REL_FROM_KEYS)
+            to_key, raw_to = _first_scalar(raw_relation, REL_TO_KEYS)
             if not from_key or not to_key:
                 if len(warnings) < MAX_WARNINGS:
                     warnings.append(
                         f"第 {record_index + 1} 条记录：关系缺少 from/to 字段，已跳过"
                     )
                 continue
-            source = _resolve_endpoint(raw_from, entity_ids, text_ids)
-            target = _resolve_endpoint(raw_to, entity_ids, text_ids)
+            source = _resolve_endpoint(raw_from, entity_ids, text_ids) or (
+                _resolve_endpoint(raw_from, file_ids, file_texts)
+            )
+            target = _resolve_endpoint(raw_to, entity_ids, text_ids) or (
+                _resolve_endpoint(raw_to, file_ids, file_texts)
+            )
             if not source or not target:
                 if len(warnings) < MAX_WARNINGS:
                     warnings.append(
                         f"第 {record_index + 1} 条记录：关系端点无法匹配，已跳过（{raw_from} → {raw_to}）"
                     )
                 continue
-            _, rel_type = _first_scalar(item, REL_TYPE_KEYS)
+            _, rel_type = _first_scalar(raw_relation, REL_TYPE_KEYS)
             relations.append({
                 "source": source,
                 "target": target,
                 "type": rel_type,
             })
 
+        relations_path = item["relations_path"]
         if relations and relations_path and "relations" not in mappings:
             mappings["relations"] = relations_path
 
@@ -392,32 +496,15 @@ def parse_jsonl(
     )
 
 
-def _escape_html(text: str) -> str:
-    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-
-
-def _ring_offset(ordinal: int):
-    """按序号返回环形偏移：第一环 8 个（半径 170），之后每环 12 个（半径 +90）。"""
-    ring = 0
-    remaining = ordinal
-    capacity = 8
-    while remaining >= capacity:
-        remaining -= capacity
-        ring += 1
-        capacity = 12
-    radius = 170 + ring * 90
-    angle = 2 * math.pi * remaining / capacity
-    return radius * math.cos(angle), radius * math.sin(angle)
-
-
 def _add_edge(edges, seen, source, target, relation, origin):
+    """创建一条边并返回；被去重或自环丢弃时返回 None。"""
     if not source or not target or source == target:
-        return
+        return None
     key = (source, target, relation)
     if key in seen:
-        return
+        return None
     seen.add(key)
-    edges.append({
+    edge = {
         "id": str(uuid.uuid4()),
         "source": source,
         "target": target,
@@ -426,63 +513,75 @@ def _add_edge(edges, seen, source, target, relation, origin):
         "characteristics": [],
         "weight": 1.0,
         "origin": origin,
-    })
+    }
+    edges.append(edge)
+    return edge
 
 
 def build_graph(records, origin: str = "jsonl", fallback_file_name: str = ""):
-    """把规范化记录构建为节点、边与预览汇总。"""
+    """把规范化记录构建为节点、边与预览汇总。
+
+    节点 name 保留原始文本；HTML 安全显示由渲染层
+    （NodeCard.vue / App.vue）负责，避免污染检索与节点合并。
+    """
     nodes = []
     edges = []
     file_nodes = {}
     entity_nodes = {}
-    entity_ordinal = {}
+    entities_by_file = {}
+    file_order = []
     edge_seen = set()
     labels = {}
+    relation_edges = []
 
+    # 1. 先创建文件节点，保持首次出现顺序
     for record in records:
         name = record.get("file_name") or fallback_file_name or "未命名文件"
         if name in file_nodes:
             continue
-        index = len(file_nodes)
         node = {
             "id": str(uuid.uuid4()),
-            "name": _escape_html(name),
+            "name": name,
             "label": FILE_LABEL,
-            "x": (index % 3) * 420,
-            "y": (index // 3) * 360,
+            "x": 0,
+            "y": 0,
             "parent_id": None,
             "attributes": [],
             "origin": origin,
         }
         file_nodes[name] = node
+        file_order.append(name)
         nodes.append(node)
 
+    # 2. 创建实体节点（全局合并），并记录每个文件首次创建的新实体
     for record in records:
         file_name = record.get("file_name") or fallback_file_name or "未命名文件"
         file_node = file_nodes[file_name]
+        created = entities_by_file.setdefault(file_name, [])
         local_map = {}
 
         for entity in record.get("entities", []):
             text = entity.get("text", "")
             label = entity.get("label") or DEFAULT_ENTITY_LABEL
+            if label == FILE_LABEL:
+                # 避免与文件节点同名标签，前端合并时会冲突
+                label = DEFAULT_ENTITY_LABEL
             key = (label, text)
             node = entity_nodes.get(key)
             if node is None:
-                ordinal = entity_ordinal.get(file_name, 0)
-                dx, dy = _ring_offset(ordinal)
-                entity_ordinal[file_name] = ordinal + 1
                 node = {
                     "id": str(uuid.uuid4()),
-                    "name": _escape_html(text),
+                    "name": text,
                     "label": label,
-                    "x": file_node["x"] + 100 + dx,
-                    "y": file_node["y"] + 35 + dy,
+                    "x": 0,
+                    "y": 0,
                     "parent_id": None,
                     "attributes": [],
                     "origin": origin,
                 }
                 entity_nodes[key] = node
                 nodes.append(node)
+                created.append(node)
                 labels[label] = labels.get(label, 0) + 1
             local_map[entity["id"]] = node
             _add_edge(
@@ -494,7 +593,7 @@ def build_graph(records, origin: str = "jsonl", fallback_file_name: str = ""):
             target = local_map.get(relation["target"])
             if source is None or target is None:
                 continue
-            _add_edge(
+            edge = _add_edge(
                 edges,
                 edge_seen,
                 source["id"],
@@ -502,22 +601,47 @@ def build_graph(records, origin: str = "jsonl", fallback_file_name: str = ""):
                 relation["type"] or DEFAULT_RELATION,
                 origin,
             )
+            if edge is not None:
+                relation_edges.append(edge)
 
-    relation_edges = [e for e in edges if e["relation"] != CONTAIN_RELATION]
-    sample_edges = relation_edges[:10] or edges[:10]
+    # 3. 所有节点创建完成后再定位：文件块纵向堆叠，实体 4 列网格
+    cursor_y = 0
+    for file_name in file_order:
+        file_node = file_nodes[file_name]
+        file_node["x"] = 0
+        file_node["y"] = cursor_y
+        file_entities = entities_by_file.get(file_name, [])
+        for index, node in enumerate(file_entities):
+            node["x"] = ENTITY_START_X + (index % ENTITY_COLS) * ENTITY_DX
+            node["y"] = cursor_y + (index // ENTITY_COLS) * ENTITY_DY
+        rows = max(1, math.ceil(len(file_entities) / ENTITY_COLS))
+        cursor_y += max(CARD_H, rows * ENTITY_DY) + BLOCK_GAP
+
+    node_names = {node["id"]: node["name"] for node in nodes}
+    entity_samples = [n for n in nodes if n["label"] != FILE_LABEL][:10]
+    if len(entity_samples) < 10:
+        file_samples = [n for n in nodes if n["label"] == FILE_LABEL]
+        entity_samples += file_samples[: 10 - len(entity_samples)]
+
     summary = {
         "records": len(records),
         "files": len(file_nodes),
         "entities": len(entity_nodes),
         "relations": len(relation_edges),
         "labels": dict(sorted(labels.items(), key=lambda item: item[1], reverse=True)),
-        "file_names": list(file_nodes.keys()),
+        "file_names": list(file_order),
         "sample_nodes": [
-            {"name": n["name"], "label": n["label"]} for n in nodes[:10]
+            {"name": n["name"], "label": n["label"]} for n in entity_samples
         ],
         "sample_edges": [
-            {"source": e["source"], "target": e["target"], "relation": e["relation"]}
-            for e in sample_edges
+            {
+                "source": e["source"],
+                "source_name": node_names.get(e["source"], ""),
+                "target": e["target"],
+                "target_name": node_names.get(e["target"], ""),
+                "relation": e["relation"],
+            }
+            for e in relation_edges[:10]
         ],
     }
     return nodes, edges, summary
