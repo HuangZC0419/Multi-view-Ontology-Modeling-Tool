@@ -565,7 +565,8 @@ def build_graph(records, origin: str = "jsonl", fallback_file_name: str = ""):
         nodes.append(node)
 
     # 2. 创建实体节点（全局合并），并记录每个文件首次创建的新实体
-    for record in records:
+    local_maps = {}
+    for record_index, record in enumerate(records):
         file_name = record.get("file_name") or fallback_file_name or "未命名文件"
         file_node = file_nodes[file_name]
         created = entities_by_file.setdefault(file_name, [])
@@ -600,8 +601,13 @@ def build_graph(records, origin: str = "jsonl", fallback_file_name: str = ""):
                 edges, edge_seen, file_node["id"], node["id"], CONTAIN_RELATION, origin
             )
 
+        local_maps[record_index] = local_map
+
+    # 3. 全部实体创建完成后再处理关系，支持关系行先于实体行
+    for record_index, record in enumerate(records):
+        local_map = local_maps.get(record_index, {})
         for relation in record.get("relations", []):
-            # 跨记录关系：记录内优先，回退到本文件其他记录创建的实体
+            # 跨记录关系：记录内优先，回退到全局已创建的实体
             source = local_map.get(relation["source"]) or entity_id_nodes.get(
                 relation["source"]
             )
@@ -622,7 +628,7 @@ def build_graph(records, origin: str = "jsonl", fallback_file_name: str = ""):
             if edge is not None:
                 relation_edges.append(edge)
 
-    # 3. 所有节点创建完成后再定位：文件块纵向堆叠，实体 4 列网格
+    # 4. 所有节点创建完成后再定位：文件块纵向堆叠，实体 4 列网格
     cursor_y = 0
     for file_name in file_order:
         file_node = file_nodes[file_name]

@@ -640,6 +640,41 @@ class BuildGraphTests(TempFileMixin, unittest.TestCase):
         self.assertEqual(summary["relations"], 1)
         self.assertEqual(summary["unresolved_relations"], 0)
 
+    def test_relation_record_before_entity_record_is_built(self):
+        text = (
+            '{"file_name":"a.pdf","relations":['
+            '{"fromId":1,"toId":2,"type":"关联"}]}\n'
+            '{"file_name":"a.pdf","spans":['
+            '{"id":1,"text":"A"},{"id":2,"text":"B"}]}\n'
+        )
+        records = parse_jsonl(self.write_temp(text)).records
+        nodes, edges, summary = build_graph(records)
+        relations = [e for e in edges if e["relation"] == "关联"]
+        self.assertEqual(len(relations), 1)
+        node_names = {n["id"]: n["name"] for n in nodes}
+        self.assertEqual(node_names[relations[0]["source"]], "A")
+        self.assertEqual(node_names[relations[0]["target"]], "B")
+        self.assertEqual(summary["relations"], 1)
+        self.assertEqual(summary["unresolved_relations"], 0)
+
+    def test_mixed_relation_array_keeps_valid_edge_and_warns(self):
+        text = (
+            '{"file_name":"a.pdf","spans":['
+            '{"id":"1","label":"x","text":"甲"},'
+            '{"id":"2","label":"x","text":"乙"}],'
+            '"relations":[{"fromId":"1","toId":"2","type":"关联"},'
+            '{"type":"关联"}]}\n'
+        )
+        result = parse_jsonl(self.write_temp(text))
+        self.assertTrue(
+            any("from/to" in warning for warning in result.warnings)
+        )
+        self.assertEqual(len(result.records[0]["relations"]), 1)
+        _, edges, summary = build_graph(result.records)
+        self.assertEqual(len([e for e in edges if e["relation"] == "关联"]), 1)
+        self.assertEqual(summary["relations"], 1)
+        self.assertEqual(summary["unresolved_relations"], 0)
+
     def test_unresolved_relation_is_counted(self):
         records = [{
             "file_name": "a.pdf",
