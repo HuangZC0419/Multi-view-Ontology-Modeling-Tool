@@ -1429,10 +1429,14 @@ function toggleWorkbench(tab, event) {
 // 点击浮层内的"细分功能"后收起浮层：
 // 仅按钮类元素触发关闭；输入框、勾选框等交互不关闭（避免检索输入时误关）
 // 例外：检索面板的"开始检索"按钮（.ksp-btn）需保留浮层，否则检索结果会随之消失
+// 例外：数据源与 OCR 面板内部按钮会打开弹窗，收起浮层会把弹窗一起卸载
 function onFlyoutBodyClick(event) {
   const btn = event.target.closest("button");
   if (!btn) return;
+  // 检索面板的"开始检索"需保留浮层，否则结果会随之消失
   if (btn.classList.contains("ksp-btn")) return;
+  // 数据源与 OCR 面板内部按钮会打开弹窗，收起浮层会把弹窗一起卸载
+  if (btn.closest(".datasource-panel, .ocr-import-group")) return;
   flyoutOpen.value = false;
 }
 
