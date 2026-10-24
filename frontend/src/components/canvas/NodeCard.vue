@@ -4,8 +4,8 @@
  * 显示节点名称、ID、属性列表，支持选中/拖拽/高亮等视觉状态
  */
 
-defineProps({
-  /** 节点数据对象 { id, name, x, y, attributes?, parent_id? } */
+const props = defineProps({
+  /** 节点数据对象 { id, name, label?, x, y, attributes?, parent_id? } */
   node: {
     type: Object,
     required: true
@@ -69,6 +69,33 @@ function onPointerDown(event) {
 function onToggleCollapse() {
   emit('toggle-collapse');
 }
+
+// 节点名称来自外部数据原文（未转义），v-html 前必须转义，防止 HTML 注入/渲染错乱
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// 由标签名派生稳定色相：同一标签在全局始终同色，便于快速分类识别
+function labelStyle() {
+  const label = props.node.label;
+  if (!label) return {};
+  if (label === "文件") {
+    return { background: "#dbeafe", color: "#1d4ed8" };
+  }
+  let hue = 0;
+  for (const char of label) {
+    hue = (hue * 31 + char.codePointAt(0)) % 360;
+  }
+  return {
+    background: `hsl(${hue} 85% 94%)`,
+    color: `hsl(${hue} 60% 32%)`,
+  };
+}
 </script>
 
 <template>
@@ -97,11 +124,14 @@ function onToggleCollapse() {
           <path d="M2 12l10 5 10-5"/>
         </svg>
       </div>
-      <span class="node-title" :title="node.name" v-html="node.name"></span>
+      <span class="node-title" :title="node.name" v-html="escapeHtml(node.name)"></span>
     </div>
 
     <!-- 节点内容区 -->
     <div class="node-body">
+      <span v-if="node.label" class="node-label" :style="labelStyle()" :title="node.label">
+        {{ node.label }}
+      </span>
       <div class="node-id">ID: {{ node.id?.slice(0, 6) }}</div>
     </div>
 
@@ -335,6 +365,20 @@ function onToggleCollapse() {
 
 .node-body {
   padding: 10px 16px 14px 16px;
+}
+
+.node-label {
+  display: inline-block;
+  max-width: 100%;
+  margin-bottom: 4px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .node-id {

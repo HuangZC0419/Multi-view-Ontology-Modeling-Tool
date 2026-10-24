@@ -16,7 +16,8 @@ const uploadStatus = ref(""); // "" | "uploading" | "parsing" | "done" | "error"
 const statusMessage = ref("");
 const errorMessage = ref("");
 
-const ACCEPTED_TYPES = ".xlsx,.xls,.csv";
+const ACCEPTED_TYPES = ".xlsx,.xls,.csv,.jsonl";
+const ALLOWED_EXTENSIONS = [".xlsx", ".xls", ".csv", ".jsonl"];
 
 // ---------- 拖拽事件 ----------
 function onDragEnter(e) {
@@ -61,8 +62,8 @@ function handleFile(file) {
   const name = file.name.toLowerCase();
   const ext = name.substring(name.lastIndexOf("."));
 
-  if (![".xlsx", ".xls", ".csv"].includes(ext)) {
-    errorMessage.value = `不支持的文件格式: ${ext}，仅支持 .xlsx .xls .csv`;
+  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    errorMessage.value = `不支持的文件格式: ${ext}，仅支持 .xlsx .xls .csv .jsonl`;
     uploadStatus.value = "error";
     return;
   }
@@ -96,6 +97,22 @@ async function uploadFile(file) {
     const data = await resp.json();
 
     uploadStatus.value = "done";
+
+    // JSONL：直接进入知识图谱导入预览（跳过表/字段选择）
+    if (data.file_type === ".jsonl") {
+      const summary = data.jsonl_summary || {};
+      statusMessage.value = `解析完成：${data.file_name}（${summary.files || 0} 个文件 / ${summary.entities || 0} 个实体）`;
+      emit("preview-ready", {
+        source_id: data.file_id,
+        sourceType: "jsonl",
+        sourceName: data.file_name,
+        summary,
+        tables: [],
+        columns: {},
+      });
+      return;
+    }
+
     statusMessage.value = `解析完成：${data.file_name}`;
 
     // 构建 columns 映射 {tableName: [columns]}
@@ -187,7 +204,7 @@ function formatSize(bytes) {
                 </svg>
               </div>
               <p class="fu-drop-title">拖拽文件到此处，或点击选择</p>
-              <p class="fu-drop-hint">支持 Excel (.xlsx / .xls) 和 CSV (.csv) 格式</p>
+              <p class="fu-drop-hint">支持 Excel (.xlsx / .xls)、CSV (.csv) 与 JSONL (.jsonl)</p>
             </div>
           </div>
 

@@ -3,6 +3,7 @@ import { ref } from "vue";
 import DbConnector from "./DbConnector.vue";
 import FileUploader from "./FileUploader.vue";
 import SchemaPreview from "./SchemaPreview.vue";
+import JsonlImportPreview from "./JsonlImportPreview.vue";
 
 const emit = defineEmits(["import-nodes"]);
 
@@ -16,8 +17,8 @@ function onPreviewReady(data) {
   showFileDialog.value = false;
 }
 
-function onImportDone(nodes, edges, inf_rules, mut_rules) {
-  emit("import-nodes", nodes, edges, inf_rules, mut_rules);
+function onImportDone(nodes, edges, inf_rules, mut_rules, options) {
+  emit("import-nodes", nodes, edges, inf_rules, mut_rules, options || {});
   previewData.value = null;
 }
 
@@ -61,7 +62,7 @@ function onBack() {
         </div>
         <div class="ds-entry-text">
           <span class="ds-entry-label">上传文件</span>
-          <span class="ds-entry-desc">Excel / CSV</span>
+          <span class="ds-entry-desc">Excel / CSV / JSONL</span>
         </div>
         <div class="ds-entry-arrow">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -85,9 +86,16 @@ function onBack() {
       @preview-ready="onPreviewReady"
     />
 
-    <!-- Schema 预览面板 -->
+    <!-- 预览面板：JSONL 使用知识图谱预览，其余使用表/字段预览 -->
+    <JsonlImportPreview
+      v-if="previewData && previewData.sourceType === 'jsonl'"
+      :previewData="previewData"
+      @import-done="onImportDone"
+      @back="onBack"
+    />
+
     <SchemaPreview
-      v-if="previewData"
+      v-else-if="previewData"
       :previewData="previewData"
       @import-done="onImportDone"
       @back="onBack"

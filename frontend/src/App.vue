@@ -995,6 +995,32 @@ async function onPointerUp() {
 // ========================
 // 符号格式化逻辑
 // ========================
+// 节点名称来自外部文件原文，未经 HTML 转义；凡通过 v-html 渲染都必须先转义。
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// 由标签名派生稳定色相：同一标签在全局始终同色（与 NodeCard.vue 保持一致）
+function labelStyle(label) {
+  if (!label) return {};
+  if (label === "文件") {
+    return { background: "#dbeafe", color: "#1d4ed8" };
+  }
+  let hue = 0;
+  for (const char of label) {
+    hue = (hue * 31 + char.codePointAt(0)) % 360;
+  }
+  return {
+    background: `hsl(${hue} 85% 94%)`,
+    color: `hsl(${hue} 60% 32%)`,
+  };
+}
+
 function formatSymbol(text) {
   if (!text) return "";
 
@@ -1017,7 +1043,7 @@ function formatSymbol(text) {
     return `<i>${suffixMatch[1]}</i><sub>${suffixMatch[2]}</sub>`;
   }
 
-  return text;
+  return escapeHtml(text);
 }
 
 // ========================
@@ -1457,22 +1483,75 @@ function onStats(stats) {
   perspectiveStats.value = stats;
 }
 
-function onImportNodes(importedNodes, importedEdges, importedInfRules, importedMutRules) {
-  if (importedNodes && importedNodes.length > 0) {
-    nodes.value = [...nodes.value, ...importedNodes];
-    if (importedEdges && importedEdges.length > 0) {
-      edges.value = [...edges.value, ...importedEdges];
+function onImportNodes(importedNodes, importedEdges, importedInfRules, importedMutRules, options = {}) {
+  if (!importedNodes || importedNodes.length === 0) return;
+
+  let nodesToAdd = importedNodes;
+  let edgesToAdd = importedEdges || [];
+
+  // 合并模式（JSONL）：按 标签+名称 去重，重复实体复用已有节点，避免重复导入产生孤岛
+  if (options.merge) {
+    const keyOf = (node) => `${node.label || ""}::${node.name || ""}`;
+    const existingByKey = new Map(nodes.value.map((node) => [keyOf(node), node]));
+    const idMap = new Map();
+    const merged = [];
+
+    for (const node of importedNodes) {
+      const existing = existingByKey.get(keyOf(node));
+      if (existing) {
+        idMap.set(node.id, existing.id);
+      } else {
+        idMap.set(node.id, node.id);
+        existingByKey.set(keyOf(node), node);
+        merged.push(node);
+      }
     }
-    if (importedInfRules && importedInfRules.length > 0) {
-      inferenceRules.value = [...inferenceRules.value, ...importedInfRules];
+
+    // 关系端点重定向到已有节点，并剔除导入后变成自环的边
+    edgesToAdd = edgesToAdd
+      .map((edge) => ({
+        ...edge,
+        source: idMap.get(edge.source) || edge.source,
+        target: idMap.get(edge.target) || edge.target,
+      }))
+      .filter((edge) => edge.source !== edge.target);
+
+    const seenEdges = new Set(
+      edges.value.map((edge) => `${edge.source}|${edge.target}|${edge.relation}`)
+    );
+    edgesToAdd = edgesToAdd.filter((edge) => {
+      const key = `${edge.source}|${edge.target}|${edge.relation}`;
+      if (seenEdges.has(key)) return false;
+      seenEdges.add(key);
+      return true;
+    });
+
+    // 新节点整体右移，避免与画布上已有节点重叠
+    if (nodes.value.length > 0 && merged.length > 0) {
+      const maxX = Math.max(...nodes.value.map((node) => node.x));
+      const offsetX = maxX + 320;
+      merged.forEach((node) => {
+        node.x += offsetX;
+      });
     }
-    if (importedMutRules && importedMutRules.length > 0) {
-      mutexRules.value = [...mutexRules.value, ...importedMutRules];
-    }
-    syncGraph(currentProjectId.value);
-    currentPerspective.value = "process";
-    statusMessage.value = "已导入数据";
+    nodesToAdd = merged;
   }
+
+  if (nodesToAdd.length > 0) {
+    nodes.value = [...nodes.value, ...nodesToAdd];
+  }
+  if (edgesToAdd.length > 0) {
+    edges.value = [...edges.value, ...edgesToAdd];
+  }
+  if (importedInfRules && importedInfRules.length > 0) {
+    inferenceRules.value = [...inferenceRules.value, ...importedInfRules];
+  }
+  if (importedMutRules && importedMutRules.length > 0) {
+    mutexRules.value = [...mutexRules.value, ...importedMutRules];
+  }
+  syncGraph(currentProjectId.value);
+  currentPerspective.value = "process";
+  statusMessage.value = "已导入数据";
 }
 
 // ========================
@@ -2425,6 +2504,9 @@ onUnmounted(() => {
             <span class="node-title" :title="node.name" v-html="formatSymbol(node.name)"></span>
           </div>
           <div class="node-body">
+            <span v-if="node.label" class="node-label" :style="labelStyle(node.label)" :title="node.label">
+              {{ node.label }}
+            </span>
             <div v-if="node.attributes && node.attributes.length > 0" class="node-attrs">
               <span v-for="(attr, ai) in node.attributes" :key="ai" class="node-attr-chip">{{ attr.key }}</span>
             </div>
@@ -4867,6 +4949,20 @@ onUnmounted(() => {
 /* ======================== 节点内容区 ======================== */
 .node-body {
   padding: 10px 16px 14px 16px;
+}
+
+.node-label {
+  display: inline-block;
+  max-width: 100%;
+  margin-bottom: 4px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .node-id {
