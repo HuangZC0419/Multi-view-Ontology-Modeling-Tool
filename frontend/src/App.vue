@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref, nextTick, watch } from "vue";
+import { computed, onMounted, onUnmounted, onBeforeUnmount, ref, nextTick, watch } from "vue";
 import PerspectiveTabs from "./components/perspective/PerspectiveTabs.vue";
 import LeaderView from "./components/perspective/LeaderView.vue";
 import EngineerView from "./components/perspective/EngineerView.vue";
@@ -61,9 +61,140 @@ const panStart = ref({ x: 0, y: 0 });
 let panRafId = null;
 let lastPointerEvent = null;
 
+// ========================
+// 节点标题 Tooltip（固定尺寸卡片下两行截断，完整名称经浮层查看）
+// ========================
+// 使用 position:fixed + Teleport 到 body，避免被画布 overflow/transform 裁剪
+const nodeTooltip = ref({
+  visible: false,
+  text: "",
+  x: 0,
+  y: 0,
+  placement: "top",
+  ready: false,
+  maxHeight: 220,
+  anchorTop: 0,
+  anchorBottom: 0
+});
+const nodeTooltipEl = ref(null);
+let tooltipHideTimer = null;
+let tooltipShowToken = 0;
+
+function clearTooltipHideTimer() {
+  if (tooltipHideTimer !== null) {
+    clearTimeout(tooltipHideTimer);
+    tooltipHideTimer = null;
+  }
+}
+
+function hideNodeTooltip() {
+  // 使尚未执行的 nextTick 校正回调失效
+  tooltipShowToken++;
+  clearTooltipHideTimer();
+  nodeTooltip.value.visible = false;
+  nodeTooltip.value.ready = false;
+}
+
+function showNodeTooltip(event, name) {
+  const target = event?.currentTarget;
+  if (!target || !name) {
+    hideNodeTooltip();
+    return;
+  }
+  clearTooltipHideTimer();
+
+  // 仅在标题确实被两行截断时显示；短名称不弹浮层
+  if (target.scrollHeight <= target.clientHeight + 1) {
+    hideNodeTooltip();
+    return;
+  }
+
+  const token = ++tooltipShowToken;
+  const rect = target.getBoundingClientRect();
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+
+  // 先以不可见状态渲染，测量真实高度后再决定方向与最大高度
+  nodeTooltip.value = {
+    visible: true,
+    text: name,
+    x: rect.left + rect.width / 2,
+    y: 0,
+    placement: "top",
+    ready: false,
+    maxHeight: 220,
+    anchorTop: rect.top,
+    anchorBottom: rect.bottom
+  };
+
+  nextTick(() => {
+    // 快速在 A/B 节点间移动时，旧回调不得改写新状态
+    if (token !== tooltipShowToken) return;
+    const tip = nodeTooltipEl.value;
+    if (!tip || !nodeTooltip.value.visible) return;
+
+    const GAP = 8;
+    const MARGIN = 12;
+    const height = tip.offsetHeight;
+    const { anchorTop, anchorBottom } = nodeTooltip.value;
+    const spaceAbove = anchorTop - GAP - MARGIN;
+    const spaceBelow = viewportHeight - anchorBottom - GAP - MARGIN;
+
+    let placement;
+    let maxHeight;
+    if (spaceAbove >= height) {
+      placement = "top";
+      maxHeight = Math.min(220, spaceAbove);
+    } else if (spaceBelow >= height) {
+      placement = "bottom";
+      maxHeight = Math.min(220, spaceBelow);
+    } else {
+      // 两侧都放不下：选空间更大的一侧，限制高度后内部滚动，不再平移浮层
+      placement = spaceAbove >= spaceBelow ? "top" : "bottom";
+      const chosenSpace = placement === "top" ? spaceAbove : spaceBelow;
+      maxHeight = Math.max(24, Math.min(220, chosenSpace));
+    }
+
+    // y 只由锚点决定，避免浮层被推回标题上截获鼠标
+    const y = placement === "top" ? anchorTop - GAP : anchorBottom + GAP;
+
+    // x 按实测宽度夹紧在视口内（左右各 12px）
+    const halfWidth = tip.offsetWidth / 2;
+    const minX = halfWidth + MARGIN;
+    const maxX = viewportWidth - halfWidth - MARGIN;
+    const nextX = maxX >= minX
+      ? Math.min(Math.max(nodeTooltip.value.x, minX), maxX)
+      : (viewportWidth - tip.offsetWidth) / 2 + halfWidth;
+
+    nodeTooltip.value = {
+      ...nodeTooltip.value,
+      placement,
+      maxHeight,
+      x: nextX,
+      y,
+      ready: true
+    };
+  });
+}
+
+function scheduleHideNodeTooltip() {
+  clearTooltipHideTimer();
+  // 120ms 延迟：允许指针从标题移入浮层，便于滚动查看超长名称
+  tooltipHideTimer = setTimeout(() => {
+    tooltipHideTimer = null;
+    tooltipShowToken++;
+    nodeTooltip.value.visible = false;
+    nodeTooltip.value.ready = false;
+  }, 120);
+}
+
+// 视角切换时 Teleport 浮层可能残留，统一收起
+watch(currentPerspective, () => hideNodeTooltip());
+
 function onWheel(event) {
+  hideNodeTooltip();
   if (!canvasRef.value) return;
-  
+
   // 缩放灵敏度
   const zoomSensitivity = 0.001;
   const delta = -event.deltaY * zoomSensitivity;
@@ -89,14 +220,17 @@ function onWheel(event) {
 
 // 缩放控件方法
 function zoomIn() {
+  hideNodeTooltip();
   zoom.value = Math.min(zoom.value * 1.2, 5);
 }
 
 function zoomOut() {
+  hideNodeTooltip();
   zoom.value = Math.max(zoom.value / 1.2, 0.1);
 }
 
 function zoomReset() {
+  hideNodeTooltip();
   zoom.value = 1;
   viewOffset.value = { x: 0, y: 0 };
 }
@@ -325,6 +459,46 @@ const selectedEdge = computed(() =>
   edges.value.find((edge) => edge.id === selectedEdgeId.value)
 );
 
+// ========================
+// 详情面板名称多行自适应
+// ========================
+const nodeNameTextarea = ref(null);
+
+// 全局 `* { box-sizing: border-box }`：scrollHeight 不含边框，需补 2px 边框高度
+function resizeNodeNameTextarea() {
+  const el = nodeNameTextarea.value;
+  if (!el) return;
+  el.style.height = "auto";
+  const contentHeight = el.scrollHeight + 2;
+  el.style.height = `${Math.min(contentHeight, 240)}px`;
+  el.style.overflowY = contentHeight > 240 ? "auto" : "hidden";
+}
+
+// 中文输入法候选词确认的 Enter 不应被拦截
+function onNameKeydown(event) {
+  if (event.isComposing || event.keyCode === 229) return;
+  event.preventDefault();
+}
+
+// 保存前把残留换行归一化为单空格（Enter 已禁止输入换行，此处兜底粘贴内容）
+function onNodeNameChange() {
+  const node = selectedNode.value;
+  if (!node) return;
+  const normalized = String(node.name ?? "").replace(/[\r\n]+/g, " ").trim();
+  if (normalized !== node.name) {
+    node.name = normalized;
+    nextTick(resizeNodeNameTextarea);
+  }
+  syncGraph();
+}
+
+// 切换节点 / 名称变化 / 面板重新打开时，等 DOM 更新后重算高度
+watch(
+  () => [selectedNode.value?.id, selectedNode.value?.name],
+  () => nextTick(resizeNodeNameTextarea),
+  { immediate: true }
+);
+
 // 删除逻辑
 async function deleteSelectedNode() {
   if (!selectedNode.value) return;
@@ -401,6 +575,66 @@ const nodeMap = computed(() => {
   return map;
 });
 
+// ========================
+// 节点卡片实测尺寸（供连线锚点与定位居中计算）
+// ========================
+// 卡片宽高在 CSS 中固定（220×90）；实测仅用于防御字体/边框/缩放的细微差异，
+// 不再表示“高度随内容自适应”。
+const NODE_CARD_WIDTH = 220;
+const NODE_CARD_HEIGHT_FALLBACK = 90;
+
+const nodeSizes = ref({});
+const nodeElMap = new Map();
+let nodeResizeObserver = null;
+
+// Vue 3 深层响应式可追踪对象新增键，直接赋值即可触发 edgeViews 重算
+function updateNodeSize(id, w, h) {
+  // 画布被 v-show 隐藏时 ResizeObserver 会上报 0×0，忽略以免污染尺寸缓存
+  if (!(w > 0 && h > 0)) return;
+  const prev = nodeSizes.value[id];
+  if (prev && Math.abs(prev.w - w) < 0.5 && Math.abs(prev.h - h) < 0.5) return;
+  nodeSizes.value[id] = { w, h };
+}
+
+// v-for 的函数 ref：绑定真实 DOM，并用 ResizeObserver 跟踪高度变化
+function bindNodeEl(el, id) {
+  // 卸载时清理 DOM 引用与缓存尺寸
+  if (!el) {
+    const prevEl = nodeElMap.get(id);
+    if (prevEl) {
+      nodeResizeObserver?.unobserve(prevEl);
+      nodeElMap.delete(id);
+    }
+    if (nodeSizes.value[id]) {
+      const next = { ...nodeSizes.value };
+      delete next[id];
+      nodeSizes.value = next;
+    }
+    return;
+  }
+  if (nodeElMap.get(id) === el) return;
+
+  const prevEl = nodeElMap.get(id);
+  if (prevEl && nodeResizeObserver) {
+    nodeResizeObserver.unobserve(prevEl);
+  }
+  nodeElMap.set(id, el);
+
+  if (!nodeResizeObserver && typeof ResizeObserver !== "undefined") {
+    nodeResizeObserver = new ResizeObserver((entries) => {
+      entries.forEach((entry) => {
+        const nodeId = entry.target.dataset.nodeId;
+        if (!nodeId) return;
+        // 使用 offset 尺寸，避免画布 CSS scale 影响测量结果
+        updateNodeSize(nodeId, entry.target.offsetWidth, entry.target.offsetHeight);
+      });
+    });
+  }
+
+  // ResizeObserver 会异步上报初始尺寸，避免挂载期同步强制布局
+  nodeResizeObserver?.observe(el);
+}
+
 // 计算从矩形中心指向外部点的射线与矩形边界的交点
 // 用于让连线端点落在节点矩形边框上，而非被卡片遮挡
 function lineRectIntersection(outX, outY, rectX, rectY, rectW, rectH) {
@@ -452,16 +686,18 @@ const edgeViews = computed(() => {
         return null;
       }
 
-      // 节点中心和尺寸
-      const srcCX = source.x + 100;
-      const srcCY = source.y + 35;
-      const tgtCX = target.x + 100;
-      const tgtCY = target.y + 35;
+      // 节点中心和尺寸（读取 nodeSizes 使尺寸变化时自动重算）
+      const srcSize = nodeSizes.value[source.id] || { w: NODE_CARD_WIDTH, h: NODE_CARD_HEIGHT_FALLBACK };
+      const tgtSize = nodeSizes.value[target.id] || { w: NODE_CARD_WIDTH, h: NODE_CARD_HEIGHT_FALLBACK };
+      const srcCX = source.x + srcSize.w / 2;
+      const srcCY = source.y + srcSize.h / 2;
+      const tgtCX = target.x + tgtSize.w / 2;
+      const tgtCY = target.y + tgtSize.h / 2;
 
       // 起点 = 以 target 中心为外部点，射线与 source 矩形边界的交点
-      const srcPt = lineRectIntersection(tgtCX, tgtCY, source.x, source.y, 200, 70);
+      const srcPt = lineRectIntersection(tgtCX, tgtCY, source.x, source.y, srcSize.w, srcSize.h);
       // 终点 = 以 source 中心为外部点，射线与 target 矩形边界的交点
-      const tgtPt = lineRectIntersection(srcCX, srcCY, target.x, target.y, 200, 70);
+      const tgtPt = lineRectIntersection(srcCX, srcCY, target.x, target.y, tgtSize.w, tgtSize.h);
 
       const x1 = srcPt.x;
       const y1 = srcPt.y;
@@ -506,6 +742,7 @@ function hasChildren(nodeId) {
 
 // 展开/折叠切换
 function toggleCollapse(nodeId) {
+  hideNodeTooltip();
   const newSet = new Set(collapsedNodeIds.value);
   if (newSet.has(nodeId)) {
     newSet.delete(nodeId);
@@ -520,6 +757,7 @@ function toggleCollapse(nodeId) {
 // 右键菜单逻辑
 // ========================
 function showContextMenu(event, type, nodeId = null) {
+  hideNodeTooltip();
   if (!canvasRef.value) return;
   const rect = canvasRef.value.getBoundingClientRect();
   contextMenu.value = {
@@ -781,15 +1019,22 @@ async function addChildOntology(parentId = null) {
   const name = await customPrompt("请输入子概念名称", "", "如：硬质合金");
   if (!name) return;
 
-  // 树状布局计算 (水平铺开)
+  // 树状布局计算：按兄弟节点实际右边界铺开，首个子节点落在父节点正下方
   const siblings = nodes.value.filter(n => n.parent_id === targetParentId);
-  const xOffset = siblings.length * 180 - (siblings.length > 0 ? 90 : 0);
+  const siblingRight = siblings.reduce((max, n) => {
+    const w = nodeSizes.value[n.id]?.w || NODE_CARD_WIDTH;
+    const right = Number(n.x) + w;
+    return Number.isFinite(right) ? Math.max(max, right) : max;
+  }, -Infinity);
+  const childX = siblings.length && Number.isFinite(siblingRight) ? siblingRight + 24 : parentNode.x;
+  // 父节点实测高度（固定尺寸下仍读取，防御字体/边框差异）
+  const parentH = nodeSizes.value[parentNode.id]?.h || NODE_CARD_HEIGHT_FALLBACK;
 
   try {
     await createNode({
       name,
-      x: parentNode.x + xOffset,
-      y: parentNode.y + 130, // 自动放置在父节点正下方
+      x: childX,
+      y: parentNode.y + parentH + 24, // 自动放置在父节点正下方并留出间距
       parent_id: targetParentId
     });
     
@@ -898,6 +1143,7 @@ async function confirmRelationDialog() {
 }
 
 async function onClickNode(nodeId) {
+  hideNodeTooltip();
   selectedNodeId.value = nodeId;
   selectedEdgeId.value = null;
 
@@ -935,6 +1181,7 @@ async function onClickNode(nodeId) {
 }
 
 function startDrag(event, node) {
+  hideNodeTooltip();
   draggingNodeId.value = node.id;
   dragOffset.value = {
     x: (event.clientX - viewOffset.value.x) / zoom.value - node.x,
@@ -943,6 +1190,7 @@ function startDrag(event, node) {
 }
 
 function startPanning(event) {
+  hideNodeTooltip();
   if (event.button !== 0) return; // 仅左键平移
   // 弹窗或右键菜单打开时，不启动平移
   if (promptState.value.visible || confirmState.value.visible || contextMenu.value.visible || relationDialogVisible.value || relationCreateChoiceVisible.value || rulesDialogVisible.value || bayesianDialogVisible.value || weightDialogVisible.value || ocrDialogVisible.value || projectMenuOpen.value) return;
@@ -1140,7 +1388,8 @@ async function importOcrToCanvas() {
       entities,
       start_x: 120 - viewOffset.value.x,
       start_y: 120 - viewOffset.value.y,
-      spacing_x: 180,
+      // 与固定卡片宽度保持一致的列间距，避免导入的节点互相重叠
+      spacing_x: NODE_CARD_WIDTH + 24,
       spacing_y: 120
     };
     const result = await request("/api/ocr/import", {
@@ -1338,12 +1587,12 @@ function focusNodeOnCanvas(nodeId) {
   if (!node || !canvasRef.value) return false;
 
   const rect = canvasRef.value.getBoundingClientRect();
-  const NODE_W = 200; // 概念卡片宽度（与 edgeViews 中的 200x70 保持一致）
-  const NODE_H = 70;
+  // 概念卡片尺寸：固定 220×90，未测量到时使用兜底值
+  const size = nodeSizes.value[node.id] || { w: NODE_CARD_WIDTH, h: NODE_CARD_HEIGHT_FALLBACK };
 
   viewOffset.value = {
-    x: rect.width / 2 - (node.x + NODE_W / 2) * zoom.value,
-    y: rect.height / 2 - (node.y + NODE_H / 2) * zoom.value,
+    x: rect.width / 2 - (node.x + size.w / 2) * zoom.value,
+    y: rect.height / 2 - (node.y + size.h / 2) * zoom.value,
   };
   dragTick.value++; // 触发连线重算
   return true;
@@ -1609,6 +1858,12 @@ onMounted(() => {
   window.addEventListener("keydown", handleGlobalKeyDown);
   // 点击浮层外任意位置关闭细分功能浮层（侧栏内点击因 @click.stop 不会触发）
   document.addEventListener("click", closeFlyout);
+});
+
+onBeforeUnmount(() => {
+  clearTooltipHideTimer();
+  nodeResizeObserver?.disconnect();
+  nodeResizeObserver = null;
 });
 
 onUnmounted(() => {
@@ -2486,6 +2741,8 @@ onUnmounted(() => {
         <div
           v-for="node in visibleNodes"
           :key="node.id"
+          :data-node-id="node.id"
+          :ref="(el) => bindNodeEl(el, node.id)"
           :class="['node-card', { selected: selectedNodeId === node.id, connecting: connectMode && connectSourceId === node.id, dragging: draggingNodeId === node.id, highlighted: highlightEnabled && highlightedNodeIds.has(node.id), dimmed: highlightEnabled && !highlightedNodeIds.has(node.id) }]"
           :style="{ '--node-x': node.x + 'px', '--node-y': node.y + 'px' }"
           @click.stop="onClickNode(node.id); hideContextMenu()"
@@ -2501,16 +2758,18 @@ onUnmounted(() => {
                 <path d="M2 12l10 5 10-5"/>
               </svg>
             </div>
-            <span class="node-title" :title="node.name" v-html="formatSymbol(node.name)"></span>
+            <span
+              class="node-title"
+              v-html="formatSymbol(node.name)"
+              @mouseenter="showNodeTooltip($event, node.name)"
+              @mouseleave="scheduleHideNodeTooltip"
+            ></span>
           </div>
           <div class="node-body">
-            <span v-if="node.label" class="node-label" :style="labelStyle(node.label)" :title="node.label">
-              {{ node.label }}
-            </span>
-            <div v-if="node.attributes && node.attributes.length > 0" class="node-attrs">
-              <span v-for="(attr, ai) in node.attributes" :key="ai" class="node-attr-chip">{{ attr.key }}</span>
+            <div class="node-meta">
+              <span v-if="node.label" class="node-label" :style="labelStyle(node.label)" :title="node.label">{{ node.label }}</span>
+              <span class="node-id" :title="'ID: ' + node.id">ID: {{ node.id.slice(0, 6) }}</span>
             </div>
-            <div v-else class="node-id">ID: {{ node.id.slice(0, 6) }}</div>
           </div>
 
           <!-- 展开/折叠按钮 -->
@@ -2531,6 +2790,28 @@ onUnmounted(() => {
         <button class="zoom-btn" @click="zoomOut" title="缩小 (或使用滚轮)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
       </div>
     </main>
+
+    <!-- 节点标题浮层：Teleport 到 body，避免被画布 overflow/transform 裁剪 -->
+    <Teleport to="body">
+      <Transition name="node-tooltip-fade">
+        <div
+          v-if="nodeTooltip.visible"
+          ref="nodeTooltipEl"
+          class="node-tooltip"
+          :class="nodeTooltip.placement"
+          :style="{
+            left: nodeTooltip.x + 'px',
+            top: nodeTooltip.y + 'px',
+            maxHeight: nodeTooltip.maxHeight + 'px',
+            visibility: nodeTooltip.ready ? 'visible' : 'hidden'
+          }"
+          @mouseenter="clearTooltipHideTimer"
+          @mouseleave="scheduleHideNodeTooltip"
+        >
+          {{ nodeTooltip.text }}
+        </div>
+      </Transition>
+    </Teleport>
       </div> <!-- end canvas-wrapper -->
 
       <!-- ProcessView 用于加载数据（不可见，仅触发事件） -->
@@ -2555,7 +2836,16 @@ onUnmounted(() => {
         <template v-if="selectedNode">
           <div class="detail-group">
             <label>名称</label>
-            <input type="text" v-model="selectedNode.name" @change="syncGraph" class="input-field" :disabled="!isManager" />
+            <textarea
+              ref="nodeNameTextarea"
+              v-model="selectedNode.name"
+              @keydown.enter="onNameKeydown"
+              @compositionupdate="resizeNodeNameTextarea"
+              @change="onNodeNameChange"
+              class="input-field name-textarea"
+              rows="1"
+              :disabled="!isManager"
+            ></textarea>
           </div>
 
           <div class="detail-group">
@@ -4670,6 +4960,16 @@ onUnmounted(() => {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
+/* 名称输入：随内容多行增长，超过上限后内部滚动 */
+.name-textarea {
+  resize: none;
+  min-height: 42px;
+  max-height: 240px;
+  line-height: 1.6;
+  font-family: inherit;
+  overflow-y: hidden;
+}
+
 .attr-list {
   display: flex;
   flex-direction: column;
@@ -4730,7 +5030,11 @@ onUnmounted(() => {
   position: absolute;
   top: 0;
   left: 0;
-  width: 200px;
+  width: 220px;
+  height: 90px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   transform: translate(var(--node-x, 0px), var(--node-y, 0px));
   background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
   border-radius: 14px;
@@ -4764,7 +5068,7 @@ onUnmounted(() => {
 }
 
 .node-card:hover {
-  transform: translate(var(--node-x, 0px), var(--node-y, 0px)) translateY(-2px);
+  transform: translate(var(--node-x, 0px), var(--node-y, 0px));
   box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.05),
     0 4px 14px rgba(0, 0, 0, 0.06),
@@ -4850,6 +5154,7 @@ onUnmounted(() => {
 
 /* ======================== 顶部色条 ======================== */
 .node-topbar {
+  flex: 0 0 auto;
   height: 4px;
   background: linear-gradient(90deg, #cbd5e1, #e2e8f0);
   border-radius: 0;
@@ -4882,10 +5187,11 @@ onUnmounted(() => {
 
 /* ======================== 节点头部 ======================== */
 .node-header {
-  padding: 14px 16px 12px 16px;
+  flex: 0 0 auto;
+  padding: 8px 14px 6px;
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: flex-start;
+  gap: 9px;
   border-bottom: 1px solid rgba(241, 245, 249, 0.8);
   background: transparent;
   border-radius: 0;
@@ -4902,10 +5208,11 @@ onUnmounted(() => {
   color: #64748b;
   display: flex;
   flex-shrink: 0;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
+  margin-top: 0;
   background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-  border-radius: 8px;
+  border-radius: 7px;
   align-items: center;
   justify-content: center;
   transition: all 0.25s var(--ease-out);
@@ -4923,14 +5230,23 @@ onUnmounted(() => {
 
 /* ======================== 节点标题 ======================== */
 .node-title {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
   font-size: 14px;
+  line-height: 18px;
   font-weight: 650;
   color: #0f172a;
-  white-space: nowrap;
+  letter-spacing: -0.01em;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
   text-overflow: ellipsis;
-  letter-spacing: -0.01em;
-  line-height: 1.3;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 .node-title i {
@@ -4948,18 +5264,33 @@ onUnmounted(() => {
 
 /* ======================== 节点内容区 ======================== */
 .node-body {
-  padding: 10px 16px 14px 16px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 14px 8px;
+}
+
+.node-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
 }
 
 .node-label {
   display: inline-block;
-  max-width: 100%;
-  margin-bottom: 4px;
-  padding: 1px 6px;
+  flex: 0 0 auto;
+  max-width: 45%;
+  margin-bottom: 0;
+  padding: 0 6px;
+  height: 18px;
+  line-height: 18px;
+  box-sizing: border-box;
   border-radius: 4px;
   font-size: 10px;
   font-weight: 700;
-  line-height: 16px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4972,7 +5303,15 @@ onUnmounted(() => {
   font-weight: 500;
   background: rgba(241, 245, 249, 0.7);
   display: inline-block;
-  padding: 2px 8px;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 16px;
+  padding: 1px 8px;
+  box-sizing: border-box;
   border-radius: 5px;
   letter-spacing: 0.02em;
 }
@@ -4982,29 +5321,42 @@ onUnmounted(() => {
   color: #3b82f6;
 }
 
-.node-attrs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+/* ======================== 节点标题 Tooltip ======================== */
+.node-tooltip {
+  position: fixed;
+  z-index: 2000;
+  max-width: min(340px, calc(100vw - 24px));
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 8px 11px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow:
+    0 4px 10px rgba(15, 23, 42, 0.08),
+    0 10px 28px rgba(15, 23, 42, 0.06);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #1e293b;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  pointer-events: auto;
+  transform: translate(-50%, -100%);
 }
 
-.node-attr-chip {
-  display: inline-block;
-  padding: 2px 7px;
-  border-radius: 4px;
-  background: #F1F5F9;
-  border: 1px solid #E2E8F0;
-  font-size: 10px;
-  font-weight: 500;
-  color: #475569;
-  white-space: nowrap;
-  line-height: 1.5;
+.node-tooltip.bottom {
+  transform: translate(-50%, 0);
 }
 
-.node-card.selected .node-attr-chip {
-  background: #EFF6FF;
-  border-color: #BFDBFE;
-  color: #2563EB;
+.node-tooltip-fade-enter-active,
+.node-tooltip-fade-leave-active {
+  transition: opacity 0.12s ease;
+}
+
+.node-tooltip-fade-enter-from,
+.node-tooltip-fade-leave-to {
+  opacity: 0;
 }
 
 /* ======================== 折叠按钮 ======================== */
